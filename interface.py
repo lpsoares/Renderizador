@@ -1,5 +1,5 @@
-# Desenvolvido por: Luciano Soares
-# Displina: Computação Gráfica
+# Desenvolvido por: Luciano Soares <lpsoares@insper.edu.br>
+# Disciplina: Computação Gráfica
 # Data: 31 de Agosto de 2020
 
 # Matplotlib
@@ -7,31 +7,24 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, AutoLocator
 from matplotlib.widgets import Button
 
-# Pillow
-from PIL import Image
-
-# GPU
-import gpu
-
-
 class Interface:
 
     _pontos = []        # pontos a serem desenhados
     _linhas = []        # linhas a serem desenhadas
     _poligonos = []     # poligonos a serem desenhados
 
-    def __init__(self, width, height, file):
+    def __init__(self, width, height):
 
         self.width = width
         self.height = height
 
-        self.image_file = file  # nome do arquivo usado para salvar imagem
-
         self.geometrias = []    # lista de geometrias para controlar exibição
         self.grid = False       # usado para controlar se grid exibido ou não
 
-        self.fig, self.ax = plt.subplots()
-        self.ax.set_title('Renderizador')
+        self.image_saver = None # recebe função para salvar imagens
+
+        self.fig, self.ax = plt.subplots(num="Renderizador")
+        #self.ax.set_title('Renderizador')
 
         self.ax.axis([0, width, height, 0])  # [xmin, xmax, ymin, ymax]
 
@@ -92,7 +85,7 @@ class Interface:
             self.annotation(points)
 
     def draw_triangle(self, triangles, text=False):
-        
+
         points = triangles["vertices"]
         color = triangles["color"]
 
@@ -104,7 +97,7 @@ class Interface:
         line, = self.ax.plot(x_values, y_values,  marker='o', color=color, linestyle="-")  # "ro-"
         self.geometrias.append(line)
 
-        poly, = self.ax.fill(x_values, y_values, color=color+[0.4]) 
+        poly, = self.ax.fill(x_values, y_values, color=color+[0.4])
         self.geometrias.append(poly)
 
         # desenha texto se requisitado
@@ -123,14 +116,11 @@ class Interface:
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def save_image(self, event): 
-        img = Image.fromarray(self.data, 'RGB')
-        img.save(self.image_file)
-
+    def save_image(self, event):
+        if self.image_saver:
+            self.image_saver()
 
     def preview(self, data):
-        
-        self.data = data # armazena Frame Buffer
 
         extent = (0, self.width, self.height, 0)
         imgplot = self.ax.imshow(data, interpolation='nearest', extent=extent)
@@ -143,6 +133,8 @@ class Interface:
 
         for poligono in Interface._poligonos:
             self.draw_triangle(poligono, text=True)
+
+        # Configura todos os botões da interface
 
         bgeo = Button(plt.axes([0.8, 0.01, 0.15, 0.06]), 'Geometria')
         bgeo.on_clicked(self.exibe_geometrias)

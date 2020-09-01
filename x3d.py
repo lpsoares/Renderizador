@@ -1,5 +1,5 @@
-# Desenvolvido por: Luciano Soares
-# Displina: Computação Gráfica
+# Desenvolvido por: Luciano Soares <lpsoares@insper.edu.br>
+# Disciplina: Computação Gráfica
 # Data: 31 de Agosto de 2020
 
 # XML
@@ -7,28 +7,27 @@ import xml.etree.ElementTree as ET
 
 # Outras
 import re
-import math
-
-# Interface
-import interface
 
 def clean(child):
     _, _, child.tag = child.tag.rpartition('}') # remove os namespaces
 
 class X3D:
 
+    current_color = [1.0, 1.0, 1.0] # controle de cor instantânea
+    preview = None # artibuto que aponta para o sistema de preview
+    render = {} # dicionario dos métodos de renderização
+
     def __init__(self, filename):
         self.x3d = ET.parse(filename)
         self.root = self.x3d.getroot()
 
-        X3D.current_color = [1.0, 1.0, 1.0]
-
-        X3D.render = {} # dicionario dos métodos de renderização
+    def set_preview(self, preview):
+        X3D.preview = preview
 
     def set_resolution(self, width, height):
         self.width = width
         self.height = height
-    
+
     def parse(self):
         """ parse começando da raiz do X3D. """
         for child in self.root:
@@ -117,7 +116,6 @@ class Shape(X3DShapeNode):
                 self.geometry = Polyline2D(child)
             elif child.tag == "TriangleSet2D":
                 self.geometry = TriangleSet2D(child)
-            
 
 
 
@@ -135,16 +133,17 @@ class Polypoint2D(X3DGeometryNode):
         super().__init__()
         point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
         point = [ float(p) for p in point_str]
-        
+
         # Preview
-        polypoint2D = []
-        for i in range(0, len(point), 2):
-            polypoint2D.append([point[i], point[i+1]])
-        interface.Interface._pontos.append({'color': X3D.current_color, 'points': polypoint2D})
+        if X3D.preview:
+            polypoint2D = []
+            for i in range(0, len(point), 2):
+                polypoint2D.append([point[i], point[i+1]])
+            X3D.preview._pontos.append({'color': X3D.current_color, 'points': polypoint2D})
 
         # Render
         if "Polypoint2D" in X3D.render:
-            X3D.render["Polypoint2D"](point=point, color=X3D.current_color)  
+            X3D.render["Polypoint2D"](point=point, color=X3D.current_color)
 
 class Polyline2D(X3DGeometryNode):
     def __init__(self, node):
@@ -153,14 +152,15 @@ class Polyline2D(X3DGeometryNode):
         lineSegments = [ float(point) for point in lineSegments_str]
 
         # Preview
-        polyline2D = []
-        for i in range(0, len(lineSegments), 2):
-            polyline2D.append([lineSegments[i], lineSegments[i+1]])
-        interface.Interface._linhas.append({'color': X3D.current_color, 'lines': polyline2D})
+        if X3D.preview:
+            polyline2D = []
+            for i in range(0, len(lineSegments), 2):
+                polyline2D.append([lineSegments[i], lineSegments[i+1]])
+            X3D.preview._linhas.append({'color': X3D.current_color, 'lines': polyline2D})
 
         # Render
         if "Polyline2D" in X3D.render:
-            X3D.render["Polyline2D"](lineSegments=lineSegments, color=X3D.current_color)  
+            X3D.render["Polyline2D"](lineSegments=lineSegments, color=X3D.current_color)
 
 class TriangleSet2D(X3DGeometryNode):
     def __init__(self, node):
@@ -169,12 +169,13 @@ class TriangleSet2D(X3DGeometryNode):
         vertices = [ float(point) for point in vertices_str]
 
         # Preview
-        for i in range(0, len(vertices), 6):
-            interface.Interface._poligonos.append({'color': X3D.current_color,
-                                                   'vertices': [[vertices[i  ], vertices[i+1]],
-                                                                [vertices[i+2], vertices[i+3]],
-                                                                [vertices[i+4], vertices[i+5]]]})
-        
+        if X3D.preview:
+            for i in range(0, len(vertices), 6):
+                X3D.preview._poligonos.append({'color': X3D.current_color,
+                                                    'vertices': [[vertices[i  ], vertices[i+1]],
+                                                                 [vertices[i+2], vertices[i+3]],
+                                                                 [vertices[i+4], vertices[i+5]]]})
+
         # Render
         if "TriangleSet2D" in X3D.render:
             X3D.render["TriangleSet2D"](vertices=vertices, color=X3D.current_color)
