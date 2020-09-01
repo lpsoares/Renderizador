@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">
+<X3D>
+    <Scene>
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='2.2 3.1 5.5 10.1'/>
+                <Appearance>
+                    <Material diffuseColor='0 1 0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='6.2 17.2 11.1 5.3'/>
+                <Appearance>
+                    <Material diffuseColor='1 0 0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='18.2 19.3 14.0 13.2'/>
+                <Appearance>
+                    <Material diffuseColor='0 0 1'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='27.2 4.1 14.5 7.6'/>
+                <Appearance>
+                    <Material diffuseColor='1 1 0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+    </Scene>
+</X3D>
