@@ -6,17 +6,64 @@ import argparse     # Para tratar os parâmetros da linha de comando
 import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
 import interface    # Janela de visualização baseada no Matplotlib
 import gpu          # Simula os recursos de uma GPU
-
+       
 def polypoint2D(point, color):
     """ Função usada para renderizar Polypoint2D. """
-    gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
+    # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
     # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
+    i = 0
+    while (i < len(point)):
+        gpu.GPU.set_pixel(int(point[i]), int(point[i+1]), color[0]*255, color[1]*255, color[2]*255)
+        i+=2
 
 def polyline2D(lineSegments, color):
     """ Função usada para renderizar Polyline2D. """
-    x = gpu.GPU.width//2
-    y = gpu.GPU.height//2
-    gpu.GPU.set_pixel(x, y, 255, 0, 0) # altera um pixel da imagem
+    #x = gpu.GPU.width//2
+    #y = gpu.GPU.height//2
+    #gpu.GPU.set_pixel(x, y, 255, 0, 0) # altera um pixel da imagem
+
+    p0x = lineSegments[0]
+    p0y = lineSegments[1]
+    p1x = lineSegments[2]
+    p1y = lineSegments[3]
+
+    if p0x > p1x:
+        xMaior = int(p0x)
+        xMenor = int(p1x)
+    else:
+        xMaior = int(p1x)
+        xMenor = int(p0x)
+  
+    if p0y > p1y:
+        yMaior = int(p0y)
+        yMenor = int(p1y)
+    else:
+        yMaior = int(p1y)
+        yMenor = int(p0y)
+
+    m = (p1y - p0y)/p1x - p0x
+    b = p1y - p1x*m
+
+
+    for x in range(xMenor, xMaior):
+        print(x)
+        for y in range(yMenor, yMaior):
+            x0 = x + 0.5
+            y0 = y + 0.5
+
+            d = abs(m*x0 + y0 + b)/(m**2 + 1)**(1/2)
+
+            if d < 1:
+                gpu.GPU.set_pixel(x, y, 255, 0, 0)
+            
+    '''
+    T = [p1x - p0x, p1y - p0y]
+    N = [T[1], -T[0]]
+    V = [x+0,5 - p0x, y+0,5 - p0y] #P-P0
+    L = V[0]*N[0] + V[1]*N[1]
+    '''
+
 
 def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
@@ -30,7 +77,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo1.x3d"
+    x3d_file = "exemplo2.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
