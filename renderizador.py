@@ -23,47 +23,38 @@ def polyline2D(lineSegments, color):
     #y = gpu.GPU.height//2
     #gpu.GPU.set_pixel(x, y, 255, 0, 0) # altera um pixel da imagem
 
-    p0x = lineSegments[0]
-    p0y = lineSegments[1]
-    p1x = lineSegments[2]
-    p1y = lineSegments[3]
+    print(lineSegments)
 
-    if p0x > p1x:
-        xMaior = int(p0x)
-        xMenor = int(p1x)
+    if lineSegments[0] <= lineSegments[2]:
+        x0 = lineSegments[0] 
+        y0 = lineSegments[1]
+        x1 = lineSegments[2] 
+        y1 = lineSegments[3] 
     else:
-        xMaior = int(p1x)
-        xMenor = int(p0x)
-  
-    if p0y > p1y:
-        yMaior = int(p0y)
-        yMenor = int(p1y)
-    else:
-        yMaior = int(p1y)
-        yMenor = int(p0y)
-
-    m = (p1y - p0y)/p1x - p0x
-    b = p1y - p1x*m
+        x1 = lineSegments[0] 
+        y1 = lineSegments[1]
+        x0 = lineSegments[2] 
+        y0 = lineSegments[3] 
 
 
-    for x in range(xMenor, xMaior):
-        print(x)
-        for y in range(yMenor, yMaior):
-            x0 = x + 0.5
-            y0 = y + 0.5
-
-            d = abs(m*x0 + y0 + b)/(m**2 + 1)**(1/2)
-
-            if d < 1:
-                gpu.GPU.set_pixel(x, y, 255, 0, 0)
+    s = (y1-y0)/(x1-x0) # Inclinação da reta
+    x = x0
+    y = y0
+    while x <= x1:
+        if s > 1:
+            k = y
+            for i in range(int(y+s) - int(y)):
+                gpu.GPU.set_pixel(int(x), int(k+i), 255, 0, 255) # altera um pixel da imagem
+        elif s < -1:
+            k = y
             
-    '''
-    T = [p1x - p0x, p1y - p0y]
-    N = [T[1], -T[0]]
-    V = [x+0,5 - p0x, y+0,5 - p0y] #P-P0
-    L = V[0]*N[0] + V[1]*N[1]
-    '''
-
+            for i in range(abs(int(y) - int(y+s))):
+                gpu.GPU.set_pixel(int(x), int(k-i), 255, 0, 255) # altera um pixel da imagem
+        else:
+            gpu.GPU.set_pixel(int(x), int(y), 255, 0, 255) # altera um pixel da imagem
+      
+        y += s
+        x += 1
 
 def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
