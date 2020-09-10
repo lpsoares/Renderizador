@@ -65,7 +65,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo6.x3d"
+    x3d_file = "exemplo4.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
