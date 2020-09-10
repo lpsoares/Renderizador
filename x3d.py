@@ -39,12 +39,14 @@ class X3D:
 class Scene:
     def __init__(self, node):
         self.children = []
+        for child in node: # garante pegar o Viewpoint primeiro que tudo
+            clean(child) # remove namespace
+            elif child.tag == "Viewpoint":
+                self.children.append(Viewpoint(child))
         for child in node:
             clean(child) # remove namespace
             if child.tag == "Transform":
                 self.children.append(Transform(child))
-            elif child.tag == "Viewpoint":
-                self.children.append(Viewpoint(child))
 
 # Core component
 
