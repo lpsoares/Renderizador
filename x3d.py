@@ -41,7 +41,7 @@ class Scene:
         self.children = []
         for child in node: # garante pegar o Viewpoint primeiro que tudo
             clean(child) # remove namespace
-            elif child.tag == "Viewpoint":
+            if child.tag == "Viewpoint":
                 self.children.append(Viewpoint(child))
         for child in node:
             clean(child) # remove namespace
@@ -149,7 +149,12 @@ class Shape(X3DShapeNode):
                 self.geometry = TriangleSet2D(child)
             elif child.tag == "TriangleSet":
                 self.geometry = TriangleSet(child)
-
+            elif child.tag == "TriangleStripSet":
+                self.geometry = TriangleStripSet(child)
+            elif child.tag == "IndexedTriangleStripSet":
+                self.geometry = IndexedTriangleStripSet(child)
+            elif child.tag == "Box":
+                self.geometry = Box(child)
 
 # Rendering component
 
@@ -245,6 +250,50 @@ class TriangleSet(X3DComposedGeometryNode):
         if "TriangleSet" in X3D.render:
             X3D.render["TriangleSet"](point=self.coord.point, color=X3D.current_color)
 
+class TriangleStripSet(X3DComposedGeometryNode):
+    def __init__(self, node):
+        super().__init__()
+        self.coord = None
+        self.stripCount = []
+
+        stripCount_str = re.split(r'[,\s]\s*',node.attrib['stripCount'].strip())
+        self.stripCount = [ float(point) for point in stripCount_str]
+
+        for child in node:
+            clean(child) # remove namespace
+            if child.tag == "Coordinate":
+                self.coord = Coordinate(child)
+
+        # Preview
+        # Implemente se desejar
+        
+        # Render
+        if "TriangleStripSet" in X3D.render:
+            X3D.render["TriangleStripSet"](point=self.coord.point, stripCount=self.stripCount, color=X3D.current_color)
+
+
+class IndexedTriangleStripSet(X3DComposedGeometryNode):
+    def __init__(self, node):
+        super().__init__()
+        self.coord = None
+        self.index = []
+
+        index_str = re.split(r'[,\s]\s*',node.attrib['index'].strip())
+        self.index = [ float(point) for point in index_str]
+
+        for child in node:
+            clean(child) # remove namespace
+            if child.tag == "Coordinate":
+                self.coord = Coordinate(child)
+
+        # Preview
+        # Implemente se desejar
+        
+        # Render
+        if "IndexedTriangleStripSet" in X3D.render:
+            X3D.render["IndexedTriangleStripSet"](point=self.coord.point, index=self.index, color=X3D.current_color)
+
+
 # Navigation component
 
 class X3DViewpointNode(X3DBindableNode):
@@ -271,3 +320,21 @@ class Viewpoint(X3DViewpointNode):
         # Render
         if "Viewpoint" in X3D.render:
             X3D.render["Viewpoint"](position=self.position, orientation=self.orientation, fieldOfView=self.fieldOfView)
+
+# Geometry3D component
+
+class Box(X3DGeometryNode):
+    def __init__(self, node):
+        super().__init__()
+        self.size = [2, 2, 2]         # Valores padrão
+
+        if 'size' in node.attrib:
+            size_str = re.split(r'[,\s]\s*',node.attrib['size'].strip())
+            self.size = [ float(point) for point in size_str]
+
+        # Preview
+        # Implemente se desejar
+        
+        # Render
+        if "Box" in X3D.render:
+            X3D.render["Box"](size=self.size, color=X3D.current_color)
