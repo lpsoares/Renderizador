@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 
 # Outras
 import re
+import math
 
 def clean(child):
     _, _, child.tag = child.tag.rpartition('}') # remove os namespaces
@@ -42,6 +43,8 @@ class Scene:
             clean(child) # remove namespace
             if child.tag == "Transform":
                 self.children.append(Transform(child))
+            elif child.tag == "Viewpoint":
+                self.children.append(Viewpoint(child))
 
 # Core component
 
@@ -49,6 +52,10 @@ class X3DNode:
     pass
 
 class X3DChildNode(X3DNode):
+    def __init__(self):
+        super().__init__()
+
+class X3DBindableNode(X3DChildNode):
     def __init__(self):
         super().__init__()
 
@@ -62,10 +69,32 @@ class X3DGroupingNode(X3DChildNode):
 class Transform(X3DGroupingNode):
     def __init__(self, node):
         super().__init__()
+        self.rotation = [0, 0, 1, 0]
+        self.scale = [1, 1, 1]
+        self.translation = [0, 0, 0]
+
+        if 'rotation' in node.attrib:
+            rotation_str = re.split(r'[,\s]\s*',node.attrib['rotation'])
+            self.rotation = [ float(value) for value in rotation_str]
+
+        if 'scale' in node.attrib:
+            scale_str = re.split(r'[,\s]\s*',node.attrib['scale'])
+            self.scale = [ float(value) for value in scale_str]
+
+        if 'translation' in node.attrib:
+            translation_str = re.split(r'[,\s]\s*',node.attrib['translation'])
+            self.translation = [ float(value) for value in translation_str]
+
+        # Render
+        if "Transform" in X3D.render:
+            X3D.render["Transform"](translation=self.translation, scale=self.scale, rotation=self.rotation)
+
         for child in node:
             clean(child) # remove namespace
             if child.tag == "Shape":
                 self.children.append(Shape(child))
+            elif child.tag == "Transform":
+                self.children.append(Transform(child))
 
 # Shape component
 
@@ -116,7 +145,8 @@ class Shape(X3DShapeNode):
                 self.geometry = Polyline2D(child)
             elif child.tag == "TriangleSet2D":
                 self.geometry = TriangleSet2D(child)
-
+            elif child.tag == "TriangleSet":
+                self.geometry = TriangleSet(child)
 
 
 # Rendering component
@@ -125,6 +155,23 @@ class X3DGeometryNode(X3DNode):
     def __init__(self):
         super().__init__()
 
+class X3DComposedGeometryNode(X3DGeometryNode):
+    def __init__(self):
+        super().__init__()
+
+class X3DGeometricPropertyNode(X3DNode):
+    def __init__(self):
+        super().__init__()
+
+class X3DCoordinateNode(X3DGeometricPropertyNode):
+    def __init__(self):
+        super().__init__()
+
+class Coordinate(X3DCoordinateNode):
+    def __init__(self, node):
+        super().__init__()
+        point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
+        self.point = [ float(p) for p in point_str]
 
 # Geometry2D component
 
@@ -132,50 +179,93 @@ class Polypoint2D(X3DGeometryNode):
     def __init__(self, node):
         super().__init__()
         point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
-        point = [ float(p) for p in point_str]
+        self.point = [ float(p) for p in point_str]
 
         # Preview
         if X3D.preview:
             polypoint2D = []
-            for i in range(0, len(point), 2):
-                polypoint2D.append([point[i], point[i+1]])
+            for i in range(0, len(self.point), 2):
+                polypoint2D.append([self.point[i], self.point[i+1]])
             X3D.preview._pontos.append({'color': X3D.current_color, 'points': polypoint2D})
 
         # Render
         if "Polypoint2D" in X3D.render:
-            X3D.render["Polypoint2D"](point=point, color=X3D.current_color)
+            X3D.render["Polypoint2D"](point=self.point, color=X3D.current_color)
 
 class Polyline2D(X3DGeometryNode):
     def __init__(self, node):
         super().__init__()
         lineSegments_str = re.split(r'[,\s]\s*',node.attrib['lineSegments'].strip())
-        lineSegments = [ float(point) for point in lineSegments_str]
+        self.lineSegments = [ float(point) for point in lineSegments_str]
 
         # Preview
         if X3D.preview:
             polyline2D = []
-            for i in range(0, len(lineSegments), 2):
-                polyline2D.append([lineSegments[i], lineSegments[i+1]])
+            for i in range(0, len(self.lineSegments), 2):
+                polyline2D.append([self.lineSegments[i], self.lineSegments[i+1]])
             X3D.preview._linhas.append({'color': X3D.current_color, 'lines': polyline2D})
 
         # Render
         if "Polyline2D" in X3D.render:
-            X3D.render["Polyline2D"](lineSegments=lineSegments, color=X3D.current_color)
+            X3D.render["Polyline2D"](lineSegments=self.lineSegments, color=X3D.current_color)
 
 class TriangleSet2D(X3DGeometryNode):
     def __init__(self, node):
         super().__init__()
         vertices_str = re.split(r'[,\s]\s*',node.attrib['vertices'].strip())
-        vertices = [ float(point) for point in vertices_str]
+        self.vertices = [ float(point) for point in vertices_str]
 
         # Preview
         if X3D.preview:
-            for i in range(0, len(vertices), 6):
+            for i in range(0, len(self.vertices), 6):
                 X3D.preview._poligonos.append({'color': X3D.current_color,
-                                                    'vertices': [[vertices[i  ], vertices[i+1]],
-                                                                 [vertices[i+2], vertices[i+3]],
-                                                                 [vertices[i+4], vertices[i+5]]]})
+                                                    'vertices': [[self.vertices[i  ], self.vertices[i+1]],
+                                                                 [self.vertices[i+2], self.vertices[i+3]],
+                                                                 [self.vertices[i+4], self.vertices[i+5]]]})
 
         # Render
         if "TriangleSet2D" in X3D.render:
-            X3D.render["TriangleSet2D"](vertices=vertices, color=X3D.current_color)
+            X3D.render["TriangleSet2D"](vertices=self.vertices, color=X3D.current_color)
+
+class TriangleSet(X3DComposedGeometryNode):
+    def __init__(self, node):
+        super().__init__()
+        self.coord = None
+        for child in node:
+            clean(child) # remove namespace
+            if child.tag == "Coordinate":
+                self.coord = Coordinate(child)
+
+        # Preview
+        # Implemente se desejar
+        
+        # Render
+        if "TriangleSet" in X3D.render:
+            X3D.render["TriangleSet"](point=self.coord.point, color=X3D.current_color)
+
+# Navigation component
+
+class X3DViewpointNode(X3DBindableNode):
+    def __init__(self):
+        super().__init__()
+
+class Viewpoint(X3DViewpointNode):
+    def __init__(self, node):
+        super().__init__()
+        self.position = [0, 0, 10]         # Valores padrão
+        self.orientation = [0, 0, 1, 0]    # Valores padrão
+        self.fieldOfView = math.pi/4       # Valores padrão
+        if 'position' in node.attrib:
+            position_str = re.split(r'[,\s]\s*',node.attrib['position'].strip())
+            self.position = [ float(point) for point in position_str]
+
+        if 'orientation' in node.attrib:
+            orientation_str = re.split(r'[,\s]\s*',node.attrib['orientation'].strip())
+            self.orientation = [ float(point) for point in orientation_str]
+
+        if 'fieldOfView' in node.attrib:
+            self.fieldOfView = float(node.attrib['fieldOfView'].strip())
+
+        # Render
+        if "Viewpoint" in X3D.render:
+            X3D.render["Viewpoint"](position=self.position, orientation=self.orientation, fieldOfView=self.fieldOfView)

@@ -22,6 +22,26 @@ def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
     gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
 
+def triangleSet(point, color):
+    """ Função usada para renderizar TriangleSet. """
+    print(point) # imprime no terminal pontos
+
+def viewpoint(position, orientation, fieldOfView):
+    """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
+    print("position = {0}".format(position)) # imprime no terminal
+    print("orientation = {0}".format(orientation)) # imprime no terminal
+    print("fieldOfView = {0}".format(fieldOfView)) # imprime no terminal
+
+def trasnform(translation, scale, rotation):
+    """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
+    if translation:
+        print("translation = {0}".format(translation)) # imprime no terminal
+    if scale:
+        print("scale = {0}".format(scale)) # imprime no terminal
+    if rotation:
+        print("rotation = {0}".format(rotation)) # imprime no terminal
+
+
 LARGURA = 30
 ALTURA = 20
 
@@ -30,7 +50,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo1.x3d"
+    x3d_file = "exemplo4.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
@@ -57,6 +77,9 @@ if __name__ == '__main__':
     x3d.X3D.render["Polypoint2D"] = polypoint2D
     x3d.X3D.render["Polyline2D"] = polyline2D
     x3d.X3D.render["TriangleSet2D"] = triangleSet2D
+    x3d.X3D.render["TriangleSet"] = triangleSet
+    x3d.X3D.render["Viewpoint"] = viewpoint
+    x3d.X3D.render["Transform"] = trasnform
 
     # Se no modo silencioso não configurar janela de visualização
     if not args.quiet:
