@@ -10,27 +10,56 @@ import re
 import math
 
 def clean(child):
+    """ Recebe um nó XML e remove dele o namespace do atributo tag se houver. """
     _, _, child.tag = child.tag.rpartition('}') # remove os namespaces
 
 class X3D:
+    """
+    Classe responsável por fazer o parsing do arquivo X3D.
+
+    ...
+
+    Atributos
+    ----------
+    root : Element
+        raiz do grafo de cena X3D em XMl
+    width : int
+        largura tela que será renderizada (deprecated)
+    height : int
+        altura tela que será renderizada (deprecated)
+
+    current_color : list[3] (static)
+        cor no formato RGB usada no momento
+    preview : interface (static)
+         sistema de preview para geometrias 2D simples
+    render : {} (static)
+        dicionario dos métodos de renderização
+
+    Métodos
+    -------
+    parse():
+        Realiza o parse e já realiza as rotinas de renderização.
+    """
 
     current_color = [1.0, 1.0, 1.0] # controle de cor instantânea
-    preview = None # artibuto que aponta para o sistema de preview
+    preview = None # atributo que aponta para o sistema de preview
     render = {} # dicionario dos métodos de renderização
 
     def __init__(self, filename):
-        self.x3d = ET.parse(filename)
-        self.root = self.x3d.getroot()
+        """ Constroi o atributo para a raiz do grafo X3D. """
+        self.root = ET.parse(filename).getroot()
 
     def set_preview(self, preview):
+        """ Armazena as rotinas para fazer o render da cena. """
         X3D.preview = preview
 
     def set_resolution(self, width, height):
+        """ Armazena a largura e altura de janela de renderização. """
         self.width = width
         self.height = height
 
     def parse(self):
-        """ parse começando da raiz do X3D. """
+        """ Leitura e render da cena começando da raiz do X3D. """
         for child in self.root:
             clean(child) # remove namespace
             if child.tag == "Scene":
@@ -55,22 +84,22 @@ class X3DNode:
 
 class X3DChildNode(X3DNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 class X3DBindableNode(X3DChildNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 # Grouping component
 
 class X3DGroupingNode(X3DChildNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.children = []
 
 class Transform(X3DGroupingNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.rotation = [0, 0, 1, 0]
         self.scale = [1, 1, 1]
         self.translation = [0, 0, 0]
@@ -98,11 +127,15 @@ class Transform(X3DGroupingNode):
             elif child.tag == "Transform":
                 self.children.append(Transform(child))
 
+        if "_Transform" in X3D.render:
+            X3D.render["_Transform"]()
+
+
 # Shape component
 
 class X3DShapeNode(X3DChildNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.geometry = None
         self.appearance = None
 
@@ -112,11 +145,11 @@ class X3DAppearanceNode(X3DNode):
 
 class X3DMaterialNode():
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 class Material(X3DMaterialNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.diffuseColor = [0.8, 0.8, 0.8]
         if 'diffuseColor' in node.attrib:
             diffuseColor_str = re.split(r'[,\s]\s*',node.attrib['diffuseColor'])
@@ -125,7 +158,7 @@ class Material(X3DMaterialNode):
 
 class Appearance(X3DAppearanceNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.material = None
         for child in node:
             clean(child) # remove namespace
@@ -134,7 +167,7 @@ class Appearance(X3DAppearanceNode):
 
 class Shape(X3DShapeNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         for child in node:
             clean(child) # remove namespace
             if child.tag == "Appearance":
@@ -160,23 +193,23 @@ class Shape(X3DShapeNode):
 
 class X3DGeometryNode(X3DNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 class X3DComposedGeometryNode(X3DGeometryNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 class X3DGeometricPropertyNode(X3DNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 class X3DCoordinateNode(X3DGeometricPropertyNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 class Coordinate(X3DCoordinateNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
         self.point = [ float(p) for p in point_str]
 
@@ -184,7 +217,7 @@ class Coordinate(X3DCoordinateNode):
 
 class Polypoint2D(X3DGeometryNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
         self.point = [ float(p) for p in point_str]
 
@@ -201,7 +234,7 @@ class Polypoint2D(X3DGeometryNode):
 
 class Polyline2D(X3DGeometryNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         lineSegments_str = re.split(r'[,\s]\s*',node.attrib['lineSegments'].strip())
         self.lineSegments = [ float(point) for point in lineSegments_str]
 
@@ -218,7 +251,7 @@ class Polyline2D(X3DGeometryNode):
 
 class TriangleSet2D(X3DGeometryNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         vertices_str = re.split(r'[,\s]\s*',node.attrib['vertices'].strip())
         self.vertices = [ float(point) for point in vertices_str]
 
@@ -236,7 +269,7 @@ class TriangleSet2D(X3DGeometryNode):
 
 class TriangleSet(X3DComposedGeometryNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.coord = None
         for child in node:
             clean(child) # remove namespace
@@ -252,7 +285,7 @@ class TriangleSet(X3DComposedGeometryNode):
 
 class TriangleStripSet(X3DComposedGeometryNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.coord = None
         self.stripCount = []
 
@@ -274,7 +307,7 @@ class TriangleStripSet(X3DComposedGeometryNode):
 
 class IndexedTriangleStripSet(X3DComposedGeometryNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.coord = None
         self.index = []
 
@@ -298,11 +331,11 @@ class IndexedTriangleStripSet(X3DComposedGeometryNode):
 
 class X3DViewpointNode(X3DBindableNode):
     def __init__(self):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
 
 class Viewpoint(X3DViewpointNode):
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.position = [0, 0, 10]         # Valores padrão
         self.orientation = [0, 0, 1, 0]    # Valores padrão
         self.fieldOfView = math.pi/4       # Valores padrão
@@ -324,8 +357,9 @@ class Viewpoint(X3DViewpointNode):
 # Geometry3D component
 
 class Box(X3DGeometryNode):
+    """ Classe responsável por geometria Box, que é um paralelepípedo centro no (0,0,0). """
     def __init__(self, node):
-        super().__init__()
+        super().__init__() # Chama construtor da classe pai
         self.size = [2, 2, 2]         # Valores padrão
 
         if 'size' in node.attrib:

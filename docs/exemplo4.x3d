@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <X3D>
   <Scene>
-    <Viewpoint position="-5 3 12" orientation='0 0 -1 1.65' fieldOfView="0.7854"/> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/navigation.html -->
+    <Viewpoint position="-5 3 12" fieldOfView="0.7854"/> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/navigation.html -->
     <Transform translation="3 1 0"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
       <Transform scale="2 1.5 1.0">
         <Transform rotation="1 0 0 0.3">
