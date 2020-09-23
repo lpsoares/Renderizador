@@ -6,21 +6,99 @@ import argparse     # Para tratar os parâmetros da linha de comando
 import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
 import interface    # Janela de visualização baseada no Matplotlib
 import gpu          # Simula os recursos de uma GPU
+import numpy as np
+import math
 
 def polypoint2D(point, color):
     """ Função usada para renderizar Polypoint2D. """
-    gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
+    # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
     # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
+    # O laço passa por todos elementos da lista point
+    # pega a posição de cada ponto e pinta o píxel correspondente 
+    i = 0
+    while (i < len(point)):
+        gpu.GPU.set_pixel(int(point[i]), int(point[i+1]), color[0]*255, color[1]*255, color[2]*255)
+        i+=2
 
 def polyline2D(lineSegments, color):
     """ Função usada para renderizar Polyline2D. """
-    x = gpu.GPU.width//2
-    y = gpu.GPU.height//2
-    gpu.GPU.set_pixel(x, y, 255, 0, 0) # altera um pixel da imagem
+    #x = gpu.GPU.width//2
+    #y = gpu.GPU.height//2
+    #gpu.GPU.set_pixel(x, y, 255, 0, 0) # altera um pixel da imagem
+
+    if lineSegments[0] <= lineSegments[2]:
+        x0 = lineSegments[0] 
+        y0 = lineSegments[1]
+        x1 = lineSegments[2] 
+        y1 = lineSegments[3] 
+    else:
+        x1 = lineSegments[0] 
+        y1 = lineSegments[1]
+        x0 = lineSegments[2] 
+        y0 = lineSegments[3] 
+
+    s = (y1-y0)/(x1-x0) # Inclinação da reta
+    
+    x, y = x0, y0
+    while x <= x1:
+        if s > 1:
+            k = y
+            for i in range(int(y+s) - int(y)):
+                gpu.GPU.set_pixel(int(x), int(k+i), color[0]*255, color[1]*255, color[2]*255) # altera um pixel da imagem
+        elif s < -1:
+            k = y
+            for i in range(abs(int(y) - int(y+s))):
+                gpu.GPU.set_pixel(int(x), int(k-i), color[0]*255, color[1]*255, color[2]*255) # altera um pixel da imagem
+        else:
+            gpu.GPU.set_pixel(int(x), int(y), color[0]*255, color[1]*255, color[2]*255) # altera um pixel da imagem
+      
+        y += s
+        x += 1
+
+def eqDaReta(x, y, x0, y0, x1, y1):
+    """ Função usada para calcular a Equação da Reta"""
+    dx = x1 - x0
+    dy = y1 - y0
+
+    if (x - x0)*dy - (y - y0)*dx >= 0:
+        return True
+    
+    return False
+
+def inside(x, y, vertices):
+    "Função usada para verificar se um píxel esta dentro do triangulo"
+    x0, y0 = vertices[0], vertices[1]
+    x1, y1 = vertices[2], vertices[3]
+    x2, y2 = vertices[4], vertices[5]
+
+    if eqDaReta(x, y, x0, y0, x1, y1) and eqDaReta(x, y, x1, y1, x2, y2) and eqDaReta(x, y, x2, y2, x0, y0):
+        return True
+    
+    return False
 
 def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
-    gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
+    #gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
+
+    xmax, ymax = 30, 20
+
+    for x in range(xmax):
+        for y in range(ymax):
+            supersampling = 4
+            mean = 0
+            
+            if inside(x+0.25, y+0.25, vertices):
+                mean += 1/supersampling
+            if inside(x+0.25, y+0.75, vertices):
+                mean += 1/supersampling
+            if inside(x+0.75, y+0.25, vertices):
+                mean += 1/supersampling
+            if inside(x+0.75, y+0.75, vertices):
+                mean += 1/supersampling
+
+            if mean > 0:
+                gpu.GPU.set_pixel(x, y, color[0]*255*mean, color[1]*255*mean, color[2]*255*mean)
 
 def triangleSet(point, color):
     """ Função usada para renderizar TriangleSet. """
@@ -35,15 +113,115 @@ def triangleSet(point, color):
     
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
+    
+    numTriangles = int(len(point)/9)
+    triangles = []
+    for e in range(numTriangles):
+        k = e*9
+        triangle = np.matrix([
+                [point[0+k], point[3+k], point[6+k]],
+                [point[1+k], point[4+k], point[7+k]],
+                [point[2+k], point[5+k], point[8+k]],
+                [1,1,1]
+            ])
+        triangles.append(triangle)
 
+    global lista_de_matrizes
+    #LA, MPP, MCT
+
+    for triangle in triangles:
+        triangle_transformado = np.matmul(matriz, triangle)
+        triangle_lookat = np.matmul(lista_de_matrizes[0], triangle_transformado)
+        perspectiva = np.matmul(lista_de_matrizes[1], triangle_lookat)
+        
+        for e in range(3):
+            perspectiva[:,e] = perspectiva[:,e]/perspectiva[-1,e]
+
+        tela = np.matmul(lista_de_matrizes[2], perspectiva)
+        
+        vertices = []
+        vertices.append(tela[0,0])
+        vertices.append(tela[1,0])
+        vertices.append(tela[0,1])
+        vertices.append(tela[1,1])
+        vertices.append(tela[0,2])
+        vertices.append(tela[1,2])
+
+        triangleSet2D(vertices, color)
+
+lista_de_matrizes = []
 def viewpoint(position, orientation, fieldOfView):
     """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
     # Na função de viewpoint você receberá a posição, orientação e campo de visão da
     # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
     # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
+    global lista_de_matrizes
+
+    mOrientation = np.matrix([
+            [1,0,0,0],
+            [0,1,0,0],
+            [0,0,1,0],
+            [0,0,0,1]
+        ])
+
+    mTraslation = np.matrix([
+            [1,0,0,-position[0]],
+            [0,1,0,-position[1]],
+            [0,0,1,-position[2]],
+            [0,0,0,1]
+        ])
+
+    lookAt = np.matmul(mOrientation, mTraslation)
+
+    mPP = np.matrix([
+            [0.5, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, -1.01, -1.005],
+            [0, 0, -1, 0]
+        ])
+    
+    global ALTURA
+    global LARGURA
+
+    mResolution = np.matrix([
+            [LARGURA/2,0,0,0],
+            [0,ALTURA/2,0,0],
+            [0,0,1,0],
+            [0,0,0,1]
+        ])
+
+    T = np.matrix([
+            [1,0,0,1],
+            [0,1,0,1],
+            [0,0,1,0],
+            [0,0,0,1]
+        ])
+
+    E = np.matrix([
+            [1,0,0,0],
+            [0,-1,0,0],
+            [0,0,1,0],
+            [0,0,0,1]
+        ])
+
+    mCT_partial = np.matmul(mResolution, T)
+    mCT = np.matmul(mCT_partial, E)
+
+    lista_de_matrizes.append(lookAt)
+    lista_de_matrizes.append(mPP)
+    lista_de_matrizes.append(mCT)
+
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("Viewpoint : position = {0}, orientation = {1}, fieldOfView = {2}".format(position, orientation, fieldOfView)) # imprime no terminal
+
+pilha = []
+matriz = np.matrix([
+        [1,0,0,0],
+        [0,1,0,0],
+        [0,0,1,0],
+        [0,0,0,1]
+    ])
 
 def transform(translation, scale, rotation):
     """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
@@ -55,15 +233,78 @@ def transform(translation, scale, rotation):
     # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
     # modelos do mundo em alguma estrutura de pilha.
 
+    global pilha
+    global matriz
+
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("Transform : ", end = '')
+    #print("Transform : ", end = '')
     if translation:
+        pilha.append(matriz)
+
+        mTranslation = np.matrix([
+            [1,0,0, translation[0]],
+            [0,1,0, translation[1]],
+            [0,0,1, translation[2]],
+            [0,0,0,1]
+        ])
+
+        matriz = np.matmul(mTranslation, matriz)
+
         print("translation = {0} ".format(translation), end = '') # imprime no terminal
     if scale:
+        pilha.append(matriz)
+
+        mScale = np.matrix([
+            [scale[0],0,0,0],
+            [0,scale[1],0,0],
+            [0,0,scale[2],0],
+            [0,0,0,1]
+        ])
+
+        matriz = np.matmul(mScale, matriz)
+
         print("scale = {0} ".format(scale), end = '') # imprime no terminal
+
     if rotation:
+        if rotation[0]: 
+            pilha.append(matriz)
+
+            mRotation = np.matrix([
+                [1, 0, 0, 0],
+                [0, math.cos(rotation[3]), -math.sin(rotation[3]), 0],
+                [0, math.sin(rotation[3]),  math.cos(rotation[3]), 0],
+                [0, 0, 0, 1]
+            ])
+
+            matriz = np.matmul(mRotation, matriz)
+
+        elif rotation[1]:
+            pilha.append(matriz)
+
+            mRotation = np.matrix([
+                [math.cos(rotation[3]), 0, math.sin(rotation[3]), 0],
+                [0, 1, 0, 0],
+                [-math.sin(rotation[3]), 0, math.cos(rotation[3]), 0],
+                [0, 0, 0, 1]
+            ])
+
+            matriz = np.matmul(mRotation, matriz)
+
+        elif rotation[2]:
+            pilha.append(matriz)
+
+            mRotation = np.matrix([
+                [math.cos(rotation[3]), -math.sin(rotation[3]), 0, 0],
+                [math.sin(rotation[3]),  math.cos(rotation[3]), 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ])
+
+            matriz = np.matmul(mRotation, matriz)
+
+
         print("rotation = {0} ".format(rotation), end = '') # imprime no terminal
-    print("")
+    #print("")
 
 def _transform():
     """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
@@ -71,6 +312,13 @@ def _transform():
     # grafo de cena. Não são passados valores, porém quando se sai de um nó transform se
     # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
     # pilha implementada.
+
+    global pilha
+    global matriz
+
+    matriz = pilha[-1]
+
+    del pilha[-1]
 
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("Saindo de Transform")
@@ -120,8 +368,8 @@ def box(size, color):
     print("Box : size = {0}".format(size)) # imprime no terminal pontos
 
 
-LARGURA = 30
-ALTURA = 20
+LARGURA = 40
+ALTURA = 30
 
 if __name__ == '__main__':
 
@@ -155,9 +403,9 @@ if __name__ == '__main__':
     x3d.X3D.render["Polypoint2D"] = polypoint2D
     x3d.X3D.render["Polyline2D"] = polyline2D
     x3d.X3D.render["TriangleSet2D"] = triangleSet2D
+    x3d.X3D.render["Transform"] = transform
     x3d.X3D.render["TriangleSet"] = triangleSet
     x3d.X3D.render["Viewpoint"] = viewpoint
-    x3d.X3D.render["Transform"] = transform
     x3d.X3D.render["_Transform"] = _transform
     x3d.X3D.render["TriangleStripSet"] = triangleStripSet
     x3d.X3D.render["IndexedTriangleStripSet"] = indexedTriangleStripSet
