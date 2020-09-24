@@ -50,3 +50,9 @@ class GPU:
         """Método para salvar a imagem do framebuffer em um arquivo. """
         img = Image.fromarray(GPU._frame_buffer, 'RGB')
         img.save(GPU.image_file)
+
+    def load_texture(textura):
+        "Método para ler textura."
+        imagem = Image.open(textura)
+        matriz = np.array(imagem)
+        return matriz
