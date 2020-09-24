@@ -42,6 +42,7 @@ class X3D:
     """
 
     current_color = [1.0, 1.0, 1.0] # controle de cor instantânea
+    current_texture = [] # controle de texturas instantâneas
     preview = None # atributo que aponta para o sistema de preview
     render = {} # dicionario dos métodos de renderização
 
@@ -156,14 +157,38 @@ class Material(X3DMaterialNode):
             self.diffuseColor = [ float(color) for color in diffuseColor_str]
         X3D.current_color = self.diffuseColor
 
+class X3DAppearanceChildNode(X3DNode):
+    def __init__(self):
+        super().__init__() # Chama construtor da classe pai
+
+class X3DTextureNode(X3DAppearanceChildNode):
+    def __init__(self):
+        super().__init__() # Chama construtor da classe pai
+
+class X3DTexture2DNode(X3DTextureNode):
+    def __init__(self):
+        super().__init__() # Chama construtor da classe pai
+
+class ImageTexture(X3DTexture2DNode):
+    def __init__(self, node):
+        super().__init__() # Chama construtor da classe pai
+        self.url = []
+        if 'url' in node.attrib:
+            url_list = re.split(r'[,\s]\s*',node.attrib['url'])
+            self.url = [ addr.replace('"', '').replace("'", '') for addr in url_list if addr != '']
+        X3D.current_texture = self.url
+
 class Appearance(X3DAppearanceNode):
     def __init__(self, node):
         super().__init__() # Chama construtor da classe pai
         self.material = None
+        self.imageTexture = None
         for child in node:
             clean(child) # remove namespace
             if child.tag == "Material":
                 self.material = Material(child)
+            if child.tag == "ImageTexture":
+                self.imageTexture = ImageTexture(child)
 
 class Shape(X3DShapeNode):
     def __init__(self, node):
@@ -188,6 +213,9 @@ class Shape(X3DShapeNode):
                 self.geometry = IndexedTriangleStripSet(child)
             elif child.tag == "Box":
                 self.geometry = Box(child)
+            elif child.tag == "IndexedFaceSet":
+                self.geometry = IndexedFaceSet(child)
+
 
 # Rendering component
 
@@ -207,11 +235,21 @@ class X3DCoordinateNode(X3DGeometricPropertyNode):
     def __init__(self):
         super().__init__() # Chama construtor da classe pai
 
+class X3DColorNode(X3DGeometricPropertyNode):
+    def __init__(self):
+        super().__init__() # Chama construtor da classe pai
+
 class Coordinate(X3DCoordinateNode):
     def __init__(self, node):
         super().__init__() # Chama construtor da classe pai
         point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
         self.point = [ float(p) for p in point_str]
+
+class Color(X3DColorNode):
+    def __init__(self, node):
+        super().__init__() # Chama construtor da classe pai
+        color_str = re.split(r'[,\s]\s*',node.attrib['color'].strip())
+        self.color = [ float(p) for p in color_str]
 
 # Geometry2D component
 
@@ -290,7 +328,7 @@ class TriangleStripSet(X3DComposedGeometryNode):
         self.stripCount = []
 
         stripCount_str = re.split(r'[,\s]\s*',node.attrib['stripCount'].strip())
-        self.stripCount = [ float(point) for point in stripCount_str]
+        self.stripCount = [ int(point) for point in stripCount_str]
 
         for child in node:
             clean(child) # remove namespace
@@ -312,7 +350,7 @@ class IndexedTriangleStripSet(X3DComposedGeometryNode):
         self.index = []
 
         index_str = re.split(r'[,\s]\s*',node.attrib['index'].strip())
-        self.index = [ float(point) for point in index_str]
+        self.index = [ int(point) for point in index_str]
 
         for child in node:
             clean(child) # remove namespace
@@ -372,3 +410,82 @@ class Box(X3DGeometryNode):
         # Render
         if "Box" in X3D.render:
             X3D.render["Box"](size=self.size, color=X3D.current_color)
+
+class IndexedFaceSet(X3DComposedGeometryNode):
+    """ Classe responsável por geometria Indexed Face Set, que é uma malha de polígonos. """
+    def __init__(self, node):
+        super().__init__() # Chama construtor da classe pai
+        
+        self.coord = None
+        self.color = None
+        self.texCoord = None
+
+        self.coordIndex = []
+        self.colorIndex = []
+        self.texCoordIndex = []
+
+        self.colorPerVertex = True
+
+        if "coordIndex" in node.attrib:
+            coordIndex_str = re.split(r'[,\s]\s*',node.attrib['coordIndex'].strip())
+            self.coordIndex = [ int(point) for point in coordIndex_str]
+
+        if 'colorPerVertex' in node.attrib:
+            colorPerVertex_str = node.attrib['colorPerVertex'].strip()
+            self.colorPerVertex = colorPerVertex_str == "true"
+
+        if "colorIndex" in node.attrib:
+            colorIndex_str = re.split(r'[,\s]\s*',node.attrib['colorIndex'].strip())
+            self.colorIndex = [ int(point) for point in colorIndex_str]
+
+        if "texCoordIndex" in node.attrib:
+            texCoordIndex_str = re.split(r'[,\s]\s*',node.attrib['texCoordIndex'].strip())
+            self.texCoordIndex = [ int(point) for point in texCoordIndex_str]
+
+        for child in node:
+            clean(child) # remove namespace
+            if child.tag == "Coordinate":
+                self.coord = Coordinate(child)
+            elif child.tag == "Color":
+                self.color = Color(child)
+            elif child.tag == "TextureCoordinate":
+                self.texCoord = TextureCoordinate(child)
+
+        # Preview
+        # Implemente se desejar
+        
+        if self.coord:
+            ret_coord=self.coord.point
+        else: 
+            ret_coord=None
+
+        if self.color:
+            ret_color=self.color.color
+        else: 
+            ret_color=None
+
+        if self.texCoord:
+            ret_texCoord=self.texCoord.point
+        else: 
+            ret_texCoord=None
+
+        # Render
+        if "IndexedFaceSet" in X3D.render:
+            X3D.render["IndexedFaceSet"](coord=ret_coord, coordIndex=self.coordIndex,
+                                         colorPerVertex=self.colorPerVertex, color=ret_color, colorIndex=self.colorIndex,
+                                         texCoord=ret_texCoord, texCoordIndex=self.texCoordIndex,
+                                         current_color=X3D.current_color, current_texture=X3D.current_texture)
+
+# Texturing component
+
+class X3DTextureCoordinateNode(X3DGeometricPropertyNode):
+    def __init__(self):
+        super().__init__() # Chama construtor da classe pai
+
+class TextureCoordinate(X3DTextureCoordinateNode):
+    def __init__(self, node):
+        super().__init__() # Chama construtor da classe pai
+        point_str = re.split(r'[,\s]\s*',node.attrib['point'].strip())
+        self.point = [ float(p) for p in point_str]
+
+
