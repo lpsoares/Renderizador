@@ -5,7 +5,7 @@
     <Transform rotation="1 0 0 0.3">
       <Transform rotation="0 1 0 0.4">
         <Shape>
-          <Box size='1 1 1'/>
+          <Box size='5 5 5'/>
         <Appearance>
           <Material diffuseColor='1 0 1'/>
         </Appearance>
