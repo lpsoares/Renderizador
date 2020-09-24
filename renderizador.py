@@ -585,9 +585,9 @@ def get_box_vertices(size, centro):
 def get_box_faces(vertices):
     faces = [
         [vertices[0], vertices[1], vertices[2], vertices[3]],
-        [vertices[0], vertices[2], vertices[4], vertices[6]],
+        [vertices[4], vertices[6], vertices[0], vertices[2]],
         [vertices[2], vertices[3], vertices[6], vertices[7]],
-        [vertices[1], vertices[3], vertices[5], vertices[7]],
+        [vertices[5], vertices[7], vertices[1], vertices[3]],
         [vertices[0], vertices[1], vertices[4], vertices[5]],
         [vertices[4], vertices[5], vertices[6], vertices[7]],
     ]
@@ -610,23 +610,7 @@ def box(size, color):
 
     faces = get_box_faces(vertices)
 
-    for face in faces[5:6]:
-        points = []
-        for vertices in face:
-            for coord in vertices:
-                points.append(coord)
-
-        triangleStripSet(points, [4], color)
-
-    for face in faces[1:5]:
-        points = []
-        for vertices in face:
-            for coord in vertices:
-                points.append(coord)
-
-        triangleStripSet(points, [4], color)
-
-    for face in faces[0:1]:
+    for face in faces:
         points = []
         for vertices in face:
             for coord in vertices:
