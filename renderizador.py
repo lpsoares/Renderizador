@@ -432,14 +432,21 @@ def create_triangle_strip_matrix(point, e):
     """
     k = e*3
 
-    triangle = np.matrix([
-                [point[0+k], point[3+k], point[6+k]],
-                [point[1+k], point[4+k], point[7+k]],
-                [point[2+k], point[5+k], point[8+k]],
-                [1,1,1]
-            ])
+    if e % 2 == 0:
+        triangle = np.matrix([
+                    [point[0+k], point[3+k], point[6+k]],
+                    [point[1+k], point[4+k], point[7+k]],
+                    [point[2+k], point[5+k], point[8+k]],
+                    [1,1,1]
+                ])
+    else:
+        triangle = np.matrix([
+                    [point[3+k], point[0+k], point[6+k]],
+                    [point[4+k], point[1+k], point[7+k]],
+                    [point[5+k], point[2+k], point[8+k]],
+                    [1,1,1]
+                ])
     return triangle
-
 
 def triangleStripSet(point, stripCount, color):
     """ Função usada para renderizar TriangleStripSet. """
@@ -451,19 +458,55 @@ def triangleStripSet(point, stripCount, color):
     # por diante. No TriangleStripSet a quantidade de vértices a serem usados é informado
     # em uma lista chamada stripCount (perceba que é uma lista).
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    #print(len(stripCount))
     #print("TriangleStripSet : pontos = {0} ".format(point), end = '') # imprime no terminal pontos
     #for i, strip in enumerate(stripCount):
     #    print("strip[{0}] = {1} ".format(i, strip), end = '') # imprime no terminal
     
+    # Chama a matriz de transformação e a lista de matrizes da função 'viewpoint' 
+    # que possui as matrizes: 'lookAt' e 'perspective_projection_matrix'
+    global transform_matrix, viewpoint_matrixes
 
-    num_triangles = stripCount[0] - 2
+    num_triangles = int(stripCount[0] - 2)
 
     objects_coordinates = []
     for e in range(num_triangles):
         triangle = create_triangle_strip_matrix(point, e)
         objects_coordinates.append(triangle)
 
+    # Seta as matrizes que serão usadas no for:
+    # As matrizes da visão da câmera, projeção perspectiva e de coordenadas na tela
+    lookAt = viewpoint_matrixes[0]
+    perspective_projection_matrix = viewpoint_matrixes[1]
+    screen_coord_matrix = get_screen_coord_matrix()
+
+    for triangle in objects_coordinates:
+        # Realiza a primeira transformação -> 
+        # objeto nas coordenas do mundo = matriz de transformaçao * coordenadas do objeto
+        world_coord = np.matmul(transform_matrix, triangle)
+        
+        # Realiza a segunda transformação -> 
+        # objeto nas coordenas da câmera = visão da câmera * objeto nas coordenas do mundo
+        cam_coord = np.matmul(lookAt, world_coord)
+        
+        # Realiza a terceira transformação -> 
+        # coordenadas em perspectiva = projeção perspectiva * objeto nas coordenas da câmera
+        perspective_coord = np.matmul(perspective_projection_matrix, cam_coord)
+        
+        # Divide cada coluna da matriz das coordenadas em perspectiva pelo últivo valor 
+        # da mesma coluna a fim de normaliza-las
+        norm_coord = np.asmatrix(np.zeros((4,4)))
+        for e in range(3):
+            norm_coord[:,e] = perspective_coord[:,e]/perspective_coord[-1,e]
+
+        # A última transformação ->
+        # tela = coordenadas na tela * coordenadas normalizadas
+        screen = np.matmul(screen_coord_matrix, norm_coord)
+
+        # lista de vertices para função de printar o triangulo na tela
+        vertices = get_vertice_list(screen)
+
+        # printa o triangulo na tela
+        triangleSet2D(vertices, color)
 
 def indexedTriangleStripSet(point, index, color):
     """ Função usada para renderizar IndexedTriangleStripSet. """
@@ -477,9 +520,79 @@ def indexedTriangleStripSet(point, index, color):
     # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
     # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
     # depois 2, 3 e 4, e assim por diante.
-    
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)) # imprime no terminal pontos
+    #print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)) # imprime no terminal pontos
+
+    # Chama a matriz de transformação e a lista de matrizes da função 'viewpoint' 
+    # que possui as matrizes: 'lookAt' e 'perspective_projection_matrix'
+    global transform_matrix, viewpoint_matrixes
+
+    num_triangles = int(max(index) - 1)
+
+    objects_coordinates = []
+    for e in range(num_triangles):
+        triangle = create_triangle_strip_matrix(point, e)
+        objects_coordinates.append(triangle)
+
+    # Seta as matrizes que serão usadas no for:
+    # As matrizes da visão da câmera, projeção perspectiva e de coordenadas na tela
+    lookAt = viewpoint_matrixes[0]
+    perspective_projection_matrix = viewpoint_matrixes[1]
+    screen_coord_matrix = get_screen_coord_matrix()
+
+    for triangle in objects_coordinates:
+        # Realiza a primeira transformação -> 
+        # objeto nas coordenas do mundo = matriz de transformaçao * coordenadas do objeto
+        world_coord = np.matmul(transform_matrix, triangle)
+        
+        # Realiza a segunda transformação -> 
+        # objeto nas coordenas da câmera = visão da câmera * objeto nas coordenas do mundo
+        cam_coord = np.matmul(lookAt, world_coord)
+        
+        # Realiza a terceira transformação -> 
+        # coordenadas em perspectiva = projeção perspectiva * objeto nas coordenas da câmera
+        perspective_coord = np.matmul(perspective_projection_matrix, cam_coord)
+        
+        # Divide cada coluna da matriz das coordenadas em perspectiva pelo últivo valor 
+        # da mesma coluna a fim de normaliza-las
+        norm_coord = np.asmatrix(np.zeros((4,4)))
+        for e in range(3):
+            norm_coord[:,e] = perspective_coord[:,e]/perspective_coord[-1,e]
+
+        # A última transformação ->
+        # tela = coordenadas na tela * coordenadas normalizadas
+        screen = np.matmul(screen_coord_matrix, norm_coord)
+
+        # lista de vertices para função de printar o triangulo na tela
+        vertices = get_vertice_list(screen)
+
+        # printa o triangulo na tela
+        triangleSet2D(vertices, color)
+
+def get_box_vertices(size, centro):
+    vertices = [
+        [centro[0] - size[0]/2, centro[1] - size[1]/2, centro[2] - size[2]/2],
+        [centro[0] - size[0]/2, centro[1] - size[1]/2, centro[2] + size[2]/2],
+        [centro[0] - size[0]/2, centro[1] + size[1]/2, centro[2] - size[2]/2],
+        [centro[0] - size[0]/2, centro[1] + size[1]/2, centro[2] + size[2]/2],
+        [centro[0] + size[0]/2, centro[1] - size[1]/2, centro[2] - size[2]/2],
+        [centro[0] + size[0]/2, centro[1] - size[1]/2, centro[2] + size[2]/2],
+        [centro[0] + size[0]/2, centro[1] + size[1]/2, centro[2] - size[2]/2],
+        [centro[0] + size[0]/2, centro[1] + size[1]/2, centro[2] + size[2]/2],
+    ]
+    return vertices
+
+def get_box_faces(vertices):
+    faces = [
+        [vertices[0], vertices[1], vertices[2], vertices[3]],
+        [vertices[0], vertices[2], vertices[4], vertices[6]],
+        [vertices[2], vertices[3], vertices[6], vertices[7]],
+        [vertices[1], vertices[3], vertices[5], vertices[7]],
+        [vertices[0], vertices[1], vertices[4], vertices[5]],
+        [vertices[4], vertices[5], vertices[6], vertices[7]],
+    ]
+
+    return faces
 
 def box(size, color):
     """ Função usada para renderizar Boxes. """
@@ -489,9 +602,37 @@ def box(size, color):
     # e Z, respectivamente, e cada valor do tamanho deve ser maior que zero. Para desenha
     # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
     # encontre os vértices e defina os triângulos.
-
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("Box : size = {0}".format(size)) # imprime no terminal pontos
+
+    centro = [0,0,0]
+    vertices = get_box_vertices(size, centro)
+
+    faces = get_box_faces(vertices)
+
+    for face in faces[5:6]:
+        points = []
+        for vertices in face:
+            for coord in vertices:
+                points.append(coord)
+
+        triangleStripSet(points, [4], color)
+
+    for face in faces[1:5]:
+        points = []
+        for vertices in face:
+            for coord in vertices:
+                points.append(coord)
+
+        triangleStripSet(points, [4], color)
+
+    for face in faces[0:1]:
+        points = []
+        for vertices in face:
+            for coord in vertices:
+                points.append(coord)
+
+        triangleStripSet(points, [4], color)
 
 
 LARGURA = 300
@@ -502,7 +643,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo5.x3d"
+    x3d_file = "exemplo6.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
