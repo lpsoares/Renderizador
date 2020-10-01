@@ -293,6 +293,14 @@ transform_matrix = np.matrix([
 # 'stack' é a pilha que armazena os resultados de 'transform_matrix'
 stack = []
 
+pilha = []
+matriz = np.matrix([
+        [1,0,0,0],
+        [0,1,0,0],
+        [0,0,1,0],
+        [0,0,0,1]
+    ])
+
 def transform(translation, scale, rotation):
     """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
     # A função transform será chamada quando se entrar em um nó X3D do tipo Transform
@@ -412,6 +420,17 @@ def _transform():
     # grafo de cena. Não são passados valores, porém quando se sai de um nó transform se
     # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
     # pilha implementada.
+<<<<<<< HEAD
+=======
+
+    global pilha
+    global matriz
+
+    matriz = pilha[-1]
+
+    del pilha[-1]
+
+>>>>>>> merge com a parte 3 do professor
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     #print("Saindo de Transform")
 
@@ -605,6 +624,7 @@ def box(size, color):
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("Box : size = {0}".format(size)) # imprime no terminal pontos
 
+<<<<<<< HEAD
     centro = [0,0,0]
     vertices = get_box_vertices(size, centro)
 
@@ -618,6 +638,9 @@ def box(size, color):
 
         triangleStripSet(points, [4], color)
 
+=======
+<<<<<<< HEAD
+>>>>>>> merge com a parte 3 do professor
 def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoord, texCoordIndex, current_color, current_texture):
     """ Função usada para renderizar IndexedFaceSet. """
     # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
@@ -654,6 +677,11 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
 # Defina o tamanhã da tela que melhor sirva para perceber a renderização
 LARGURA = 30
 ALTURA = 20
+=======
+
+LARGURA = 40
+ALTURA = 30
+>>>>>>> todas tarefas mal feitas
 
 if __name__ == '__main__':
 
