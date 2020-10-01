@@ -420,17 +420,6 @@ def _transform():
     # grafo de cena. Não são passados valores, porém quando se sai de um nó transform se
     # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
     # pilha implementada.
-<<<<<<< HEAD
-=======
-
-    global pilha
-    global matriz
-
-    matriz = pilha[-1]
-
-    del pilha[-1]
-
->>>>>>> merge com a parte 3 do professor
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     #print("Saindo de Transform")
 
