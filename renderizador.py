@@ -11,8 +11,13 @@ import math
 
 def polypoint2D(point, color):
     """ Função usada para renderizar Polypoint2D. """
-    # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
-    # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
+    # O laço passa por todos elementos da lista point
+    # pega a posição de cada ponto e pinta o píxel correspondente 
+    i = 0
+    while (i < len(point)):
+        gpu.GPU.set_pixel(int(point[i]), int(point[i+1]), color[0]*255, color[1]*255, color[2]*255)
+        i+=2
 
     # O laço passa por todos elementos da lista point
     # pega a posição de cada ponto e pinta o píxel correspondente 
@@ -23,9 +28,6 @@ def polypoint2D(point, color):
 
 def polyline2D(lineSegments, color):
     """ Função usada para renderizar Polyline2D. """
-    #x = gpu.GPU.width//2
-    #y = gpu.GPU.height//2
-    #gpu.GPU.set_pixel(x, y, 255, 0, 0) # altera um pixel da imagem
 
     if lineSegments[0] <= lineSegments[2]:
         x0 = lineSegments[0] 
@@ -71,6 +73,11 @@ def inside(x, y, vertices):
     x0, y0 = vertices[0], vertices[1]
     x1, y1 = vertices[2], vertices[3]
     x2, y2 = vertices[4], vertices[5]
+
+    if eqDaReta(x, y, x0, y0, x1, y1) and eqDaReta(x, y, x1, y1, x2, y2) and eqDaReta(x, y, x2, y2, x0, y0):
+        return True
+    
+    return False
 
     if eqDaReta(x, y, x0, y0, x1, y1) and eqDaReta(x, y, x1, y1, x2, y2) and eqDaReta(x, y, x2, y2, x0, y0):
         return True
