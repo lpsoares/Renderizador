@@ -77,7 +77,7 @@ def inside(x, y, vertices):
     
     return False
 
-def triangleSet2D(vertices, color):
+def triangleSet2D(vertices, color, text = False):
     """ Função usada para renderizar TriangleSet2D. """
     #gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
 
@@ -101,7 +101,11 @@ def triangleSet2D(vertices, color):
                 mean += 1/supersampling
 
             if mean > 0:
-                gpu.GPU.set_pixel(x, y, color[0]*255*mean, color[1]*255*mean, color[2]*255*mean)
+
+                if text:        
+                    gpu.GPU.set_pixel(x, y, color[0][0]*mean, color[0][1]*mean, color[0][2]*mean)
+                else:
+                    gpu.GPU.set_pixel(x, y, color[0]*255*mean, color[1]*255*mean, color[2]*255*mean)
 
 def create_triangle_matrix(point, e):
     """ 
@@ -440,6 +444,8 @@ def create_triangle_strip_matrix(point, e):
     """
     k = e*3
 
+    print(e)
+
     if e % 2 == 0:
         triangle = np.matrix([
                     [point[0+k], point[3+k], point[6+k]],
@@ -456,7 +462,7 @@ def create_triangle_strip_matrix(point, e):
                 ])
     return triangle
 
-def triangleStripSet(point, stripCount, color):
+def triangleStripSet(point, stripCount, color, text=False):
     """ Função usada para renderizar TriangleStripSet. """
     # A função triangleStripSet é usada para desenhar tiras de triângulos interconectados,
     # você receberá as coordenadas dos pontos no parâmetro point, esses pontos são uma
@@ -480,14 +486,17 @@ def triangleStripSet(point, stripCount, color):
     for e in range(num_triangles):
         triangle = create_triangle_strip_matrix(point, e)
         objects_coordinates.append(triangle)
-
+        
     # Seta as matrizes que serão usadas no for:
     # As matrizes da visão da câmera, projeção perspectiva e de coordenadas na tela
     lookAt = viewpoint_matrixes[0]
     perspective_projection_matrix = viewpoint_matrixes[1]
     screen_coord_matrix = get_screen_coord_matrix()
 
-    for triangle in objects_coordinates:
+    for i in range(len(objects_coordinates)):
+
+        triangle = objects_coordinates[i]
+
         # Realiza a primeira transformação -> 
         # objeto nas coordenas do mundo = matriz de transformaçao * coordenadas do objeto
         world_coord = np.matmul(transform_matrix, triangle)
@@ -513,8 +522,12 @@ def triangleStripSet(point, stripCount, color):
         # lista de vertices para função de printar o triangulo na tela
         vertices = get_vertice_list(screen)
 
-        # printa o triangulo na tela
-        triangleSet2D(vertices, color)
+        if text:
+            triangleSet2D(vertices, color[i: i+3], text=True)
+
+        else:    
+            # printa o triangulo na tela
+            triangleSet2D(vertices, color)
 
 def indexedTriangleStripSet(point, index, color):
     """ Função usada para renderizar IndexedTriangleStripSet. """
@@ -658,6 +671,19 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     if(current_texture):
         image = gpu.GPU.load_texture(current_texture[0])
         print("\t Matriz com image = {0}".format(image))
+
+    if texCoord:
+        image = gpu.GPU.load_texture(current_texture[0])
+
+        color_list = []
+
+        for e in texCoordIndex:
+            u = int(texCoord[e*2])
+            v = int(texCoord[e*2 + 1])
+
+            color_list.append(image[u][v][0:3])
+
+        triangleStripSet(coord, [4], color_list, True)
 
 # Defina o tamanhã da tela que melhor sirva para perceber a renderização
 LARGURA = 40
