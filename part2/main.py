@@ -21,11 +21,6 @@ def triangleSet(point, color):
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     #print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
 
-
-    # Chama a matriz de transformação e a lista de matrizes da função 'viewpoint' 
-    # que possui as matrizes: 'lookAt' e 'perspective_projection_matrix'
-    global transform_matrix, viewpoint_matrixes
-
     # Número de triangulos sendo passado no point
     num_triangles = int(len(point)/9)
 
@@ -60,7 +55,7 @@ def triangleSet(point, color):
         
         # Divide cada coluna da matriz das coordenadas em perspectiva pelo últivo valor 
         # da mesma coluna a fim de normaliza-las
-        norm_coord = np.asmatrix(np.zeros((4,4)))
+        norm_coord = np.asmatrix(np.zeros((4,3)))
         for e in range(3):
             norm_coord[:,e] = perspective_coord[:,e]/perspective_coord[-1,e]
 
@@ -273,7 +268,10 @@ def triangleStripSet(point, stripCount, color, text=False):
 
     objects_coordinates = []
     for e in range(num_triangles):
-        triangle = create_triangle_strip_matrix(point, e)
+        if text:
+            triangle = create_triangle_strip_matrix(point, e, text)
+        else:
+            triangle = create_triangle_strip_matrix(point, e)
         objects_coordinates.append(triangle)
         
     # Seta as matrizes que serão usadas no for:

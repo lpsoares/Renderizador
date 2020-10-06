@@ -1,4 +1,7 @@
 
+import numpy as np
+
+from part1.main import *
 from part2.main import *
 
 def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoord, texCoordIndex, current_color, current_texture):
@@ -35,14 +38,86 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
         print("\t Matriz com image = {0}".format(image))
 
     if texCoord:
+        pontos = []
+
+        for c in range(int(len(coord)/3)):
+            pontos.append(coord[c*3:c*3+3])
+
+        num_triangulos = len(pontos) - 2
+
+        triangulos = []
+
+        for e in range(num_triangulos):
+
+            idx1 = 0+e*2
+            idx2 = 1+e*2
+            
+            if 2+e*2 > len(pontos) - 1 : 
+                idx3 = 0
+            else:
+                idx3 = 2+e*2
+
+            triangulos.append(
+                np.matrix([
+                    [pontos[idx1][0], pontos[idx2][0], pontos[idx3][0]],
+                    [pontos[idx1][1], pontos[idx2][1], pontos[idx3][1]],
+                    [pontos[idx1][2], pontos[idx2][2], pontos[idx3][2]],
+                    [1,1,1]
+                ])
+            )
+
+        lookAt = viewpoint_matrixes[0]
+        perspective_projection_matrix = viewpoint_matrixes[1]
+        screen_coord_matrix = get_screen_coord_matrix()
+
+
         image = gpu.GPU.load_texture(current_texture[0])
 
         color_list = []
-
+        
         for e in texCoordIndex:
             u = int(texCoord[e*2])
             v = int(texCoord[e*2 + 1])
 
             color_list.append(image[u][v][0:3])
 
-        triangleStripSet(coord, [4], color_list, True)
+        contador = 0
+
+        for t in triangulos:
+
+            if contador == 0:
+                pts = [0,1,2]
+                contador += 1
+            else:
+                pts = [2,3,0]
+
+            w_c = np.matmul(transform_matrix, t)
+            c_c = np.matmul(lookAt, w_c)
+            p_c = np.matmul(perspective_projection_matrix, c_c)
+
+            n_c = np.asmatrix(np.zeros((4,3)))
+
+            for e in range(3):
+                n_c[:,e] = p_c[:,e]/p_c[-1,e]
+
+            screen = np.matmul(screen_coord_matrix, n_c)
+
+            xa, xb, xc = screen[0,0], screen[0,1], screen[0,2]
+            ya, yb, yc = screen[1,0], screen[1,1], screen[1,2]
+            
+            vertices = [xa, ya, xb, yb, xc, yc]
+
+            for x in range(LARGURA):
+                for y in range(ALTURA):
+
+                    if inside(x+0.5,y+0.5,vertices):
+
+                        alpha = (-(x-xb)*(yc-yb) + (y-yb)*(xc-xb)) / (-(xa-xb)*(yc-yb) + (ya-yb)*(xc-xb))
+                        beta = (-(x-xc)*(ya-yc) + (y-yc)*(xa-xc)) / (-(xb-xc)*(ya-yc) + (yb-yc)*(xa-xc))
+                        gama = 1 - alpha - beta
+
+                        red = alpha*color_list[pts[0]][0] + beta*color_list[pts[1]][0] + gama*color_list[pts[2]][0]
+                        green = alpha*color_list[pts[0]][1] + beta*color_list[pts[1]][1] + gama*color_list[pts[2]][1]
+                        blue = alpha*color_list[pts[0]][2] + beta*color_list[pts[1]][2] + gama*color_list[pts[2]][2]
+                        
+                        gpu.GPU.set_pixel(x, y, red, green, blue)

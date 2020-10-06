@@ -100,15 +100,13 @@ def create_triangle_strip_matrix(point, e):
     """
     k = e*3
 
-    print(e)
-
     if e % 2 == 0:
         triangle = np.matrix([
-                    [point[0+k], point[3+k], point[6+k]],
-                    [point[1+k], point[4+k], point[7+k]],
-                    [point[2+k], point[5+k], point[8+k]],
-                    [1,1,1]
-                ])
+                [point[0+k], point[3+k], point[6+k]],
+                [point[1+k], point[4+k], point[7+k]],
+                [point[2+k], point[5+k], point[8+k]],
+                [1,1,1]
+            ])
     else:
         triangle = np.matrix([
                     [point[3+k], point[0+k], point[6+k]],
@@ -116,5 +114,5 @@ def create_triangle_strip_matrix(point, e):
                     [point[5+k], point[2+k], point[8+k]],
                     [1,1,1]
                 ])
-    return triangle
 
+    return triangle

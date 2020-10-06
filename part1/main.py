@@ -46,7 +46,7 @@ def polyline2D(lineSegments, color):
         y += s
         x += 1
 
-def triangleSet2D(vertices, color, text = False):
+def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
     #gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
 
@@ -67,8 +67,5 @@ def triangleSet2D(vertices, color, text = False):
                 mean += 1/supersampling
 
             if mean > 0:
-
-                if text:        
-                    gpu.GPU.set_pixel(x, y, color[0][0]*mean, color[0][1]*mean, color[0][2]*mean)
-                else:
-                    gpu.GPU.set_pixel(x, y, color[0]*255*mean, color[1]*255*mean, color[2]*255*mean)
+ 
+                gpu.GPU.set_pixel(x, y, color[0]*255*mean, color[1]*255*mean, color[2]*255*mean)
