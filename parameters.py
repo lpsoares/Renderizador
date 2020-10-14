@@ -1,7 +1,7 @@
 import numpy as np
 
 # Defina o tamanhã da tela que melhor sirva para perceber a renderização
-LARGURA, ALTURA = 300, 200
+LARGURA, ALTURA = 400, 200
 
 viewpoint_matrixes = []
 
