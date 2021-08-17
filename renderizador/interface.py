@@ -1,6 +1,13 @@
-# Desenvolvido por: Luciano Soares <lpsoares@insper.edu.br>
-# Disciplina: Computação Gráfica
-# Data: 31 de Agosto de 2020
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+
+"""
+Interface Gráfica para Desenvolver e Usuários.
+
+Desenvolvido por: Luciano Soares <lpsoares@insper.edu.br>
+Disciplina: Computação Gráfica
+Data: 31 de Agosto de 2020
+"""
 
 # Matplotlib
 import matplotlib.pyplot as plt
@@ -42,12 +49,12 @@ class Interface:
         self.ax.yaxis.set_minor_locator(MultipleLocator(1))
 
     def annotation(self, points):
-        """ Desenha texto ao lando dos pontos identificando eles. """
+        """Desenha texto ao lando dos pontos identificando eles."""
 
         sh = 5 # distância do label para o ponto
         for i, pos in enumerate(points):
-            text = self.ax.annotate("P{0}".format(i), xy=pos,  xytext = (sh, sh),
-                                textcoords = 'offset points', color='lightgray')
+            text = self.ax.annotate("P{0}".format(i), xy=pos, xytext = (sh, sh),
+                                    textcoords = 'offset points', color='lightgray')
             self.geometrias.append(text)
 
     def draw_points(self, point, text=False):
@@ -56,11 +63,11 @@ class Interface:
         color = point["color"]
 
         # converte pontos
-        x_values = [ pt[0] for pt in points ]
-        y_values = [ pt[1] for pt in points ]
+        x_values = [pt[0] for pt in points]
+        y_values = [pt[1] for pt in points]
 
         # desenha as linhas com os pontos
-        dots, = self.ax.plot(x_values, y_values,  marker='o', color=color, linestyle="")  # "ro"
+        dots, = self.ax.plot(x_values, y_values, marker='o', color=color, linestyle="")  # "ro"
         self.geometrias.append(dots)
 
         # desenha texto se requisitado
@@ -73,11 +80,11 @@ class Interface:
         color = lines["color"]
 
         # converte pontos
-        x_values = [ pt[0] for pt in points ]
-        y_values = [ pt[1] for pt in points ]
+        x_values = [pt[0] for pt in points]
+        y_values = [pt[1] for pt in points]
 
         # desenha as linhas com os pontos
-        line, = self.ax.plot(x_values, y_values,  marker='o', color=color, linestyle="-")
+        line, = self.ax.plot(x_values, y_values, marker='o', color=color, linestyle="-")
         self.geometrias.append(line)
 
         # desenha texto se requisitado
@@ -90,11 +97,11 @@ class Interface:
         color = triangles["color"]
 
         # converte pontos
-        x_values = [ pt[0] for pt in points ] + [points[0][0]]
-        y_values = [ pt[1] for pt in points ] + [points[0][1]]
+        x_values = [pt[0] for pt in points] + [points[0][0]]
+        y_values = [pt[1] for pt in points] + [points[0][1]]
 
         # desenha as linhas com os pontos
-        line, = self.ax.plot(x_values, y_values,  marker='o', color=color, linestyle="-")  # "ro-"
+        line, = self.ax.plot(x_values, y_values, marker='o', color=color, linestyle="-")  # "ro-"
         self.geometrias.append(line)
 
         poly, = self.ax.fill(x_values, y_values, color=color+[0.4])

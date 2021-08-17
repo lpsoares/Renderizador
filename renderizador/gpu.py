@@ -1,6 +1,13 @@
-# Desenvolvido por: Luciano Soares <lpsoares@insper.edu.br>
-# Disciplina: Computação Gráfica
-# Data: 31 de Agosto de 2020
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+
+"""
+Simulador de GPU.
+
+Desenvolvido por: Luciano Soares <lpsoares@insper.edu.br>
+Disciplina: Computação Gráfica
+Data: 31 de Agosto de 2020
+"""
 
 # Numpy
 import numpy as np
@@ -21,10 +28,10 @@ class GPU:
     height : int (static)
         altura tela
     image_file : str (static)
-        nome do arquivo a ser salvo 
+        nome do arquivo a ser salvo
     framebuffer : numpy.ndarray (static)
         matriz que armazena pixels no formato RGB
-    
+
     Métodos
     -------
     parse():
@@ -32,7 +39,7 @@ class GPU:
     """
 
     def __init__(self, width, height, image_file):
-        """ Criar um framebuffer e define o nome do arquivo para salvar o framebuffer. """
+        """Criar um framebuffer e define o nome do arquivo para salvar o framebuffer."""
         # Mantem largura e altura
         GPU.width = width
         GPU.height = height
@@ -41,18 +48,21 @@ class GPU:
         # Cria imagem
         GPU._frame_buffer = np.zeros((height, width, 3), dtype=np.uint8) # cria imagem c/fundo preto
 
+    @staticmethod
     def set_pixel(u, v, r, g, b):
-        """ Troca a cor de um pixel no framebuffer. """
+        """Troca a cor de um pixel no framebuffer."""
         GPU._frame_buffer[v][u] = [r, g, b] # altera um pixel da imagem
         # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x
 
+    @staticmethod
     def save_image():
-        """Método para salvar a imagem do framebuffer em um arquivo. """
+        """Método para salvar a imagem do framebuffer em um arquivo."""
         img = Image.fromarray(GPU._frame_buffer, 'RGB')
         img.save(GPU.image_file)
 
+    @staticmethod
     def load_texture(textura):
-        "Método para ler textura."
+        """Método para ler textura."""
         imagem = Image.open(textura)
         matriz = np.array(imagem)
         return matriz
