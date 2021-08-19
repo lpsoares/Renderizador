@@ -31,6 +31,7 @@ Opções:
 - número ou índice do exemplo
 
 Lista de exemplos:
+
 0. pontos
 1. linhas
 2. octogono
