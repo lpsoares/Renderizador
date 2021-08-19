@@ -353,11 +353,11 @@ class Polypoint2D(X3DGeometryNode):
 
         # Preview
         if X3D.preview:
-            polypoint2D = []
+            points = []
             for i in range(0, len(self.point), 2):
-                polypoint2D.append([self.point[i], self.point[i+1]])
+                points.append([self.point[i], self.point[i+1]])
             X3D.preview.pontos.append({'appearance': X3D.current_appearance,
-                                       'points': polypoint2D})
+                                       'points': points})
 
     def render(self, appearance=None):
         """Rotina de renderização."""
@@ -376,11 +376,11 @@ class Polyline2D(X3DGeometryNode):
 
         # Preview
         if X3D.preview:
-            polyline2D = []
+            points = []
             for i in range(0, len(self.lineSegments), 2):
-                polyline2D.append([self.lineSegments[i], self.lineSegments[i+1]])
+                points.append([self.lineSegments[i], self.lineSegments[i+1]])
             X3D.preview.linhas.append({'appearance': X3D.current_appearance,
-                                       'lines': polyline2D})
+                                       'lines': points})
 
     def render(self, appearance=None):
         """Rotina de renderização."""
@@ -398,11 +398,11 @@ class TriangleSet2D(X3DGeometryNode):
 
         # Preview
         if X3D.preview:
-            for i in range(0, len(self.vertices), 6):
-                X3D.preview.poligonos.append({'appearance': X3D.current_appearance,
-                                              'vertices': [[self.vertices[i], self.vertices[i+1]],
-                                                           [self.vertices[i+2], self.vertices[i+3]],
-                                                           [self.vertices[i+4], self.vertices[i+5]]]})
+            points = []
+            for i in range(0, len(self.vertices), 2):
+                points.append([self.vertices[i], self.vertices[i+1]])
+            X3D.preview.poligonos.append({'appearance': X3D.current_appearance,
+                                          'vertices': points})
 
     def render(self, appearance=None):
         """Rotina de renderização."""

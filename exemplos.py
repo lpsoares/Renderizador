@@ -17,7 +17,9 @@ DIR_EXP = "docs/exemplos/"
 EXEMPLOS = []
 EXEMPLOS.append(["pontos", "-i", DIR_EXP+"2D/pontos/pontos.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["linhas", "-i", DIR_EXP+"2D/linhas/linhas.x3d", "-w", "30", "-h", "20"])
+EXEMPLOS.append(["octogono", "-i", DIR_EXP+"2D/linhas/octogono.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["tri_2D", "-i", DIR_EXP+"2D/triangulos/triangulos.x3d", "-w", "30", "-h", "20"])
+EXEMPLOS.append(["helice", "-i", DIR_EXP+"2D/triangulos/helice.x3d", "-w", "30", "-h", "20"])
 
 # Lista os exemplos registrados
 for i, titulo in enumerate(EXEMPLOS):

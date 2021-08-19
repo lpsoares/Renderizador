@@ -72,9 +72,9 @@ def main():
 
     scene.parse() # carrega os dados do grafo de cena
 
-    t = time.process_time()
-    scene.render() # faz o traversal no grafo de cena    
-    elapsed_time = time.process_time() - t
+    start = time.process_time()
+    scene.render() # faz o traversal no grafo de cena
+    elapsed_time = time.process_time() - start
 
     # Se no modo silencioso salvar imagem e não mostrar janela de visualização
     if args.quiet:

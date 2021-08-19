@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">
+<X3D>
+    <Scene>
+
+        <Viewpoint position="14 11 24"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+        <NavigationInfo type='"NONE"'/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+
+        <Transform>
+            <Shape>
+                <TriangleSet2D vertices='15.5 10.5  15.5 2.5  9.5 4.5   15.5 10.5  7.5 10.5  9.5 16.5   15.5 10.5  15.5 18.5  21.5 16.5   15.5 10.5  23.5 10.5  21.5 4.5'/>
+                <Appearance>
+                    <Material emissiveColor='0.8 0.6 0.4'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+    </Scene>
+</X3D>
