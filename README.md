@@ -18,3 +18,21 @@ Opções
 - "-w", "--width": resolução horizontal
 - "-h", "--height": resolução vertical
 - "-q", "--quiet": não exibe janela
+
+## Exemplos
+
+Para rodar os exemplos:
+
+```sh
+  python3 exemplos.py
+````
+
+Opções:
+- número ou índice do exemplo
+
+Lista de exemplos:
+0. pontos
+1. linhas
+2. octogono
+3. tri_2D
+4. helice
