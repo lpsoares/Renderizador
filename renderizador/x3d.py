@@ -10,15 +10,35 @@ Data: 31 de Agosto de 2020
 """
 
 # XML
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree
 
 # Outras
 import re
 import math
 
+# Métodos de Apoio
+
 def clean(child):
     """Recebe um nó XML e remove dele o namespace do atributo tag se houver."""
     _, _, child.tag = child.tag.rpartition('}') # remove os namespaces
+
+def get_colors(appearance):
+    """Método de apoio para recuperar cores de um nó Appearance."""
+    colors = {
+        "diffuseColor": [0.8, 0.8, 0.8],  # Valor padrão
+        "emissiveColor": [0.0, 0.0, 0.0],  # Valor padrão
+        "specularColor": [0.0, 0.0, 0.0],  # Valor padrão
+        "shininess": 0.2  # Valor padrão
+    }
+    if appearance and appearance.material:
+        colors["diffuseColor"] = appearance.material.diffuseColor
+        colors["emissiveColor"] = appearance.material.emissiveColor
+        colors["specularColor"] = appearance.material.specularColor
+        colors["shininess"] = appearance.material.shininess
+    return colors
+
+
+# Estrutura do X3D
 
 class X3D:
     """
@@ -52,15 +72,16 @@ class X3D:
         "diffuseColor": [0.8, 0.8, 0.8],
         "emissiveColor": [0.0, 0.0, 0.0]
     }
+    current_appearance = None  # objeto de aparencia atual
     current_texture = []  # controle de texturas instantâneas
     preview = None  # atributo que aponta para o sistema de preview
-    render = {}  # dicionario dos métodos de renderização
+    renderer = {}  # dicionario dos métodos de renderização
 
     def __init__(self, filename):
         """Constroi o atributo para a raiz do grafo X3D."""
-        self.root = ET.parse(filename).getroot()
-        self.width = 640  # Valor padrão de largura da tela
-        self.height = 480  # Valor padrão de altura da tela
+        self.root = xml.etree.ElementTree.parse(filename).getroot()
+        self.width = 60  # Valor padrão de largura da tela
+        self.height = 40  # Valor padrão de altura da tela
         self.scene = None  # Referência para o objeto da cena
 
     def set_preview(self, preview):
@@ -73,11 +94,15 @@ class X3D:
         self.height = height
 
     def parse(self):
-        """Leitura e render da cena começando da raiz do X3D."""
+        """Leitura da cena começando da raiz do X3D."""
         for child in self.root:
             clean(child) # remove namespace
             if child.tag == "Scene":
                 self.scene = Scene(child)
+
+    def render(self):
+        """Renderização da cena começando da raiz do X3D."""
+        self.scene.render()
 
 class Scene:
     """O nó Scene acomoda a cena X3D."""
@@ -92,6 +117,11 @@ class Scene:
             clean(child) # remove namespace
             if child.tag == "Transform":
                 self.children.append(Transform(child))
+
+    def render(self):
+        """Rotina de renderização."""
+        for child in self.children:
+            child.render()
 
 # Core component
 
@@ -135,12 +165,6 @@ class Transform(X3DGroupingNode):
             translation_str = re.split(r'[,\s]\s*', node.attrib['translation'])
             self.translation = [float(value) for value in translation_str]
 
-        # Render
-        if "Transform" in X3D.render:
-            X3D.render["Transform"](translation=self.translation,
-                                    scale=self.scale,
-                                    rotation=self.rotation)
-
         for child in node:
             clean(child) # remove namespace
             if child.tag == "Shape":
@@ -148,8 +172,16 @@ class Transform(X3DGroupingNode):
             elif child.tag == "Transform":
                 self.children.append(Transform(child))
 
-        if "_Transform" in X3D.render:
-            X3D.render["_Transform"]()
+    def render(self):
+        """Rotina de renderização."""
+        X3D.renderer["Transform_in"](translation=self.translation,
+                                     scale=self.scale,
+                                     rotation=self.rotation)
+
+        for child in self.children:
+            child.render()
+
+        X3D.renderer["Transform_out"]()  # Tira a transformação da pilha
 
 
 # Shape component
@@ -175,14 +207,26 @@ class Material(X3DMaterialNode):
         super().__init__()  # Chama construtor da classe pai
         self.diffuseColor = [0.8, 0.8, 0.8]  # Valor padrão
         self.emissiveColor = [0.0, 0.0, 0.0]  # Valor padrão
+        self.specularColor = [0.0, 0.0, 0.0]  # Valor padrão
+        self.shininess = 0.2  # Valor padrão
         if 'diffuseColor' in node.attrib:
             diffuseColor_str = re.split(r'[,\s]\s*', node.attrib['diffuseColor'])
             self.diffuseColor = [float(color) for color in diffuseColor_str]
         if 'emissiveColor' in node.attrib:
             emissiveColor_str = re.split(r'[,\s]\s*', node.attrib['emissiveColor'])
             self.emissiveColor = [float(color) for color in emissiveColor_str]
+        if 'specularColor' in node.attrib:
+            specularColor_str = re.split(r'[,\s]\s*', node.attrib['specularColor'])
+            self.emissiveColor = [float(color) for color in specularColor_str]
+        if 'shininess' in node.attrib:
+            self.fieldOfView = float(node.attrib['shininess'].strip())
+
+    def render(self):
+        """Rotina de renderização."""
         X3D.current_color["diffuseColor"] = self.diffuseColor
         X3D.current_color["emissiveColor"] = self.emissiveColor
+        X3D.current_color["specularColor"] = self.specularColor
+        X3D.current_color["shininess"] = self.shininess
 
 class X3DAppearanceChildNode(X3DNode):
     """Este é o tipo de nó básico para todos os nós do tipo X3DAppearanceNode."""
@@ -202,6 +246,9 @@ class ImageTexture(X3DTexture2DNode):
         if 'url' in node.attrib:
             url_list = re.split(r'[,\s]\s*', node.attrib['url'])
             self.url = [addr.replace('"', '').replace("'", '') for addr in url_list if addr != '']
+
+    def render(self):
+        """Rotina de renderização."""
         X3D.current_texture = self.url
 
 class Appearance(X3DAppearanceNode):
@@ -218,6 +265,13 @@ class Appearance(X3DAppearanceNode):
             if child.tag == "ImageTexture":
                 self.imageTexture = ImageTexture(child)
 
+    def render(self):
+        """Rotina de renderização."""
+        if self.material:
+            self.material.render()
+        if self.imageTexture:
+            self.imageTexture.render()
+
 class Shape(X3DShapeNode):
     """Define aparência e geometria, que são usados para criar objetos renderizados."""
 
@@ -227,6 +281,7 @@ class Shape(X3DShapeNode):
             clean(child) # remove namespace
             if child.tag == "Appearance":
                 self.appearance = Appearance(child)
+                X3D.current_appearance = self.appearance
         for child in node:
             clean(child) # remove namespace
             if child.tag == "Polypoint2D":
@@ -246,6 +301,12 @@ class Shape(X3DShapeNode):
             elif child.tag == "IndexedFaceSet":
                 self.geometry = IndexedFaceSet(child)
 
+    def render(self):
+        """Rotina de renderização."""
+        if self.appearance:
+            self.appearance.render()
+        if self.geometry:
+            self.geometry.render(self.appearance)
 
 # Rendering component
 
@@ -295,11 +356,15 @@ class Polypoint2D(X3DGeometryNode):
             polypoint2D = []
             for i in range(0, len(self.point), 2):
                 polypoint2D.append([self.point[i], self.point[i+1]])
-            X3D.preview._pontos.append({'color': X3D.current_color, 'points': polypoint2D})
+            X3D.preview.pontos.append({'appearance': X3D.current_appearance,
+                                       'points': polypoint2D})
 
-        # Render
-        if "Polypoint2D" in X3D.render:
-            X3D.render["Polypoint2D"](point=self.point, color=X3D.current_color)
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        colors = get_colors(appearance)
+        if self.point:
+            X3D.renderer["Polypoint2D"](point=self.point, colors=colors)
+
 
 class Polyline2D(X3DGeometryNode):
     """Série de segmentos de linha contíguos no sistema de coordenadas 2D."""
@@ -314,11 +379,14 @@ class Polyline2D(X3DGeometryNode):
             polyline2D = []
             for i in range(0, len(self.lineSegments), 2):
                 polyline2D.append([self.lineSegments[i], self.lineSegments[i+1]])
-            X3D.preview._linhas.append({'color': X3D.current_color, 'lines': polyline2D})
+            X3D.preview.linhas.append({'appearance': X3D.current_appearance,
+                                       'lines': polyline2D})
 
-        # Render
-        if "Polyline2D" in X3D.render:
-            X3D.render["Polyline2D"](lineSegments=self.lineSegments, color=X3D.current_color)
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        colors = get_colors(appearance)
+        if self.lineSegments:
+            X3D.renderer["Polyline2D"](lineSegments=self.lineSegments, colors=colors)
 
 class TriangleSet2D(X3DGeometryNode):
     """Especifica um conjunto de triângulos no sistema de coordenadas 2D local."""
@@ -331,14 +399,16 @@ class TriangleSet2D(X3DGeometryNode):
         # Preview
         if X3D.preview:
             for i in range(0, len(self.vertices), 6):
-                X3D.preview._poligonos.append({'color': X3D.current_color,
-                                               'vertices': [[self.vertices[i], self.vertices[i+1]],
-                                                            [self.vertices[i+2], self.vertices[i+3]],
-                                                            [self.vertices[i+4], self.vertices[i+5]]]})
+                X3D.preview.poligonos.append({'appearance': X3D.current_appearance,
+                                              'vertices': [[self.vertices[i], self.vertices[i+1]],
+                                                           [self.vertices[i+2], self.vertices[i+3]],
+                                                           [self.vertices[i+4], self.vertices[i+5]]]})
 
-        # Render
-        if "TriangleSet2D" in X3D.render:
-            X3D.render["TriangleSet2D"](vertices=self.vertices, color=X3D.current_color)
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        colors = get_colors(appearance)
+        if self.vertices:
+            X3D.renderer["TriangleSet2D"](vertices=self.vertices, colors=colors)
 
 class TriangleSet(X3DComposedGeometryNode):
     """Representa uma forma 3D que representa uma coleção de triângulos individuais."""
@@ -354,9 +424,12 @@ class TriangleSet(X3DComposedGeometryNode):
         # Preview
         # Implemente se desejar
 
-        # Render
-        if "TriangleSet" in X3D.render:
-            X3D.render["TriangleSet"](point=self.coord.point, color=X3D.current_color)
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        colors = get_colors(appearance)
+        if self.coord and self.coord.point:
+            X3D.renderer["TriangleSet"](point=self.coord.point, colors=colors)
+
 
 class TriangleStripSet(X3DComposedGeometryNode):
     """Representa uma forma 3D composta por faixas de triângulos."""
@@ -377,11 +450,13 @@ class TriangleStripSet(X3DComposedGeometryNode):
         # Preview
         # Implemente se desejar
 
-        # Render
-        if "TriangleStripSet" in X3D.render:
-            X3D.render["TriangleStripSet"](point=self.coord.point,
-                                           stripCount=self.stripCount,
-                                           color=X3D.current_color)
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        colors = get_colors(appearance)
+        if self.coord and self.coord.point and self.stripCount:
+            X3D.renderer["TriangleStripSet"](point=self.coord.point,
+                                             stripCount=self.stripCount,
+                                             colors=colors)
 
 
 class IndexedTriangleStripSet(X3DComposedGeometryNode):
@@ -403,11 +478,13 @@ class IndexedTriangleStripSet(X3DComposedGeometryNode):
         # Preview
         # Implemente se desejar
 
-        # Render
-        if "IndexedTriangleStripSet" in X3D.render:
-            X3D.render["IndexedTriangleStripSet"](point=self.coord.point,
-                                                  index=self.index,
-                                                  color=X3D.current_color)
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        colors = get_colors(appearance)
+        if self.coord and self.coord.point and self.index:
+            X3D.renderer["IndexedTriangleStripSet"](point=self.coord.point,
+                                                    index=self.index,
+                                                    colosr=colors)
 
 
 # Navigation component
@@ -434,11 +511,12 @@ class Viewpoint(X3DViewpointNode):
         if 'fieldOfView' in node.attrib:
             self.fieldOfView = float(node.attrib['fieldOfView'].strip())
 
-        # Render
-        if "Viewpoint" in X3D.render:
-            X3D.render["Viewpoint"](position=self.position,
-                                    orientation=self.orientation,
-                                    fieldOfView=self.fieldOfView)
+
+    def render(self):
+        """Rotina de renderização."""
+        X3D.renderer["Viewpoint"](position=self.position,
+                                  orientation=self.orientation,
+                                  fieldOfView=self.fieldOfView)
 
 # Geometry3D component
 
@@ -456,9 +534,11 @@ class Box(X3DGeometryNode):
         # Preview
         # Implemente se desejar
 
-        # Render
-        if "Box" in X3D.render:
-            X3D.render["Box"](size=self.size, color=X3D.current_color)
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        colors = get_colors(appearance)
+        if self.size:
+            X3D.renderer["Box"](size=self.size, colosr=colors)
 
 class IndexedFaceSet(X3DComposedGeometryNode):
     """Classe responsável por geometria Indexed Face Set, que é uma malha de polígonos."""
@@ -504,29 +584,28 @@ class IndexedFaceSet(X3DComposedGeometryNode):
         # Preview
         # Implemente se desejar
 
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        ret_coord = None
+        ret_color = None
+        ret_texCoord = None
+
         if self.coord:
             ret_coord = self.coord.point
-        else:
-            ret_coord = None
-
         if self.color:
             ret_color = self.color.color
-        else:
-            ret_color = None
-
         if self.texCoord:
             ret_texCoord = self.texCoord.point
-        else:
-            ret_texCoord = None
 
-        # Render
-        if "IndexedFaceSet" in X3D.render:
-            X3D.render["IndexedFaceSet"](coord=ret_coord, coordIndex=self.coordIndex,
-                                         colorPerVertex=self.colorPerVertex, color=ret_color,
-                                         colorIndex=self.colorIndex, texCoord=ret_texCoord,
-                                         texCoordIndex=self.texCoordIndex,
-                                         current_color=X3D.current_color,
-                                         current_texture=X3D.current_texture)
+        colors = get_colors(appearance)
+
+        if self.coordIndex:
+            X3D.renderer["IndexedFaceSet"](coord=ret_coord, coordIndex=self.coordIndex,
+                                           colorPerVertex=self.colorPerVertex, color=ret_color,
+                                           colorIndex=self.colorIndex, texCoord=ret_texCoord,
+                                           texCoordIndex=self.texCoordIndex,
+                                           colors=colors,
+                                           current_texture=X3D.current_texture)
 
 # Texturing component
 
@@ -540,3 +619,6 @@ class TextureCoordinate(X3DTextureCoordinateNode):
         super().__init__() # Chama construtor da classe pai
         point_str = re.split(r'[,\s]\s*', node.attrib['point'].strip())
         self.point = [float(p) for p in point_str]
+
+    def render(self):
+        """Rotina de renderização."""

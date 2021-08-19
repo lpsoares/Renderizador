@@ -3,7 +3,7 @@
 <X3D>
     <Scene>
 
-        <Viewpoint position="10 10 40"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+        <Viewpoint position="14 11 24"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
         <NavigationInfo type='"NONE"'/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
 
         <Transform>
