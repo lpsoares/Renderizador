@@ -10,6 +10,7 @@ Data:
 """
 
 import gpu          # Simula os recursos de uma GPU
+from typing import Tuple
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polypoint2D
 def polypoint2D(point, colors):
@@ -37,6 +38,34 @@ def polypoint2D(point, colors):
         x, y = int(point[i]), int(point[i + 1])
         gpu.GPU.set_pixel(x, y, color_r, color_g, color_b)
 
+# Implementation of the Bresenham Line Drawing Algorithm.
+# See: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+def bresenham_line(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]):
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    x, y = x1, y1
+    sx = -1 if x1 > x2 else 1
+    sy = -1 if y1 > y2 else 1
+    if dx > dy:
+        err = dx / 2.0
+        while x != x2:
+            gpu.GPU.set_pixel(x, y, color[0], color[1], color[2])
+            err -= dy
+            if err < 0:
+                y += sy
+                err += dx
+            x += sx
+    else:
+        err = dy / 2.0
+        while y != y2:
+            gpu.GPU.set_pixel(x, y, color[0], color[1], color[2])
+            err -= dx
+            if err < 0:
+                x += sx
+                err += dy
+            y += sy
+    gpu.GPU.set_pixel(x, y, color[0], color[1], color[2])
+
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polyline2D
 def polyline2D(lineSegments, colors):
     """Função usada para renderizar Polyline2D."""
@@ -50,12 +79,24 @@ def polyline2D(lineSegments, colors):
     # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
     # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
-    print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
-    print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
+    # print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
+    # print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
     # Exemplo:
-    pos_x = gpu.GPU.width//2
-    pos_y = gpu.GPU.height//2
-    gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # pos_x = gpu.GPU.width//2
+    # pos_y = gpu.GPU.height//2
+    # gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+    color_r = int(colors["emissiveColor"][0] * 255)
+    color_g = int(colors["emissiveColor"][1] * 255)
+    color_b = int(colors["emissiveColor"][2] * 255)
+    color = (color_r, color_g, color_b)
+
+    for i in range(0, len(lineSegments) - 1, 4):
+        x1, y1 = int(lineSegments[i]), int(lineSegments[i + 1])
+        # gpu.GPU.set_pixel(x1, y1, color[0], color[1], color[2])
+        x2, y2 = int(lineSegments[i + 2]), int(lineSegments[i + 3])
+        # gpu.GPU.set_pixel(x2, y2, color[0], color[1], color[2])
+        bresenham_line(x1, y1, x2, y2, color)
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#TriangleSet2D
 def triangleSet2D(vertices, colors):
