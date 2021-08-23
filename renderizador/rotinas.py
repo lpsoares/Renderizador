@@ -23,11 +23,19 @@ def polypoint2D(point, colors):
     # você pode assumir o desenho dos pontos com a cor emissiva (emissiveColor).
 
     # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-    print("Polypoint2D : pontos = {0}".format(point)) # imprime no terminal pontos
-    print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
+    # print("Polypoint2D : pontos = {0}".format(point)) # imprime no terminal pontos
+    # print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
     # Exemplo:
-    gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
     # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
+    color_r = int(colors["emissiveColor"][0] * 255)
+    color_g = int(colors["emissiveColor"][1] * 255)
+    color_b = int(colors["emissiveColor"][2] * 255)
+
+    for i in range(0, len(point) - 1, 2):
+        x, y = int(point[i]), int(point[i + 1])
+        gpu.GPU.set_pixel(x, y, color_r, color_g, color_b)
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polyline2D
 def polyline2D(lineSegments, colors):
