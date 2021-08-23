@@ -108,10 +108,40 @@ def triangleSet2D(vertices, colors):
     # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
     # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
     # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-    print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
-    print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
+    # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
+    # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
     # Exemplo:
-    gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+    color_r = int(colors["emissiveColor"][0] * 255)
+    color_g = int(colors["emissiveColor"][1] * 255)
+    color_b = int(colors["emissiveColor"][2] * 255)
+    color = (color_r, color_g, color_b)
+
+    for i in range(0, len(vertices) - 1, 6):
+        x0, y0 = float(vertices[i]), float(vertices[i + 1])
+        # gpu.GPU.set_pixel(x0, y0, color[0], color[1], color[2])
+        x1, y1 = float(vertices[i + 2]), float(vertices[i + 3])
+        # gpu.GPU.set_pixel(x1, y1, color[0], color[1], color[2])
+        x2, y2 = float(vertices[i + 4]), float(vertices[i + 5])
+        # gpu.GPU.set_pixel(x2, y2, color[0], color[1], color[2])
+
+        # Calcula se o ponto (x, y) está acima, abaixo, ou na linha descrita por P0 -> P1.
+        L0 = lambda x, y: (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0)
+
+        # Calcula se o ponto (x, y) está acima, abaixo, ou na linha descrita por P1 -> P2.
+        L1 = lambda x, y: (x - x1) * (y2 - y1) - (y - y1) * (x2 - x1)
+
+        # Calcula se o ponto (x, y) está acima, abaixo, ou na linha descrita por P2 -> P0.
+        L2 = lambda x, y: (x - x2) * (y0 - y2) - (y - y2) * (x0 - x2)
+
+        # Determina se o ponto está dentro do triângulo ou não.
+        inside = lambda x, y: L0(x, y) > 0 and L1(x, y) > 0 and L2(x, y) > 0
+
+        for si in range(gpu.GPU.width):
+            for sj in range(gpu.GPU.height):
+                if inside(si + 0.5, sj + 0.5):
+                    gpu.GPU.set_pixel(si, sj, color[0], color[1], color[2])
 
 def triangleSet(point, colors):
     """Função usada para renderizar TriangleSet."""
