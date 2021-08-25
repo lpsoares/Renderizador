@@ -43,20 +43,35 @@ class GPU:
     image_file = None
     frame_buffer = None
 
-    def __init__(self, width, height, image_file):
-        """Criar um framebuffer e define o nome do arquivo para salvar o framebuffer."""
+    def __init__(self, image_file):
+        """Define o nome do arquivo para caso se salvar o framebuffer."""
+        GPU.image_file = image_file
+
+        # Prepara o Frame Buffer para ser uma matriz NumPy
+        GPU.frame_buffer = np.empty([])
+
+    @staticmethod
+    def set_framebuffer(width, height, depth=3):
+        """Aloca o FrameBuffer."""
         # Mantem largura e altura
         GPU.width = width
         GPU.height = height
-        GPU.image_file = image_file
 
-        # Cria imagem
-        GPU.frame_buffer = np.zeros((height, width, 3), dtype=np.uint8) # cria imagem c/fundo preto
+        # Aloca espaço para imagem, definindo todos os valores como 0 (imagem preta)
+        GPU.frame_buffer = np.zeros((height, width, depth), dtype=np.uint8)
+
+        # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x, ou v e u
 
     @staticmethod
     def set_pixel(coord_u, coord_v, color_r, color_g, color_b):
         """Troca a cor de um pixel no framebuffer."""
         GPU.frame_buffer[coord_v][coord_u] = [color_r, color_g, color_b] # altera um pixel da imagem
+        # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x, ou v e u
+
+    @staticmethod
+    def set_data(coord_u, coord_v, data):
+        """Troca os dados de um pixel no framebuffer."""
+        GPU.frame_buffer[coord_v][coord_u] = data # altera um pixel da imagem
         # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x, ou v e u
 
     @staticmethod

@@ -46,11 +46,10 @@ def main():
         height = args.height
 
     # Iniciando simulação de GPU
-    gpu.GPU(width, height, image_file)
+    gpu.GPU(image_file)
 
     # Abre arquivo X3D
     scene = x3d.X3D(x3d_file)
-    scene.set_resolution(width, height)
 
     # Funções que irão fazer o rendering
     x3d.X3D.renderer["Polypoint2D"] = rotinas.polypoint2D
@@ -70,18 +69,29 @@ def main():
         window = interface.Interface(width, height)
         scene.set_preview(window)
 
-    scene.parse() # carrega os dados do grafo de cena
+    scene.parse()  # carrega os dados do grafo de cena
 
+    # Configura o sistema para a renderização.
+    gpu.GPU.set_framebuffer(width=width, height=height, depth=3)
+    scene.set_resolution(width=width, height=height)
+
+    # Coleta o tempo antes da renderização
     start = time.process_time()
-    scene.render() # faz o traversal no grafo de cena
+
+    # Laço principal de renderização
+    rotinas.pre()  # executa rotina pré renderização
+    scene.render()  # faz o traversal no grafo de cena
+    rotinas.pos()  # executa rotina pós renderização
+
+    # Calcula o tempo ao concluir a renderização
     elapsed_time = time.process_time() - start
 
     # Se no modo silencioso salvar imagem e não mostrar janela de visualização
     if args.quiet:
-        gpu.GPU.save_image() # Salva imagem em arquivo
+        gpu.GPU.save_image()  # Salva imagem em arquivo
     else:
-        window.set_saver(gpu.GPU.save_image) # pasa a função para salvar imagens
-        window.preview(gpu.GPU.frame_buffer, elapsed_time) # mostra janela de visualização
+        window.set_saver(gpu.GPU.save_image)  # pasa a função para salvar imagens
+        window.preview(gpu.GPU.frame_buffer, elapsed_time)  # mostra janela de visualização
 
 
 if __name__ == '__main__':
