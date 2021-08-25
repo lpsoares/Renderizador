@@ -18,6 +18,7 @@ EXEMPLOS = []
 EXEMPLOS.append(["pontos", "-i", DIR_EXP+"2D/pontos/pontos.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["linhas", "-i", DIR_EXP+"2D/linhas/linhas.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["octogono", "-i", DIR_EXP+"2D/linhas/octogono.x3d", "-w", "30", "-h", "20"])
+EXEMPLOS.append(["var_lin", "-i", DIR_EXP+"2D/linhas/varias_linhas.x3d", "-w", "600", "-h", "400"])
 EXEMPLOS.append(["tri_2D", "-i", DIR_EXP+"2D/triangulos/triangulos.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["helice", "-i", DIR_EXP+"2D/triangulos/helice.x3d", "-w", "30", "-h", "20"])
 
