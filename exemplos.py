@@ -32,7 +32,7 @@ if len(sys.argv) > 1:
 else:
     escolha = input("Escolha o exemplo: ")
 
-# Verifica se a escolha do exemplo foi pelo índice ou primeiro argumento da lista 
+# Verifica se a escolha do exemplo foi pelo índice ou primeiro argumento da lista
 if escolha.isnumeric():
     opcoes = EXEMPLOS[int(escolha)]
 else:
