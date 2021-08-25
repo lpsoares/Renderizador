@@ -41,12 +41,20 @@ class Interface:
 
         self.axes.xaxis.tick_top()
 
-        # o tamanho do gris é 1x1 para ser do tamanho do pixel
-        # mostrando de 10 em 10 o posicionamento dos pixels
-        self.axes.xaxis.set_major_locator(MultipleLocator(10))
-        self.axes.yaxis.set_major_locator(MultipleLocator(10))
-        self.axes.xaxis.set_minor_locator(MultipleLocator(1))
-        self.axes.yaxis.set_minor_locator(MultipleLocator(1))
+        # Adaptando número de divisões (ticks) conforme resolução informada
+        if max(self.width, self.height) > 400:
+            divisions = 100
+        elif max(self.width, self.height) > 200:
+            divisions = 50
+        elif max(self.width, self.height) > 100:
+            divisions = 20
+        else:
+            divisions = 10
+
+        self.axes.xaxis.set_major_locator(MultipleLocator(divisions))
+        self.axes.yaxis.set_major_locator(MultipleLocator(divisions))
+        self.axes.xaxis.set_minor_locator(MultipleLocator(divisions//10))
+        self.axes.yaxis.set_minor_locator(MultipleLocator(divisions//10))
 
     def annotation(self, points):
         """Desenha texto ao lando dos pontos identificando eles."""
