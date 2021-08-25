@@ -205,11 +205,3 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
         image = gpu.GPU.load_texture(current_texture[0])
         print("\t Matriz com image = {0}".format(image))
     print("IndexedFaceSet : colors = {0}".format(colors)) # imprime no terminal as cores
-
-def pre():
-    """Rotinas pré renderização."""
-    # Função invocada antes do processo de renderização iniciar.
-
-def pos():
-    """Rotinas pós renderização."""
-    # Função invocada após o processo de renderização terminar.
