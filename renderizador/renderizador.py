@@ -27,15 +27,16 @@ class Renderizador:
 
     def __init__(self):
         """Definindo valores padrão."""
-        self.width = LARGURA          # Valores padrão da aplicação
-        self.height = ALTURA          # Valores padrão da aplicação
-        self.x3d_file = ""            # Valores padrão da aplicação
-        self.image_file = "tela.png"  # Valores padrão da aplicação
-        self.scene = None             # Valores padrão da aplicação
+        self.width = LARGURA
+        self.height = ALTURA
+        self.x3d_file = ""
+        self.image_file = "tela.png"
+        self.scene = None
 
     def setup(self):
         """Configura o sistema para a renderização."""
-        gpu.GPU.set_framebuffer(width=self.width, height=self.height, depth=3)
+        # Configurando color buffers (Front-left, Front-right, Back-left, Back-right) e z-buffer
+        gpu.GPU.set_framebuffer(width=self.width, height=self.height)
         self.scene.set_resolution(width=self.width, height=self.height)
 
     def pre(self):

@@ -49,6 +49,7 @@ class GPU:
 
         # Prepara o Frame Buffer para ser uma matriz NumPy
         GPU.frame_buffer = np.empty([])
+        GPU.z_buffer = np.empty([])
 
     @staticmethod
     def set_framebuffer(width, height, depth=3):
@@ -57,8 +58,11 @@ class GPU:
         GPU.width = width
         GPU.height = height
 
-        # Aloca espaço para imagem, definindo todos os valores como 0 (imagem preta)
+        # Aloca espaço para cores, definindo todos os valores como 0 (imagem preta)
         GPU.frame_buffer = np.zeros((height, width, depth), dtype=np.uint8)
+
+        # Aloca espaço para profundidade, definindo todos os valores como 0
+        GPU.z_buffer = np.zeros((height, width, 1), dtype=np.uint32)
 
         # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x, ou v e u
 
