@@ -23,7 +23,7 @@ ALTURA = 40   # Valor padrão para altura da tela
 
 
 class Renderizador:
-    """."""
+    """Realiza a renderização da cena informada."""
 
     def __init__(self):
         """Definindo valores padrão."""
@@ -35,13 +35,32 @@ class Renderizador:
 
     def setup(self):
         """Configura o sistema para a renderização."""
-        # Configurando color buffers (Front-left, Front-right, Back-left, Back-right) e z-buffer
-        gpu.GPU.set_framebuffer(width=self.width, height=self.height)
-        self.scene.set_resolution(width=self.width, height=self.height)
+        # Configurando color buffers para exibição na tela
+
+        # Cria uma (1) posição de FrameBuffer na GPU
+        fbo = gpu.GPU.gen_framebuffers(1)
+
+        # Define que a posição criada será usada para desenho e leitura
+        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, fbo[0])
+
+        # Define o tipo e tamanho do buffer
+        gpu.GPU.framebuffer_storage(
+            fbo[0],
+            gpu.GPU.RGB8,
+            self.width,
+            self.height
+        )
+
+        # Definindo tamanho do Viewport para renderização
+        self.scene.viewport(width=self.width, height=self.height)
 
     def pre(self):
         """Rotinas pré renderização."""
         # Função invocada antes do processo de renderização iniciar.
+
+        # Recursos que podem ser úteis:
+        # Define o valor do pixel no framebuffer: draw_pixels(coord_u, coord_v, data)
+        # Retorna o valor do pixel no framebuffer: read_pixels(coord_u, coord_v)
 
     def pos(self):
         """Rotinas pós renderização."""
@@ -113,7 +132,7 @@ class Renderizador:
             gpu.GPU.save_image()  # Salva imagem em arquivo
         else:
             window.set_saver(gpu.GPU.save_image)  # pasa a função para salvar imagens
-            window.preview(gpu.GPU.frame_buffer, elapsed_time)  # mostra janela de visualização
+            window.preview(gpu.GPU.get_frame_buffer(), elapsed_time)  # mostra visualização
 
 
 if __name__ == '__main__':

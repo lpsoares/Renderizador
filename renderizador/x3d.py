@@ -88,7 +88,7 @@ class X3D:
         """Armazena as rotinas para fazer o render da cena."""
         X3D.preview = preview
 
-    def set_resolution(self, width, height):
+    def viewport(self, width, height):
         """Armazena a largura e altura de janela de renderização."""
         self.width = width
         self.height = height

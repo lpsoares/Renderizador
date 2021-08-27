@@ -38,50 +38,106 @@ class GPU:
         Realiza o parse e já realiza as rotinas de renderização.
     """
 
+    # Constantes a serem usadas com Enum para definir estados
+    DRAW_FRAMEBUFFER = 0b01
+    READ_FRAMEBUFFER = 0b10
+    FRAMEBUFFER = 0b11
+
+    RGB8 = 0b001  # Valores para Vermelho, Verde, Azul de 8bits cada (0-255)
+    RGBA8 = 0b010  # Valores para Vermelho, Verde, Azul e Transpareência de 8bits cada (0-255)
+    DEPTH_COMPONENT16 = 0b101  # Valores para Profundidade de 16bits cada (0-65535)
+    DEPTH_COMPONENT32F = 0b110  # Valores para Profundidade de 32bits em float
+
+    # Atributos estáticos
     width = 60
     height = 40
     image_file = None
     frame_buffer = None
+
+    # Legado, deverá ser REMOVIDO
+    width = 1
+    height = 1
 
     def __init__(self, image_file):
         """Define o nome do arquivo para caso se salvar o framebuffer."""
         GPU.image_file = image_file
 
         # Prepara o Frame Buffer para ser uma matriz NumPy
-        GPU.frame_buffer = np.empty([])
-        GPU.z_buffer = np.empty([])
+        GPU.frame_buffer = []
+
+        # Define buffers de leitura e escrita
+        GPU.draw_framebuffer = 0
+        GPU.read_framebuffer = 0
 
     @staticmethod
-    def set_framebuffer(width, height, depth=3):
-        """Aloca o FrameBuffer."""
+    def gen_framebuffers(size):
+        """Gera posições para FrameBuffers."""
+        allocated = []
+        for _ in range(size):
+            GPU.frame_buffer.append(np.empty([]))
+            allocated += [len(GPU.frame_buffer)-1]  # informado a posição recem alocada
+        return allocated
+
+    @staticmethod
+    def bind_framebuffer(buffer, framebuffer_pos):
+        """Define o framebuffer a ser usado e como."""
+        if buffer == GPU.DRAW_FRAMEBUFFER:
+            GPU.draw_framebuffer = framebuffer_pos
+        elif buffer == GPU.READ_FRAMEBUFFER:
+            GPU.read_framebuffer = framebuffer_pos
+        elif buffer == GPU.FRAMEBUFFER:
+            GPU.draw_framebuffer = framebuffer_pos
+            GPU.read_framebuffer = framebuffer_pos
+
+    @staticmethod
+    def framebuffer_storage(framebuffer_pos, mode, width, height):
+        """Aloca o FrameBuffer especificado."""
         # Mantem largura e altura
-        GPU.width = width
-        GPU.height = height
+        if mode == GPU.RGB8:
+            dtype = np.uint8
+            depth = 3
+        elif mode == GPU.RGBA8:
+            dtype = np.uint8
+            depth = 4
+        elif mode == GPU.DEPTH_COMPONENT16:
+            dtype = np.uint16
+            depth = 1
+        elif mode == GPU.DEPTH_COMPONENT32F:
+            dtype = np.float32
+            depth = 1
 
-        # Aloca espaço para cores, definindo todos os valores como 0 (imagem preta)
-        GPU.frame_buffer = np.zeros((height, width, depth), dtype=np.uint8)
+        # Aloca espaço definindo todos os valores como 0 (imagem preta)
+        GPU.frame_buffer[framebuffer_pos] = np.zeros((height, width, depth), dtype=dtype)
 
-        # Aloca espaço para profundidade, definindo todos os valores como 0
-        GPU.z_buffer = np.zeros((height, width, 1), dtype=np.uint32)
-
-        # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x, ou v e u
-
+    # Obsoleto, parar de usar no futuro
     @staticmethod
-    def set_pixel(coord_u, coord_v, color_r, color_g, color_b):
+    def set_pixel(coord_u, coord_v, clr_r, clr_g, clr_b, clr_a=-1):
         """Troca a cor de um pixel no framebuffer."""
-        GPU.frame_buffer[coord_v][coord_u] = [color_r, color_g, color_b] # altera um pixel da imagem
-        # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x, ou v e u
+        if clr_a >= 0:
+            GPU.frame_buffer[GPU.draw_framebuffer][coord_v][coord_u] = [clr_r, clr_g, clr_b, clr_a]
+        else:
+            GPU.frame_buffer[GPU.draw_framebuffer][coord_v][coord_u] = [clr_r, clr_g, clr_b]
+
+    # Obsoleto, parar de usar no futuro
+    @staticmethod
+    def set_depth(coord_u, coord_v, depth):
+        """Troca a profundidade de um pixel no framebuffer."""
+        GPU.frame_buffer[GPU.draw_framebuffer][coord_v][coord_u] = depth
 
     @staticmethod
-    def set_data(coord_u, coord_v, data):
-        """Troca os dados de um pixel no framebuffer."""
-        GPU.frame_buffer[coord_v][coord_u] = data # altera um pixel da imagem
-        # Perceba que a matriz é organizada em linhas e colunas, ou seja, y e x, ou v e u
+    def draw_pixels(coord_u, coord_v, data):
+        """Define o valor do pixel no framebuffer."""
+        GPU.frame_buffer[GPU.draw_framebuffer][coord_v][coord_u] = data
+
+    @staticmethod
+    def read_pixels(coord_u, coord_v):
+        """Retorna o valor do pixel no framebuffer."""
+        return GPU.frame_buffer[GPU.read_framebuffer][coord_v][coord_u]
 
     @staticmethod
     def save_image():
         """Método para salvar a imagem do framebuffer em um arquivo."""
-        img = Image.fromarray(GPU.frame_buffer, 'RGB')
+        img = Image.fromarray(GPU.frame_buffer[GPU.read_framebuffer], 'RGB')
         img.save(GPU.image_file)
 
     @staticmethod
@@ -90,3 +146,8 @@ class GPU:
         imagem = Image.open(textura)
         matriz = np.array(imagem)
         return matriz
+
+    @staticmethod
+    def get_frame_buffer():
+        """Retorna o Framebuffer atual para leitura."""
+        return GPU.frame_buffer[GPU.read_framebuffer]
