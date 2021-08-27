@@ -95,9 +95,9 @@ def inside(x_A, y_A, x_B, y_B, x_C, y_C, x_ponto, y_ponto):
     d2 = dot(x_B, y_B, x_C, y_C, x_ponto, y_ponto)
     d3 = dot(x_C, y_C, x_A, y_A, x_ponto, y_ponto)
     if dot(x_A, y_A, x_B, y_B, x_ponto, y_ponto) >= 0 and dot(x_B, y_B, x_C, y_C, x_ponto, y_ponto) >= 0 and dot(x_C, y_C, x_A, y_A, x_ponto, y_ponto) >= 0:
-        return True
+        return 1
     else:
-        return False
+        return 0
 
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#TriangleSet2D
@@ -131,11 +131,18 @@ def triangleSet2D(vertices, colors):
         if y_3 < minY:
             minY = y_3
 
-        for x in range(int(minX)*2, int(maxX)*2):
-            for y in range(int(minY)*2, int(maxY)*2):
-                if inside(x_1, y_1, x_2, y_2, x_3, y_3, x/2, y/2):
-                    gpu.GPU.set_pixel(int(x/2), int(y/2), 255 / 2 * colors['emissiveColor'][0],
-                                      255 / 2 * colors['emissiveColor'][1], 255 / 2 * colors['emissiveColor'][2])
+        aliasing = 4
+
+        for x in range(int(minX)*aliasing, int(maxX)*aliasing, aliasing):
+            for y in range(int(minY)*aliasing, int(maxY)*aliasing, aliasing):
+                sumk = 0
+                for kx in range(aliasing):
+                    for ky in range(aliasing):
+                        sumk += inside(x_1, y_1, x_2, y_2, x_3, y_3, (x + kx) / aliasing, (y + ky) / aliasing)
+                sumk = sumk*255/aliasing
+                if sumk > 0:
+                    gpu.GPU.set_pixel(int(x/aliasing), int(y/aliasing), sumk * colors['emissiveColor'][0],
+                                      sumk * colors['emissiveColor'][1], sumk * colors['emissiveColor'][2])
 
 
 
@@ -146,10 +153,6 @@ def triangleSet2D(vertices, colors):
     # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
     # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
     # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-    print("TriangleSet2D : vertices = {0}".format(vertices))  # imprime no terminal
-    print("TriangleSet2D : colors = {0}".format(colors))  # imprime no terminal as cores
-    # Exemplo:
-    gpu.GPU.set_pixel(24, 8, 255, 255, 0)  # altera um pixel da imagem (u, v, r, g, b)
 
 
 def triangleSet(point, colors):
