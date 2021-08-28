@@ -32,24 +32,31 @@ class Renderizador:
         self.x3d_file = ""
         self.image_file = "tela.png"
         self.scene = None
+        self.fbo = None
 
     def setup(self):
         """Configura o sistema para a renderização."""
         # Configurando color buffers para exibição na tela
 
         # Cria uma (1) posição de FrameBuffer na GPU
-        fbo = gpu.GPU.gen_framebuffers(1)
+        self.fbo = gpu.GPU.gen_framebuffers(1)
 
         # Define que a posição criada será usada para desenho e leitura
-        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, fbo[0])
+        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.fbo[0])
 
         # Define o tipo e tamanho do buffer
         gpu.GPU.framebuffer_storage(
-            fbo[0],
+            self.fbo[0],
             gpu.GPU.RGB8,
             self.width,
             self.height
         )
+
+        # Define cor que ira apagar o FrameBuffer quando clear_buffer() invocado
+        gpu.GPU.clear_color([0, 0, 0])
+
+        # Define a profundidade que ira apagar o FrameBuffer quando clear_buffer() invocado
+        gpu.GPU.clear_depth(1.0)
 
         # Definindo tamanho do Viewport para renderização
         self.scene.viewport(width=self.width, height=self.height)
@@ -58,6 +65,9 @@ class Renderizador:
         """Rotinas pré renderização."""
         # Função invocada antes do processo de renderização iniciar.
 
+        # Limpa a lista de buffers selecionados
+        gpu.GPU.clear_buffer(self.fbo)
+
         # Recursos que podem ser úteis:
         # Define o valor do pixel no framebuffer: draw_pixels(coord_u, coord_v, data)
         # Retorna o valor do pixel no framebuffer: read_pixels(coord_u, coord_v)
@@ -65,6 +75,9 @@ class Renderizador:
     def pos(self):
         """Rotinas pós renderização."""
         # Função invocada após o processo de renderização terminar.
+
+        # Método para a troca dos buffers (NÃO IMPLEMENTADO)
+        gpu.GPU.swap_buffers()
 
     def main(self):
         """Executa a renderização."""

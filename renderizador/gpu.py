@@ -69,6 +69,10 @@ class GPU:
         GPU.draw_framebuffer = 0
         GPU.read_framebuffer = 0
 
+        # Cor e profundidade padrão para apagar o FrameBuffer
+        GPU.clear_color_buffer = [0, 0, 0]
+        GPU.clear_depth_buffer = 1.0
+
     @staticmethod
     def gen_framebuffers(size):
         """Gera posições para FrameBuffers."""
@@ -108,6 +112,26 @@ class GPU:
 
         # Aloca espaço definindo todos os valores como 0 (imagem preta)
         GPU.frame_buffer[framebuffer_pos] = np.zeros((height, width, depth), dtype=dtype)
+
+    @staticmethod
+    def clear_color(color):
+        """Definindo cor para apagar o FrameBuffer."""
+        GPU.clear_color_buffer = color
+
+    @staticmethod
+    def clear_depth(depth):
+        """Definindo profundidade para apagar o FrameBuffer."""
+        GPU.clear_depth_buffer = depth
+
+    @staticmethod
+    def clear_buffer(buffers):
+        """Usa o mesmo valor em todo o FrameBuffer, na prática apagando ele."""
+        for buffer in buffers:
+            print(GPU.frame_buffer[buffer].dtype)
+            if GPU.frame_buffer[buffer].dtype == "uint8":  # Assumindo que é um color buffer
+                GPU.frame_buffer[buffer][:] = GPU.clear_color_buffer
+            else:  # Assumindo que é um depth buffer (z-buffer)
+                GPU.frame_buffer[buffer][:] = GPU.clear_depth_buffer
 
     # Obsoleto, parar de usar no futuro
     @staticmethod
@@ -151,3 +175,7 @@ class GPU:
     def get_frame_buffer():
         """Retorna o Framebuffer atual para leitura."""
         return GPU.frame_buffer[GPU.read_framebuffer]
+
+    @staticmethod
+    def swap_buffers():
+        """Método para a troca dos buffers (NÃO IMPLEMENTADA)."""
