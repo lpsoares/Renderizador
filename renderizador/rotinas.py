@@ -10,6 +10,7 @@ Data:
 """
 
 import gpu          # Simula os recursos de uma GPU
+from typing import Tuple
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polypoint2D
 def polypoint2D(point, colors):
@@ -23,11 +24,47 @@ def polypoint2D(point, colors):
     # você pode assumir o desenho dos pontos com a cor emissiva (emissiveColor).
 
     # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-    print("Polypoint2D : pontos = {0}".format(point)) # imprime no terminal pontos
-    print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
+    # print("Polypoint2D : pontos = {0}".format(point)) # imprime no terminal pontos
+    # print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
     # Exemplo:
-    gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
     # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
+    color_r = int(colors["emissiveColor"][0] * 255)
+    color_g = int(colors["emissiveColor"][1] * 255)
+    color_b = int(colors["emissiveColor"][2] * 255)
+
+    for i in range(0, len(point) - 1, 2):
+        x, y = int(point[i]), int(point[i + 1])
+        gpu.GPU.set_pixel(x, y, color_r, color_g, color_b)
+
+# Implementation of the Bresenham Line Drawing Algorithm.
+# See: https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+def bresenham_line(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]):
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    x, y = x1, y1
+    sx = -1 if x1 > x2 else 1
+    sy = -1 if y1 > y2 else 1
+    if dx > dy:
+        err = dx / 2.0
+        while x != x2:
+            gpu.GPU.set_pixel(x, y, color[0], color[1], color[2])
+            err -= dy
+            if err < 0:
+                y += sy
+                err += dx
+            x += sx
+    else:
+        err = dy / 2.0
+        while y != y2:
+            gpu.GPU.set_pixel(x, y, color[0], color[1], color[2])
+            err -= dx
+            if err < 0:
+                x += sx
+                err += dy
+            y += sy
+    gpu.GPU.set_pixel(x, y, color[0], color[1], color[2])
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#Polyline2D
 def polyline2D(lineSegments, colors):
@@ -42,12 +79,24 @@ def polyline2D(lineSegments, colors):
     # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
     # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
-    print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
-    print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
+    # print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
+    # print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
     # Exemplo:
-    pos_x = gpu.GPU.width//2
-    pos_y = gpu.GPU.height//2
-    gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # pos_x = gpu.GPU.width//2
+    # pos_y = gpu.GPU.height//2
+    # gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+    color_r = int(colors["emissiveColor"][0] * 255)
+    color_g = int(colors["emissiveColor"][1] * 255)
+    color_b = int(colors["emissiveColor"][2] * 255)
+    color = (color_r, color_g, color_b)
+
+    for i in range(0, len(lineSegments) - 1, 4):
+        x1, y1 = int(lineSegments[i]), int(lineSegments[i + 1])
+        # gpu.GPU.set_pixel(x1, y1, color[0], color[1], color[2])
+        x2, y2 = int(lineSegments[i + 2]), int(lineSegments[i + 3])
+        # gpu.GPU.set_pixel(x2, y2, color[0], color[1], color[2])
+        bresenham_line(x1, y1, x2, y2, color)
 
 # web3d.org/documents/specifications/19775-1/V3.0/Part01/components/geometry2D.html#TriangleSet2D
 def triangleSet2D(vertices, colors):
@@ -59,10 +108,40 @@ def triangleSet2D(vertices, colors):
     # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
     # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
     # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-    print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
-    print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
+    # print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
+    # print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
     # Exemplo:
-    gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+    # gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem (u, v, r, g, b)
+
+    color_r = int(colors["emissiveColor"][0] * 255)
+    color_g = int(colors["emissiveColor"][1] * 255)
+    color_b = int(colors["emissiveColor"][2] * 255)
+    color = (color_r, color_g, color_b)
+
+    for i in range(0, len(vertices) - 1, 6):
+        x0, y0 = float(vertices[i]), float(vertices[i + 1])
+        # gpu.GPU.set_pixel(x0, y0, color[0], color[1], color[2])
+        x1, y1 = float(vertices[i + 2]), float(vertices[i + 3])
+        # gpu.GPU.set_pixel(x1, y1, color[0], color[1], color[2])
+        x2, y2 = float(vertices[i + 4]), float(vertices[i + 5])
+        # gpu.GPU.set_pixel(x2, y2, color[0], color[1], color[2])
+
+        # Calcula se o ponto (x, y) está acima, abaixo, ou na linha descrita por P0 -> P1.
+        L0 = lambda x, y: (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0)
+
+        # Calcula se o ponto (x, y) está acima, abaixo, ou na linha descrita por P1 -> P2.
+        L1 = lambda x, y: (x - x1) * (y2 - y1) - (y - y1) * (x2 - x1)
+
+        # Calcula se o ponto (x, y) está acima, abaixo, ou na linha descrita por P2 -> P0.
+        L2 = lambda x, y: (x - x2) * (y0 - y2) - (y - y2) * (x0 - x2)
+
+        # Determina se o ponto está dentro do triângulo ou não.
+        inside = lambda x, y: L0(x, y) > 0 and L1(x, y) > 0 and L2(x, y) > 0
+
+        for si in range(gpu.GPU.width):
+            for sj in range(gpu.GPU.height):
+                if inside(si + 0.5, sj + 0.5):
+                    gpu.GPU.set_pixel(si, sj, color[0], color[1], color[2])
 
 def triangleSet(point, colors):
     """Função usada para renderizar TriangleSet."""
