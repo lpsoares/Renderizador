@@ -484,7 +484,7 @@ class IndexedTriangleStripSet(X3DComposedGeometryNode):
         if self.coord and self.coord.point and self.index:
             X3D.renderer["IndexedTriangleStripSet"](point=self.coord.point,
                                                     index=self.index,
-                                                    colosr=colors)
+                                                    colors=colors)
 
 
 # Navigation component
@@ -538,7 +538,7 @@ class Box(X3DGeometryNode):
         """Rotina de renderização."""
         colors = get_colors(appearance)
         if self.size:
-            X3D.renderer["Box"](size=self.size, colosr=colors)
+            X3D.renderer["Box"](size=self.size, colors=colors)
 
 class IndexedFaceSet(X3DComposedGeometryNode):
     """Classe responsável por geometria Indexed Face Set, que é uma malha de polígonos."""

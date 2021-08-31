@@ -15,12 +15,19 @@ import subprocess
 DIR_EXP = "docs/exemplos/"
 
 EXEMPLOS = []
+
+# Exemplos 2D
 EXEMPLOS.append(["pontos", "-i", DIR_EXP+"2D/pontos/pontos.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["linhas", "-i", DIR_EXP+"2D/linhas/linhas.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["octogono", "-i", DIR_EXP+"2D/linhas/octogono.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["var_lin", "-i", DIR_EXP+"2D/linhas/varias_linhas.x3d", "-w", "600", "-h", "400"])
 EXEMPLOS.append(["tri_2D", "-i", DIR_EXP+"2D/triangulos/triangulos.x3d", "-w", "30", "-h", "20"])
 EXEMPLOS.append(["helice", "-i", DIR_EXP+"2D/triangulos/helice.x3d", "-w", "30", "-h", "20"])
+
+# Exemplos 3D
+EXEMPLOS.append(["tri_3D", "-i", DIR_EXP+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["tira_tri", "-i", DIR_EXP+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["box", "-i", DIR_EXP+"3D/box/box.x3d", "-w", "300", "-h", "200"])
 
 # Lista os exemplos registrados
 for i, titulo in enumerate(EXEMPLOS):
