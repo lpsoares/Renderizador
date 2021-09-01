@@ -12,19 +12,7 @@ Data:
 import gpu          # Simula os recursos de uma GPU
 
 class GL:
-    """
-    Classe que representa a biblioteca gráfica (Graphics Library).
-
-    ...
-
-    Atributos
-    ----------
-
-
-    Métodos
-    -------
-
-    """
+    """Classe que representa a biblioteca gráfica (Graphics Library)."""
 
     @staticmethod
     def triangleSet(point, colors):
@@ -43,6 +31,9 @@ class GL:
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
         print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
+
+        # Exemplo de desenho de um pixel branco na coordenada 10, 10
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -107,6 +98,9 @@ class GL:
         print("")
         print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
 
+        # Exemplo de desenho de um pixel branco na coordenada 10, 10
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
         """Função usada para renderizar IndexedTriangleStripSet."""
@@ -125,6 +119,9 @@ class GL:
         print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
         print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
 
+        # Exemplo de desenho de um pixel branco na coordenada 10, 10
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+
     @staticmethod
     def box(size, colors):
         """Função usada para renderizar Boxes."""
@@ -138,6 +135,9 @@ class GL:
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Box : size = {0}".format(size)) # imprime no terminal pontos
         print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
+
+        # Exemplo de desenho de um pixel branco na coordenada 10, 10
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
@@ -173,4 +173,7 @@ class GL:
         if current_texture:
             image = gpu.GPU.load_texture(current_texture[0])
             print("\t Matriz com image = {0}".format(image))
-        print("IndexedFaceSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+
+        # Exemplo de desenho de um pixel branco na coordenada 10, 10
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel

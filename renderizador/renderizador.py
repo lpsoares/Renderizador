@@ -36,25 +36,37 @@ class Renderizador:
         self.x3d_file = ""
         self.image_file = "tela.png"
         self.scene = None
-        self.fbo = None
+        self.framebuffers = {}
 
     def setup(self):
         """Configura o sistema para a renderização."""
         # Configurando color buffers para exibição na tela
 
         # Cria uma (1) posição de FrameBuffer na GPU
-        self.fbo = gpu.GPU.gen_framebuffers(1)
+        fbo = gpu.GPU.gen_framebuffers(1)
+
+        # Define o atributo FRONT como o FrameBuffe principal
+        self.framebuffers["FRONT"] = fbo[0]
 
         # Define que a posição criada será usada para desenho e leitura
-        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.fbo[0])
+        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
+        # Opções:
+        # - DRAW_FRAMEBUFFER: Faz o bind só para escrever no framebuffer
+        # - READ_FRAMEBUFFER: Faz o bind só para leitura no framebuffer
+        # - FRAMEBUFFER: Faz o bind para leitura e escrita no framebuffer
 
-        # Define o tipo e tamanho do buffer
+        # Aloca memória no FrameBuffer para um tipo e tamanho especificado de buffer
         gpu.GPU.framebuffer_storage(
-            self.fbo[0],
+            self.framebuffers["FRONT"],
+            gpu.GPU.COLOR_ATTACHMENT,
             gpu.GPU.RGB8,
             self.width,
             self.height
         )
+        # Opções:
+        # - COLOR_ATTACHMENT: alocações para as cores da imagem renderizada
+        # - DEPTH_ATTACHMENT: alocações para as profundidades da imagem renderizada
+        # Obs: Você pode chamar duas vezes a rotina com cada tipo de buffer.
 
         # Define cor que ira apagar o FrameBuffer quando clear_buffer() invocado
         gpu.GPU.clear_color([0, 0, 0])
@@ -69,12 +81,12 @@ class Renderizador:
         """Rotinas pré renderização."""
         # Função invocada antes do processo de renderização iniciar.
 
-        # Limpa a lista de buffers selecionados
-        gpu.GPU.clear_buffer(self.fbo)
+        # Limpa o frame buffers atual
+        gpu.GPU.clear_buffer()
 
         # Recursos que podem ser úteis:
-        # Define o valor do pixel no framebuffer: draw_pixels(coord_u, coord_v, data)
-        # Retorna o valor do pixel no framebuffer: read_pixels(coord_u, coord_v)
+        # Define o valor do pixel no framebuffer: draw_pixels(coord, mode, data)
+        # Retorna o valor do pixel no framebuffer: read_pixels(coord, mode)
 
     def pos(self):
         """Rotinas pós renderização."""
