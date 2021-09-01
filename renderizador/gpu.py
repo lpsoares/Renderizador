@@ -127,7 +127,6 @@ class GPU:
     def clear_buffer(buffers):
         """Usa o mesmo valor em todo o FrameBuffer, na prática apagando ele."""
         for buffer in buffers:
-            print(GPU.frame_buffer[buffer].dtype)
             if GPU.frame_buffer[buffer].dtype == "uint8":  # Assumindo que é um color buffer
                 GPU.frame_buffer[buffer][:] = GPU.clear_color_buffer
             else:  # Assumindo que é um depth buffer (z-buffer)

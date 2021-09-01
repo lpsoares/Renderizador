@@ -9,14 +9,18 @@ Disciplina: Computação Gráfica
 Data: 28 de Agosto de 2020
 """
 
-import time
-
+import time         # Para operações com tempo, como a duração de renderização
 import argparse     # Para tratar os parâmetros da linha de comando
-import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
+
+import gl           # Recupera rotinas de suporte ao X3D
+
 import interface    # Janela de visualização baseada no Matplotlib
 import gpu          # Simula os recursos de uma GPU
 
-import rotinas      # Recupera todas as rotinas de suporte ao X3D
+import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
+
+# Deprecated
+import rotinas      # Desatualizado possui rotinas antigas de suporte ao X3D (legado)
 
 LARGURA = 60  # Valor padrão para largura da tela
 ALTURA = 40   # Valor padrão para altura da tela
@@ -79,6 +83,22 @@ class Renderizador:
         # Método para a troca dos buffers (NÃO IMPLEMENTADO)
         gpu.GPU.swap_buffers()
 
+    def mapping(self):
+        """Mapeamento de funções para as rotinas de renderização."""
+        # Rotinas antigas ainda no arquivo rotinas.py
+        x3d.X3D.renderer["Polypoint2D"] = rotinas.polypoint2D
+        x3d.X3D.renderer["Polyline2D"] = rotinas.polyline2D
+        x3d.X3D.renderer["TriangleSet2D"] = rotinas.triangleSet2D
+        # Rotinas encapsuladas na classe GL (Graphics Library)
+        x3d.X3D.renderer["TriangleSet"] = gl.GL.triangleSet
+        x3d.X3D.renderer["Viewpoint"] = gl.GL.viewpoint
+        x3d.X3D.renderer["Transform_in"] = gl.GL.transform_in
+        x3d.X3D.renderer["Transform_out"] = gl.GL.transform_out
+        x3d.X3D.renderer["TriangleStripSet"] = gl.GL.triangleStripSet
+        x3d.X3D.renderer["IndexedTriangleStripSet"] = gl.GL.indexedTriangleStripSet
+        x3d.X3D.renderer["Box"] = gl.GL.box
+        x3d.X3D.renderer["IndexedFaceSet"] = gl.GL.indexedFaceSet
+
     def main(self):
         """Executa a renderização."""
         # Tratando entrada de parâmetro
@@ -105,17 +125,7 @@ class Renderizador:
         self.scene = x3d.X3D(self.x3d_file)
 
         # Funções que irão fazer o rendering
-        x3d.X3D.renderer["Polypoint2D"] = rotinas.polypoint2D
-        x3d.X3D.renderer["Polyline2D"] = rotinas.polyline2D
-        x3d.X3D.renderer["TriangleSet2D"] = rotinas.triangleSet2D
-        x3d.X3D.renderer["TriangleSet"] = rotinas.triangleSet
-        x3d.X3D.renderer["Viewpoint"] = rotinas.viewpoint
-        x3d.X3D.renderer["Transform_in"] = rotinas.transform_in
-        x3d.X3D.renderer["Transform_out"] = rotinas.transform_out
-        x3d.X3D.renderer["TriangleStripSet"] = rotinas.triangleStripSet
-        x3d.X3D.renderer["IndexedTriangleStripSet"] = rotinas.indexedTriangleStripSet
-        x3d.X3D.renderer["Box"] = rotinas.box
-        x3d.X3D.renderer["IndexedFaceSet"] = rotinas.indexedFaceSet
+        self.mapping()
 
         # Se no modo silencioso não configurar janela de visualização
         if not args.quiet:
