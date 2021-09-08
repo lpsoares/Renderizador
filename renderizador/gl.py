@@ -102,7 +102,10 @@ class GL:
         # do primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
         # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e assim
         # por diante. No TriangleStripSet a quantidade de vértices a serem usados é informado
-        # em uma lista chamada stripCount (perceba que é uma lista).
+        # em uma lista chamada stripCount (perceba que é uma lista). Ligue os vértices na ordem,
+        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
+        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
+        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("TriangleStripSet : pontos = {0} ".format(point), end='')
@@ -126,7 +129,8 @@ class GL:
         # como conectar os vértices é informada em index, o valor -1 indica que a lista
         # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
         # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante.
+        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
+        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
