@@ -145,17 +145,17 @@ class GPU:
     def draw_pixels(coord, mode, data):
         """Define o valor do pixel no framebuffer."""
         if mode in (GPU.RGB8, GPU.RGBA8):  # cores
-            GPU.frame_buffer[GPU.draw_framebuffer].color[coord[0]][coord[1]] = data
+            GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
         elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
-            GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[0]][coord[1]] = data
+            GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
 
     @staticmethod
     def read_pixels(coord, mode):
         """Retorna o valor do pixel no framebuffer."""
         if mode in (GPU.RGB8, GPU.RGBA8):  # cores
-            data = GPU.frame_buffer[GPU.read_framebuffer].color[coord[0]][coord[1]]
+            data = GPU.frame_buffer[GPU.read_framebuffer].color[coord[1]][coord[0]]
         elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
-            data = GPU.frame_buffer[GPU.read_framebuffer].depth[coord[0]][coord[1]]
+            data = GPU.frame_buffer[GPU.read_framebuffer].depth[coord[1]][coord[0]]
         return data
 
     @staticmethod
