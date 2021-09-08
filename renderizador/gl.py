@@ -14,6 +14,17 @@ import gpu          # Simula os recursos de uma GPU
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
 
+    aspect_ratio = 4/3  # razão de aspecto
+    near = 0.01         # plano de corte próximo
+    far = 1000          # plano de corte distante
+
+    @staticmethod
+    def setup(aspect_ratio=4/3, near=0.01, far=1000):
+        """Definr parametros para câmera de razão de aspecto, plano próximo e distante."""
+        GL.aspect_ratio = aspect_ratio
+        GL.near = near
+        GL.far = far
+
     @staticmethod
     def triangleSet(point, colors):
         """Função usada para renderizar TriangleSet."""

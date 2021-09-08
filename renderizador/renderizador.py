@@ -136,6 +136,13 @@ class Renderizador:
         # Abre arquivo X3D
         self.scene = x3d.X3D(self.x3d_file)
 
+        # Iniciando Biblioteca Gráfica
+        gl.GL.setup(
+            aspect_ratio=self.width/self.height,
+            near=0.01,
+            far=1000
+        )
+
         # Funções que irão fazer o rendering
         self.mapping()
 
