@@ -2,15 +2,13 @@
 <X3D>
   <Scene>
     <Viewpoint position='0 0 10' fieldOfView="0.7854"/>
-    <Transform rotation="1 0 0 0.3">
-      <Transform rotation="0 1 0 0.4">
-        <Shape>
-          <Box size='1 1 1'/>
-        <Appearance>
-          <Material diffuseColor='1 0 1'/>
-        </Appearance>
-        </Shape>
-      </Transform>
+    <Transform rotation="0.7 0.7 0 0.35">
+      <Shape>
+        <Box size='1 1 1'/>
+      <Appearance>
+        <Material diffuseColor='1 0 1'/>
+      </Appearance>
+      </Shape>
     </Transform>
   </Scene>
 </X3D>
