@@ -510,7 +510,8 @@ class Viewpoint(X3DViewpointNode):
 
         if 'fieldOfView' in node.attrib:
             self.fieldOfView = float(node.attrib['fieldOfView'].strip())
-
+            if (self.fieldOfView < 0) or (self.fieldOfView > math.pi):
+                self.fieldOfView = math.pi/4
 
     def render(self):
         """Rotina de renderização."""
