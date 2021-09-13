@@ -194,3 +194,11 @@ class GL:
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+
+
+    # Para o futuro (Não para versão atual do projeto.)
+    def vertex_shader(self, shader):
+        """Para no futuro implementar um vertex shader."""
+
+    def fragment_shader(self, shader):
+        """Para no futuro implementar um fragment shader."""
