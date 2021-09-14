@@ -24,7 +24,7 @@
         </Transform>
         <Transform>
             <Shape>
-                <Polyline2D lineSegments='18.2 19.3 14.0 13.2'/>
+                <Polyline2D lineSegments='17.2 18.3 13.0 12.2'/>
                 <Appearance>
                     <Material emissiveColor='0 0 1'/>
                 </Appearance>
@@ -35,6 +35,22 @@
                 <Polyline2D lineSegments='27.2 4.1 14.5 7.6'/>
                 <Appearance>
                     <Material emissiveColor='1 1 0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='23.5 9.5 23.5 17.5'/>
+                <Appearance>
+                    <Material emissiveColor='1 1 1'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='19.5 13.5 27.5 13.5'/>
+                <Appearance>
+                    <Material emissiveColor='1 1 1'/>
                 </Appearance>
             </Shape>
         </Transform>

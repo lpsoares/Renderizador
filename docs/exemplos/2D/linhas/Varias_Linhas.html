@@ -4,14 +4,18 @@
     <link rel="stylesheet" type="text/css" href="https://code.create3000.de/x_ite/latest/dist/x_ite.css"/>
     <script type="text/javascript" src="https://code.create3000.de/x_ite/latest/dist/x_ite.min.js"></script>
     <style type="text/css">
-      X3DCanvas {
-        width: 768px;
-        height: 432px;
-      }
+    X3DCanvas {
+      width: 600px;
+      height: 400px;
+      zoom: 100%;
+      -ms-interpolation-mode: nearest-neighbor;
+      image-rendering: pixelated;
+      transform: scaleY(-1);
+    }
     </style>
   </head>
   <body>
-    <X3DCanvas src="letras.x3d">
+    <X3DCanvas src="varias_linhas.x3d">
       <p>Your browser may not support all features required by X_ITE.
          For a better experience, keep your browser up to date.
          <a href="http://outdatedbrowser.com">Check here for latest versions.</a></p>

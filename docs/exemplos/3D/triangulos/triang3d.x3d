@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position="-5 3 12" fieldOfView="0.7854"/> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/navigation.html -->
+    <Transform translation="2.3 0.8 0" scale="2 1.5 1.0" rotation="1 0 0 0.3"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='-5 1 3 -3 2 1 -5 4 0'/>
+        </TriangleSet>
+        <Appearance>
+          <Material diffuseColor='1 0 0'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+    <Transform translation="3 1 0" scale="1.6 1.4 1.0" rotation="0 1 0 0.4">
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='-4 1 3 -2 2 1 -3 2 0    -4 2 3 -2 4 1 -3 3 0    -5 0 3 -3 1 1 -3 1 0'/>
+        </TriangleSet>
+        <Appearance>
+          <Material diffuseColor='0 0 1'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+  </Scene>
+</X3D>
