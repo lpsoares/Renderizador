@@ -70,7 +70,7 @@ def world_view_lookat_simple(translation, rotation):
     translation_matrix_inv = np.linalg.inv(translation_matrix)
     rotation_matrix_inv = np.linalg.inv(rotation_matrix)
 
-    return translation_matrix_inv.dot(rotation_matrix_inv)
+    return rotation_matrix_inv.dot(translation_matrix_inv)
 
 def view_point(fovx, near, far, width, height):
     fovy = 2 * math.atan(math.tan(fovx / 2) * height / math.sqrt(height ** 2 + width ** 2))
@@ -139,6 +139,7 @@ class Rasterizer:
     width = None
     height = None
     gpu_instance = None
+    frame_buffer = []
 
     class AABB:
         min_x = None
@@ -153,55 +154,57 @@ class Rasterizer:
             self.max_y = max_y
 
     @staticmethod
-    def setup(gpu_instance):
+    def setup(gpu_instance, width, height):
         Rasterizer.gpu_instance = gpu_instance
+        Rasterizer.width = width
+        Rasterizer.height = height
+        Rasterizer.frame_buffer = [[0, 0, 0, 0]] * (4 * width * height)
     
     @staticmethod
-    def raster(triangle, colors):
+    def raster(triangles, colors):
 
-        line1 = (triangle[2][0] - triangle[0][0], triangle[2][1] - triangle[0][1])
-        line2 = (triangle[1][0] - triangle[2][0], triangle[1][1] - triangle[2][1])
-        line3 = (triangle[0][0] - triangle[1][0], triangle[0][1] - triangle[1][1])
+        for triangle in triangles:
+            line1 = (triangle[2][0] - triangle[0][0], triangle[2][1] - triangle[0][1])
+            line2 = (triangle[1][0] - triangle[2][0], triangle[1][1] - triangle[2][1])
+            line3 = (triangle[0][0] - triangle[1][0], triangle[0][1] - triangle[1][1])
 
-        normals = [(line1[1], - line1[0]), (line2[1], - line2[0]), (line3[1], - line3[0])]
-        triangle_AABB = Rasterizer.AABB(int(triangle[0][0, 0]), int(triangle[0][1, 0]), math.ceil(triangle[0][0, 0]), math.ceil(triangle[0][1, 0]))
+            normals = [(line1[1], - line1[0]), (line2[1], - line2[0]), (line3[1], - line3[0])]
+            triangle_AABB = Rasterizer.AABB(int(triangle[0][0, 0]), int(triangle[0][1, 0]), math.ceil(triangle[0][0, 0]), math.ceil(triangle[0][1, 0]))
 
-        for p in range(1, len(triangle)):
-            if triangle[p][0] > triangle_AABB.max_x: triangle_AABB.max_x = math.ceil(triangle[p][0, 0])
-            if triangle[p][0] < triangle_AABB.min_x: triangle_AABB.min_x = int(triangle[p][0, 0])
-            if triangle[p][1] > triangle_AABB.max_y: triangle_AABB.max_y = math.ceil(triangle[p][1, 0])
-            if triangle[p][1] < triangle_AABB.min_y: triangle_AABB.min_y = int(triangle[p][1, 0])
+            for p in range(1, len(triangle)):
+                if triangle[p][0] > triangle_AABB.max_x: triangle_AABB.max_x = math.ceil(triangle[p][0, 0])
+                if triangle[p][0] < triangle_AABB.min_x: triangle_AABB.min_x = int(triangle[p][0, 0])
+                if triangle[p][1] > triangle_AABB.max_y: triangle_AABB.max_y = math.ceil(triangle[p][1, 0])
+                if triangle[p][1] < triangle_AABB.min_y: triangle_AABB.min_y = int(triangle[p][1, 0])
 
-        Rasterizer.sample2x2(triangle, normals, colors, triangle_AABB)
+            Rasterizer.render(triangle, normals, colors, triangle_AABB)
+        
+        Rasterizer.sample2x2()
     
     @staticmethod
-    def sample2x2(triangle, normals, colors, triangle_AABB):
+    def render(triangle, normals, colors, triangle_AABB):
 
         P1 = [0, 0]
         P2 = [0, 0]
         P3 = [0, 0]
-
-        sample_p = lambda point, x, y : (point[0] + x, point[1] + y)
+        height = Rasterizer.height
+        frame_buffer = Rasterizer.frame_buffer
 
         for x in range(triangle_AABB.min_x, triangle_AABB.max_x):
-            P1[0] = x - triangle[0][0]
-            P2[0] = x - triangle[2][0]
-            P3[0] = x - triangle[1][0]
+            P1[0] = x - triangle[0][0] + 1/2
+            P2[0] = x - triangle[2][0] + 1/2
+            P3[0] = x - triangle[1][0] + 1/2
 
             for y in range(triangle_AABB.min_y, triangle_AABB.max_y):
-                P1[1] = y - triangle[0][1]
-                P2[1] = y - triangle[2][1]
-                P3[1] = y - triangle[1][1]
+                P1[1] = y - triangle[0][1] + 1/2
+                P2[1] = y - triangle[2][1] + 1/2
+                P3[1] = y - triangle[1][1] + 1/2
 
-                sampling  = 0
-                sampling  = Rasterizer.is_inside([sample_p(P1, 1/4, 1/4), sample_p(P2, 1/4, 1/4), sample_p(P3, 1/4, 1/4)], normals) * 1/4
-                sampling += Rasterizer.is_inside([sample_p(P1, 1/4, 3/4), sample_p(P2, 1/4, 3/4), sample_p(P3, 1/4, 3/4)], normals) * 1/4 
-                sampling += Rasterizer.is_inside([sample_p(P1, 3/4, 1/4), sample_p(P2, 3/4, 1/4), sample_p(P3, 3/4, 1/4)], normals) * 1/4
-                sampling += Rasterizer.is_inside([sample_p(P1, 3/4, 3/4), sample_p(P2, 3/4, 3/4), sample_p(P3, 3/4, 3/4)], normals) * 1/4
+                if Rasterizer.is_inside([P1, P2, P3], normals):
+                    tri_color = [colors[0] * 255, colors[1] * 255, colors[2] * 255, 1]
+                    frame_buffer[x * height + y] = tri_color
 
-                if sampling > 0:
-                    tri_color = [colors[0] * 255 * sampling, colors[1] * 255 * sampling, colors[2] * 255 * sampling]
-                    Rasterizer.gpu_instance.draw_pixels([x, y], Rasterizer.gpu_instance.RGB8, tri_color)
+        Rasterizer.frame_buffer = frame_buffer
     
     @staticmethod
     def is_inside(points, normals):
@@ -209,3 +212,13 @@ class Rasterizer:
             if points[i][0] * normals[i][0] + points[i][1] * normals[i][1] > 0: return 0
         
         return 1
+    
+    @staticmethod
+    def sample2x2():
+        height = Rasterizer.height
+        frame_buffer = Rasterizer.frame_buffer
+
+        for x in range(Rasterizer.width):
+            for y in range(Rasterizer.height):
+                if (frame_buffer[x * height + y][3] > 0):
+                    Rasterizer.gpu_instance.draw_pixels([x, y], Rasterizer.gpu_instance.RGB8, frame_buffer[x * height + y][:3])

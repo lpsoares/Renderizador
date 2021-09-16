@@ -106,11 +106,13 @@ class GL:
         # print("--- %s seconds ---" % (time.time() - start_time))
 
         ## Raster
-        utils.Rasterizer.setup(gpu.GPU)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
+        triangles = []
 
         for p in range(0, len(screen_points) - 2, 3):
-            triangle = [screen_points[p][0:2, 0:1], screen_points[p + 1][0:2, 0:1], screen_points[p + 2][0:2, 0:1]]
-            utils.Rasterizer.raster(triangle, colors["diffuseColor"])
+            triangles += [[screen_points[p][0:2, 0:1], screen_points[p + 1][0:2, 0:1], screen_points[p + 2][0:2, 0:1]]]
+        
+        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
@@ -139,12 +141,14 @@ class GL:
         
         ## Raster
         # ?? stripCount
-        utils.Rasterizer.setup(gpu.GPU)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
+        triangles = []
 
         for i in range(stripCount[0] - 2):
-            triangle = [screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]
-            if i % 2 == 0: triangle = [screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]
-            utils.Rasterizer.raster(triangle, colors["diffuseColor"])
+            triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
+            if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
+        
+        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -170,12 +174,14 @@ class GL:
         screen_points = utils.transform_points(point, GL)
         
         ## Raster
-        utils.Rasterizer.setup(gpu.GPU)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
+        triangles = []
 
         for i in range(len(index) - 3):
-            triangle = [screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]
-            if i % 2 == 0: triangle = [screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]
-            utils.Rasterizer.raster(triangle, colors["diffuseColor"])
+            triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
+            if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
+        
+        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
@@ -234,7 +240,7 @@ class GL:
         y = size[1]
         z = size[2]
         
-        ## !! Cube Order
+        ## !! Cube Order, counter clock-wise
         # front, left, back, right, up, down
         square_p1 = (-x, -y, z)
         square_p2 = (x, -y, z)
@@ -246,23 +252,23 @@ class GL:
         square_p8 = (x, -y, -z)
 
         point = [
-                square_p3, square_p2, square_p1,
-                square_p3, square_p1, square_p4,
+                square_p1, square_p2, square_p3,
+                square_p3, square_p4, square_p1,
 
-                square_p4, square_p1, square_p7,
-                square_p5, square_p4, square_p7,
+                square_p7, square_p1, square_p4,
+                square_p4, square_p5, square_p7,
                 
-                square_p5, square_p7, square_p8,
-                square_p8, square_p6, square_p5,
+                square_p8, square_p7, square_p5,
+                square_p5, square_p6, square_p8,
                 
-                square_p6, square_p8, square_p2,
-                square_p2, square_p3, square_p6,
+                square_p8, square_p6, square_p2,
+                square_p2, square_p6, square_p3,
                 
-                square_p4, square_p5, square_p6,
-                square_p6, square_p3, square_p4,
+                square_p6, square_p5, square_p4,
+                square_p4, square_p3, square_p6,
                 
-                square_p1, square_p7, square_p8,
-                square_p8, square_p2, square_p1
+                square_p8, square_p7, square_p1,
+                square_p1, square_p2, square_p8
         ]
 
         point = list(sum(point, ()))
