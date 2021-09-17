@@ -223,8 +223,8 @@ class Rasterizer:
                     for j in range(sampling):
                         offset = i * sampled_size_y + j + y_offset
                         if offset == len(frame_buffer): break 
-                        pixel[i + j] = frame_buffer[offset]
-
+                        pixel[i * sampling + j] = frame_buffer[offset]
+                
                 sum_pixel = np.sum([pixel], axis=1)
                 r_mean = sum_pixel[0, 0] / sampling_square
                 g_mean = sum_pixel[0, 1] / sampling_square
