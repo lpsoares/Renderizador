@@ -11,7 +11,6 @@ Data: 13 de setembro de 2021
 
 import gpu          # Simula os recursos de uma GPU
 import utils
-import time
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -36,7 +35,7 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        GL.point_to_screen = utils.point_screen(width, height)
+        GL.point_to_screen = utils.point_screen(2 * width, 2 * height)
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -46,14 +45,8 @@ class GL:
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
         print("Viewpoint")
-        # print(orientation)
-        # print(position)
-
-        GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, GL.width, GL.height)
+        GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, 2 * GL.width, 2 * GL.height)
         GL.world_to_view = utils.world_view_lookat_simple(position, orientation)
-        # GL.eye = position
-        # GL.orientation = [0, 1, 0]
-        # GL.world_to_view = utils.world_view_lookat([position[0], position[1], position[2] + 1], position, GL.orientation)
 
     @staticmethod
     def transform_in(translation, scale, rotation):
@@ -66,9 +59,7 @@ class GL:
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
         # modelos do mundo em alguma estrutura de pilha.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Transform")
-        
         GL.model_to_world += [utils.model_world(translation, rotation, scale)]
         GL.mvp = utils.mvp(GL)
 
@@ -102,9 +93,6 @@ class GL:
         ## Transformations
         screen_points = utils.transform_points(point, GL)
         
-        # start_time = time.time()
-        # print("--- %s seconds ---" % (time.time() - start_time))
-
         ## Raster
         utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
         triangles = []
@@ -128,19 +116,12 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("TriangleStripSet")
-        # print(stripCount)
-        # for i, strip in enumerate(stripCount):
-        #     print("strip[{0}] = {1} ".format(i, strip), end='')
-        # print("")
-        # print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
 
         ## Transformations
         screen_points = utils.transform_points(point, GL)
         
         ## Raster
-        # ?? stripCount
         utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
         triangles = []
 
@@ -167,9 +148,6 @@ class GL:
 
         print("IndexedTriangleStripSet")
 
-        # print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
-        # print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
-
         ## Transformations
         screen_points = utils.transform_points(point, GL)
         
@@ -184,45 +162,6 @@ class GL:
         utils.Rasterizer.raster(triangles, colors["diffuseColor"])
 
     @staticmethod
-    def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
-                       texCoord, texCoordIndex, colors, current_texture):
-        """Função usada para renderizar IndexedFaceSet."""
-        # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
-        # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
-        # Você receberá as coordenadas dos pontos no parâmetro cord, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
-        # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
-        # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedFaceSet uma lista informando
-        # como conectar os vértices é informada em coordIndex, o valor -1 indica que a lista
-        # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante.
-        # Adicionalmente essa implementação do IndexedFace suport cores por vértices, assim
-        # a se a flag colorPerVertex estiver habilidades, os vértices também possuirão cores
-        # que servem para definir a cor interna dos poligonos, para isso faça um cálculo
-        # baricêntrico de que cor deverá ter aquela posição. Da mesma forma se pode definir uma
-        # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
-        # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
-        # implementadado um método para a leitura de imagens.
-
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedFaceSet : ")
-        if coord:
-            print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        if colorPerVertex:
-            print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        if texCoord:
-            print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
-        if current_texture:
-            image = gpu.GPU.load_texture(current_texture[0])
-            print("\t Matriz com image = {0}".format(image))
-        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
-
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-
-    @staticmethod
     def box(size, colors):
         """Função usada para renderizar Boxes."""
         # A função box é usada para desenhar paralelepípedos na cena. O Box é centrada no
@@ -233,8 +172,6 @@ class GL:
         # encontre os vértices e defina os triângulos.
 
         print("Box")
-        # print("Box : size = {0}".format(size)) # imprime no terminal pontos
-        # print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
 
         x = size[0]
         y = size[1]
@@ -278,3 +215,42 @@ class GL:
         
         ## Raster
         GL.triangleSet(point, colors)
+
+    @staticmethod
+    def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
+                       texCoord, texCoordIndex, colors, current_texture):
+        """Função usada para renderizar IndexedFaceSet."""
+        # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
+        # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
+        # Você receberá as coordenadas dos pontos no parâmetro cord, esses
+        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
+        # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
+        # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
+        # segundo ponto e assim por diante. No IndexedFaceSet uma lista informando
+        # como conectar os vértices é informada em coordIndex, o valor -1 indica que a lista
+        # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
+        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
+        # depois 2, 3 e 4, e assim por diante.
+        # Adicionalmente essa implementação do IndexedFace suport cores por vértices, assim
+        # a se a flag colorPerVertex estiver habilidades, os vértices também possuirão cores
+        # que servem para definir a cor interna dos poligonos, para isso faça um cálculo
+        # baricêntrico de que cor deverá ter aquela posição. Da mesma forma se pode definir uma
+        # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
+        # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
+        # implementadado um método para a leitura de imagens.
+
+        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("IndexedFaceSet : ")
+        if coord:
+            print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
+        if colorPerVertex:
+            print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
+        if texCoord:
+            print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
+        if current_texture:
+            image = gpu.GPU.load_texture(current_texture[0])
+            print("\t Matriz com image = {0}".format(image))
+        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+
+        # Exemplo de desenho de um pixel branco na coordenada 10, 10
+        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel

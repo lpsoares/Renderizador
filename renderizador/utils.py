@@ -1,22 +1,7 @@
+from xml.etree.ElementTree import register_namespace
 import numpy as np
 import math
 import time
-
-# look_at
-# [[ 1. 0. 0. 5.]
-# [ 0. 1. 0. -3.]
-# [ 0. 0. 1. -12.]
-# [ 0. 0. 0. 1.]]
-# persp
-# [[ 1.11505595 0. 0. 0. ]
-# [ 0. 1.67258392 0. 0. ]
-# [ 0. 0. -1.00002 -0.200002 ]
-# [ 0. 0. -1. 0. ]]
-# screen
-# [[ 300. 0. 0. 300.]
-# [ 0. -200. 0. 200.]
-# [ 0. 0. 1. 0.]
-# [ 0. 0. 0. 1.]]
 
 def model_world(translation, rotation, scale):
     scale_matrix = np.matrix([
@@ -111,13 +96,6 @@ def get_quaternion_rotation_matrix(rotation):
 
 def apply_point_transformations(point, gl):
     homogenous_p = np.matrix([[point[0]], [point[1]], [point[2]], [1]])
-
-    # world_point = gl.model_to_world[len(gl.model_to_world) - 1].dot(homogenous_p)
-    # view_point = gl.world_to_view.dot(world_point)
-    # clip_point = gl.view_to_point.dot(view_point)
-    # normalized_clip_point = np.divide(clip_point, clip_point[3][0])
-    # screen_point = gl.point_to_screen.dot(normalized_clip_point)
-
     clip_point = gl.mvp.dot(homogenous_p)
     normalized_clip_point = np.divide(clip_point, clip_point[3][0])
     screen_point = gl.point_to_screen.dot(normalized_clip_point)
@@ -158,12 +136,14 @@ class Rasterizer:
         Rasterizer.gpu_instance = gpu_instance
         Rasterizer.width = width
         Rasterizer.height = height
-        Rasterizer.frame_buffer = [[0, 0, 0, 0]] * (4 * width * height)
+        Rasterizer.frame_buffer = [[0, 0, 0]] * (4 * width * height)
     
     @staticmethod
     def raster(triangles, colors):
 
         for triangle in triangles:
+            start_time = time.time()
+
             line1 = (triangle[2][0] - triangle[0][0], triangle[2][1] - triangle[0][1])
             line2 = (triangle[1][0] - triangle[2][0], triangle[1][1] - triangle[2][1])
             line3 = (triangle[0][0] - triangle[1][0], triangle[0][1] - triangle[1][1])
@@ -178,6 +158,7 @@ class Rasterizer:
                 if triangle[p][1] < triangle_AABB.min_y: triangle_AABB.min_y = int(triangle[p][1, 0])
 
             Rasterizer.render(triangle, normals, colors, triangle_AABB)
+            print("--- Time to render triangle: %s seconds ---" % (time.time() - start_time))
         
         Rasterizer.sample2x2()
     
@@ -201,8 +182,9 @@ class Rasterizer:
                 P3[1] = y - triangle[1][1] + 1/2
 
                 if Rasterizer.is_inside([P1, P2, P3], normals):
-                    tri_color = [colors[0] * 255, colors[1] * 255, colors[2] * 255, 1]
-                    frame_buffer[x * height + y] = tri_color
+                    offset = x * height * 2 + y
+                    tri_color = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
+                    frame_buffer[offset] = tri_color
 
         Rasterizer.frame_buffer = frame_buffer
     
@@ -215,10 +197,24 @@ class Rasterizer:
     
     @staticmethod
     def sample2x2():
-        height = Rasterizer.height
         frame_buffer = Rasterizer.frame_buffer
+        sampled_size_x = Rasterizer.width * 2
+        sampled_size_y = Rasterizer.height * 2
+        size_y = Rasterizer.height
 
-        for x in range(Rasterizer.width):
-            for y in range(Rasterizer.height):
-                if (frame_buffer[x * height + y][3] > 0):
-                    Rasterizer.gpu_instance.draw_pixels([x, y], Rasterizer.gpu_instance.RGB8, frame_buffer[x * height + y][:3])
+        for x in range(0, sampled_size_x, 2):
+            for y in range(size_y):
+                y_offset = x * sampled_size_y + y * 2
+                x_offset = y_offset + sampled_size_y
+
+                pixel_1 = frame_buffer[y_offset]
+                pixel_2 = frame_buffer[y_offset + 1]
+                pixel_3 = frame_buffer[x_offset]
+                pixel_4 = frame_buffer[x_offset + 1]
+
+                r_mean = (pixel_1[0] + pixel_2[0] + pixel_3[0] + pixel_4[0]) / 4
+                g_mean = (pixel_1[1] + pixel_2[1] + pixel_3[1] + pixel_4[1]) / 4
+                b_mean = (pixel_1[2] + pixel_2[2] + pixel_3[2] + pixel_4[2]) / 4
+
+                if r_mean > 0 or g_mean > 0 or b_mean > 0:
+                    Rasterizer.gpu_instance.draw_pixels([int(x/2), y], Rasterizer.gpu_instance.RGB8, [r_mean, g_mean, b_mean])
