@@ -58,6 +58,9 @@ def world_view_lookat_simple(translation, rotation):
     return rotation_matrix_inv.dot(translation_matrix_inv)
 
 def view_point(fovx, near, far, width, height):
+    width = width * Rasterizer.sampling
+    height = height * Rasterizer.sampling
+
     fovy = 2 * math.atan(math.tan(fovx / 2) * height / math.sqrt(height ** 2 + width ** 2))
     top = near * math.tan(fovy)
     right = top * width / height
@@ -70,6 +73,9 @@ def view_point(fovx, near, far, width, height):
     ])
 
 def point_screen(width, height):
+    width = width * Rasterizer.sampling
+    height = height * Rasterizer.sampling
+
     return np.matrix([
         [width / 2, 0, 0, width / 2], 
         [0, - height / 2, 0, height / 2],
@@ -118,6 +124,7 @@ class Rasterizer:
     height = None
     gpu_instance = None
     frame_buffer = []
+    sampling = 1
 
     class AABB:
         min_x = None
@@ -132,11 +139,12 @@ class Rasterizer:
             self.max_y = max_y
 
     @staticmethod
-    def setup(gpu_instance, width, height):
+    def setup(gpu_instance, width, height, sampling):
         Rasterizer.gpu_instance = gpu_instance
         Rasterizer.width = width
         Rasterizer.height = height
-        Rasterizer.frame_buffer = [[0, 0, 0]] * (4 * width * height)
+        Rasterizer.sampling = sampling
+        Rasterizer.frame_buffer = [[0, 0, 0]] * ((sampling ** 2) * width * height)
     
     @staticmethod
     def raster(triangles, colors):
@@ -160,7 +168,7 @@ class Rasterizer:
             Rasterizer.render(triangle, normals, colors, triangle_AABB)
             print("--- Time to render triangle: %s seconds ---" % (time.time() - start_time))
         
-        Rasterizer.sample2x2()
+        Rasterizer.sample()
     
     @staticmethod
     def render(triangle, normals, colors, triangle_AABB):
@@ -170,6 +178,7 @@ class Rasterizer:
         P3 = [0, 0]
         height = Rasterizer.height
         frame_buffer = Rasterizer.frame_buffer
+        sampling = Rasterizer.sampling
 
         for x in range(triangle_AABB.min_x, triangle_AABB.max_x):
             P1[0] = x - triangle[0][0] + 1/2
@@ -182,7 +191,7 @@ class Rasterizer:
                 P3[1] = y - triangle[1][1] + 1/2
 
                 if Rasterizer.is_inside([P1, P2, P3], normals):
-                    offset = x * height * 2 + y
+                    offset = x * height * sampling + y
                     tri_color = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
                     frame_buffer[offset] = tri_color
 
@@ -196,25 +205,30 @@ class Rasterizer:
         return 1
     
     @staticmethod
-    def sample2x2():
+    def sample():
+        sampling = Rasterizer.sampling
         frame_buffer = Rasterizer.frame_buffer
-        sampled_size_x = Rasterizer.width * 2
-        sampled_size_y = Rasterizer.height * 2
+        sampled_size_x = Rasterizer.width * sampling
+        sampled_size_y = Rasterizer.height * sampling
         size_y = Rasterizer.height
+        
+        sampling_square = sampling ** 2
+        pixel = [[0, 0, 0]] * sampling_square
 
-        for x in range(0, sampled_size_x, 2):
+        for x in range(0, sampled_size_x, sampling):
             for y in range(size_y):
-                y_offset = x * sampled_size_y + y * 2
-                x_offset = y_offset + sampled_size_y
+                y_offset = x * sampled_size_y + y * sampling
 
-                pixel_1 = frame_buffer[y_offset]
-                pixel_2 = frame_buffer[y_offset + 1]
-                pixel_3 = frame_buffer[x_offset]
-                pixel_4 = frame_buffer[x_offset + 1]
-
-                r_mean = (pixel_1[0] + pixel_2[0] + pixel_3[0] + pixel_4[0]) / 4
-                g_mean = (pixel_1[1] + pixel_2[1] + pixel_3[1] + pixel_4[1]) / 4
-                b_mean = (pixel_1[2] + pixel_2[2] + pixel_3[2] + pixel_4[2]) / 4
+                for i in range(sampling):
+                    for j in range(sampling):
+                        offset = i * sampled_size_y + j + y_offset
+                        if offset == len(frame_buffer): break 
+                        pixel[i * sampling + j] = frame_buffer[offset]
+                
+                sum_pixel = np.sum([pixel], axis=1)
+                r_mean = sum_pixel[0, 0] / sampling_square
+                g_mean = sum_pixel[0, 1] / sampling_square
+                b_mean = sum_pixel[0, 2] / sampling_square
 
                 if r_mean > 0 or g_mean > 0 or b_mean > 0:
-                    Rasterizer.gpu_instance.draw_pixels([int(x/2), y], Rasterizer.gpu_instance.RGB8, [r_mean, g_mean, b_mean])
+                    Rasterizer.gpu_instance.draw_pixels([int(x/sampling), y], Rasterizer.gpu_instance.RGB8, [r_mean, g_mean, b_mean])

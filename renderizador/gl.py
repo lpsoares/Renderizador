@@ -35,7 +35,8 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        GL.point_to_screen = utils.point_screen(2 * width, 2 * height)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, 2)
+        GL.point_to_screen = utils.point_screen(width, height)
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -45,7 +46,7 @@ class GL:
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
         print("Viewpoint")
-        GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, 2 * GL.width, 2 * GL.height)
+        GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, GL.width, GL.height)
         GL.world_to_view = utils.world_view_lookat_simple(position, orientation)
 
     @staticmethod
@@ -94,7 +95,6 @@ class GL:
         screen_points = utils.transform_points(point, GL)
         
         ## Raster
-        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
         triangles = []
 
         for p in range(0, len(screen_points) - 2, 3):
@@ -122,7 +122,6 @@ class GL:
         screen_points = utils.transform_points(point, GL)
         
         ## Raster
-        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
         triangles = []
 
         for i in range(stripCount[0] - 2):
@@ -152,7 +151,6 @@ class GL:
         screen_points = utils.transform_points(point, GL)
         
         ## Raster
-        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
         triangles = []
 
         for i in range(len(index) - 3):
@@ -209,9 +207,6 @@ class GL:
         ]
 
         point = list(sum(point, ()))
-
-        ## Transformations
-        screen_points = utils.transform_points(point, GL)
         
         ## Raster
         GL.triangleSet(point, colors)
