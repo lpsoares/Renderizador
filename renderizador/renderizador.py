@@ -129,6 +129,9 @@ class Renderizador:
             self.width = args.width
         if args.height:
             self.height = args.height
+        
+        # self.width = 10
+        # self.height = 5
 
         # Iniciando simulação de GPU
         gpu.GPU(self.image_file)

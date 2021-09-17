@@ -11,7 +11,6 @@ Data: 13 de setembro de 2021
 
 import gpu          # Simula os recursos de uma GPU
 import utils
-import time
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -36,7 +35,7 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        GL.point_to_screen = utils.point_screen(width, height)
+        GL.point_to_screen = utils.point_screen(2 * width, 2 * height)
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -46,14 +45,8 @@ class GL:
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
         print("Viewpoint")
-        # print(orientation)
-        # print(position)
-
-        GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, GL.width, GL.height)
+        GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, 2 * GL.width, 2 * GL.height)
         GL.world_to_view = utils.world_view_lookat_simple(position, orientation)
-        # GL.eye = position
-        # GL.orientation = [0, 1, 0]
-        # GL.world_to_view = utils.world_view_lookat([position[0], position[1], position[2] + 1], position, GL.orientation)
 
     @staticmethod
     def transform_in(translation, scale, rotation):
@@ -66,9 +59,7 @@ class GL:
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
         # modelos do mundo em alguma estrutura de pilha.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Transform")
-        
         GL.model_to_world += [utils.model_world(translation, rotation, scale)]
         GL.mvp = utils.mvp(GL)
 
@@ -102,15 +93,14 @@ class GL:
         ## Transformations
         screen_points = utils.transform_points(point, GL)
         
-        # start_time = time.time()
-        # print("--- %s seconds ---" % (time.time() - start_time))
-
         ## Raster
-        utils.Rasterizer.setup(gpu.GPU)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
+        triangles = []
 
         for p in range(0, len(screen_points) - 2, 3):
-            triangle = [screen_points[p][0:2, 0:1], screen_points[p + 1][0:2, 0:1], screen_points[p + 2][0:2, 0:1]]
-            utils.Rasterizer.raster(triangle, colors["diffuseColor"])
+            triangles += [[screen_points[p][0:2, 0:1], screen_points[p + 1][0:2, 0:1], screen_points[p + 2][0:2, 0:1]]]
+        
+        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
@@ -126,25 +116,20 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("TriangleStripSet")
-        # print(stripCount)
-        # for i, strip in enumerate(stripCount):
-        #     print("strip[{0}] = {1} ".format(i, strip), end='')
-        # print("")
-        # print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
 
         ## Transformations
         screen_points = utils.transform_points(point, GL)
         
         ## Raster
-        # ?? stripCount
-        utils.Rasterizer.setup(gpu.GPU)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
+        triangles = []
 
         for i in range(stripCount[0] - 2):
-            triangle = [screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]
-            if i % 2 == 0: triangle = [screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]
-            utils.Rasterizer.raster(triangle, colors["diffuseColor"])
+            triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
+            if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
+        
+        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -163,19 +148,73 @@ class GL:
 
         print("IndexedTriangleStripSet")
 
-        # print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
-        # print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
+        ## Transformations
+        screen_points = utils.transform_points(point, GL)
+        
+        ## Raster
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height)
+        triangles = []
+
+        for i in range(len(index) - 3):
+            triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
+            if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
+        
+        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
+
+    @staticmethod
+    def box(size, colors):
+        """Função usada para renderizar Boxes."""
+        # A função box é usada para desenhar paralelepípedos na cena. O Box é centrada no
+        # (0, 0, 0) no sistema de coordenadas local e alinhado com os eixos de coordenadas
+        # locais. O argumento size especifica as extensões da caixa ao longo dos eixos X, Y
+        # e Z, respectivamente, e cada valor do tamanho deve ser maior que zero. Para desenha
+        # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
+        # encontre os vértices e defina os triângulos.
+
+        print("Box")
+
+        x = size[0]
+        y = size[1]
+        z = size[2]
+        
+        ## !! Cube Order, counter clock-wise
+        # front, left, back, right, up, down
+        square_p1 = (-x, -y, z)
+        square_p2 = (x, -y, z)
+        square_p3 = (x, y, z)
+        square_p4 = (-x, y, z)
+        square_p5 = (-x, y, -z)
+        square_p6 = (x, y, -z)
+        square_p7 = (-x, -y, -z)
+        square_p8 = (x, -y, -z)
+
+        point = [
+                square_p1, square_p2, square_p3,
+                square_p3, square_p4, square_p1,
+
+                square_p7, square_p1, square_p4,
+                square_p4, square_p5, square_p7,
+                
+                square_p8, square_p7, square_p5,
+                square_p5, square_p6, square_p8,
+                
+                square_p8, square_p6, square_p2,
+                square_p2, square_p6, square_p3,
+                
+                square_p6, square_p5, square_p4,
+                square_p4, square_p3, square_p6,
+                
+                square_p8, square_p7, square_p1,
+                square_p1, square_p2, square_p8
+        ]
+
+        point = list(sum(point, ()))
 
         ## Transformations
         screen_points = utils.transform_points(point, GL)
         
         ## Raster
-        utils.Rasterizer.setup(gpu.GPU)
-
-        for i in range(len(index) - 3):
-            triangle = [screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]
-            if i % 2 == 0: triangle = [screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]
-            utils.Rasterizer.raster(triangle, colors["diffuseColor"])
+        GL.triangleSet(point, colors)
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
@@ -215,60 +254,3 @@ class GL:
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
-
-    @staticmethod
-    def box(size, colors):
-        """Função usada para renderizar Boxes."""
-        # A função box é usada para desenhar paralelepípedos na cena. O Box é centrada no
-        # (0, 0, 0) no sistema de coordenadas local e alinhado com os eixos de coordenadas
-        # locais. O argumento size especifica as extensões da caixa ao longo dos eixos X, Y
-        # e Z, respectivamente, e cada valor do tamanho deve ser maior que zero. Para desenha
-        # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
-        # encontre os vértices e defina os triângulos.
-
-        print("Box")
-        # print("Box : size = {0}".format(size)) # imprime no terminal pontos
-        # print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
-
-        x = size[0]
-        y = size[1]
-        z = size[2]
-        
-        ## !! Cube Order
-        # front, left, back, right, up, down
-        square_p1 = (-x, -y, z)
-        square_p2 = (x, -y, z)
-        square_p3 = (x, y, z)
-        square_p4 = (-x, y, z)
-        square_p5 = (-x, y, -z)
-        square_p6 = (x, y, -z)
-        square_p7 = (-x, -y, -z)
-        square_p8 = (x, -y, -z)
-
-        point = [
-                square_p3, square_p2, square_p1,
-                square_p3, square_p1, square_p4,
-
-                square_p4, square_p1, square_p7,
-                square_p5, square_p4, square_p7,
-                
-                square_p5, square_p7, square_p8,
-                square_p8, square_p6, square_p5,
-                
-                square_p6, square_p8, square_p2,
-                square_p2, square_p3, square_p6,
-                
-                square_p4, square_p5, square_p6,
-                square_p6, square_p3, square_p4,
-                
-                square_p1, square_p7, square_p8,
-                square_p8, square_p2, square_p1
-        ]
-
-        point = list(sum(point, ()))
-
-        ## Transformations
-        screen_points = utils.transform_points(point, GL)
-        
-        ## Raster
-        GL.triangleSet(point, colors)
