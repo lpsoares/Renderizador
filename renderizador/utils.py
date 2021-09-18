@@ -167,9 +167,12 @@ class Rasterizer:
     def raster(triangle, colors):
 
         start_time_raster_prep = time.time()
+        
+        ##!! For optimization purposes
         height = Rasterizer.height
         frame_buffer = Rasterizer.frame_buffer
         sampling = Rasterizer.sampling
+        colors = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
 
         triangle_0_1 = triangle[0][1]
         triangle_2_1 = triangle[2][1]
@@ -182,66 +185,72 @@ class Rasterizer:
         line2 = (triangle_1_0 - triangle_2_0, triangle_1_1 - triangle_2_1)
         line3 = (triangle_0_0 - triangle_1_0, triangle_0_1 - triangle_1_1)
 
-        points = [[0, 0], [0, 0], [0, 0]]
-        normals = [(line1[1], - line1[0]), (line2[1], - line2[0]), (line3[1], - line3[0])]
+        normal1 = (line1[1], - line1[0])
+        normal2 = (line2[1], - line2[0])
+        normal3 = (line3[1], - line3[0])
+
+        dot = [[0, 0], [0, 0], [0, 0]]
 
         triangle_AABB = Rasterizer.AABB(int(triangle[0][0, 0]), int(triangle[0][1, 0]), math.ceil(triangle[0][0, 0]), math.ceil(triangle[0][1, 0]))
         for p in range(1, len(triangle)):
-            if triangle[p][0] > triangle_AABB.max_x: triangle_AABB.max_x = math.ceil(triangle[p][0, 0])
+            if triangle[p][0] > triangle_AABB.max_x: triangle_AABB.max_x = int(triangle[p][0, 0] + 1)
             if triangle[p][0] < triangle_AABB.min_x: triangle_AABB.min_x = int(triangle[p][0, 0])
-            if triangle[p][1] > triangle_AABB.max_y: triangle_AABB.max_y = math.ceil(triangle[p][1, 0])
+            if triangle[p][1] > triangle_AABB.max_y: triangle_AABB.max_y = int(triangle[p][1, 0] + 1)
             if triangle[p][1] < triangle_AABB.min_y: triangle_AABB.min_y = int(triangle[p][1, 0])
 
         print("--> Time to prep raster %s seconds" % (time.time() - start_time_raster_prep))
         start_time_raster_process = time.time()
         
         for x in range(triangle_AABB.min_x, triangle_AABB.max_x):
-            points[0][0] = x - triangle_0_0
-            points[1][0] = x - triangle_2_0
-            points[2][0] = x - triangle_1_0
+            dot[0][0] = (x - triangle_0_0) * normal1[0]
+            dot[1][0] = (x - triangle_2_0) * normal2[0]
+            dot[2][0] = (x - triangle_1_0) * normal3[0]
 
             for y in range(triangle_AABB.min_y, triangle_AABB.max_y):
-                points[0][1] = y - triangle_0_1
-                points[1][1] = y - triangle_2_1
-                points[2][1] = y - triangle_1_1
+                dot[0][1] = (y - triangle_0_1) * normal1[1]
+                dot[1][1] = (y - triangle_2_1) * normal2[1]
+                dot[2][1] = (y - triangle_1_1) * normal3[1]
 
                 is_inside = True
-
-                for i in range(len(normals)):
-                    if points[i][0] * normals[i][0] + points[i][1] * normals[i][1] > 0: 
+                for product in dot:
+                    if product[0] + product[1] > 0:
                         is_inside = False
                         break
 
                 if is_inside:
                     offset = x * height * sampling + y
-                    tri_color = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
-                    frame_buffer[offset] = tri_color
+                    frame_buffer[offset] = colors
 
         print("--> Time to process raster %s seconds" % (time.time() - start_time_raster_process))
         Rasterizer.frame_buffer = frame_buffer
     
     @staticmethod
     def sample():
+
         start_time_sample_prep = time.time()
+
+        ##!! For optimization purposes
         sampling = Rasterizer.sampling
         frame_buffer = Rasterizer.frame_buffer
+        gpu_instance = Rasterizer.gpu_instance
         frame_buffer_len = len(frame_buffer)
         sampled_size_x = Rasterizer.width * sampling
         sampled_size_y = Rasterizer.height * sampling
         size_y = Rasterizer.height
-        
         sampling_square = sampling ** 2
         pixel = [[0, 0, 0]] * sampling_square
+
         print("--> Time to prep sampling %s seconds" % (time.time() - start_time_sample_prep))
         start_time_sampling_process = time.time()
 
         for x in range(0, sampled_size_x, sampling):
             for y in range(size_y):
                 y_offset = x * sampled_size_y + y * sampling
-
+                
                 for i in range(sampling):
                     for j in range(sampling):
                         offset = i * sampled_size_y + j + y_offset
+
                         if offset == frame_buffer_len: break 
                         pixel[i * sampling + j] = frame_buffer[offset]
                 
@@ -254,11 +263,11 @@ class Rasterizer:
                     g_mean += color[1]
                     b_mean += color[2]
 
-                r_mean /= sampling_square
-                g_mean /= sampling_square
-                b_mean /= sampling_square
-
                 if r_mean > 0 or g_mean > 0 or b_mean > 0:
-                    Rasterizer.gpu_instance.draw_pixels([int(x/sampling), y], Rasterizer.gpu_instance.RGB8, [r_mean, g_mean, b_mean])
+                    r_mean /= sampling_square
+                    g_mean /= sampling_square
+                    b_mean /= sampling_square
+
+                    gpu_instance.draw_pixels([int(x/sampling), y], gpu_instance.RGB8, [r_mean, g_mean, b_mean])
         
         print("--> Time to process sampling %s seconds" % (time.time() - start_time_sampling_process))
