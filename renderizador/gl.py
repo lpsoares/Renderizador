@@ -35,7 +35,7 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, 2)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, 6)
         GL.point_to_screen = utils.point_screen(width, height)
 
     @staticmethod
@@ -45,7 +45,7 @@ class GL:
         # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
-        print("Viewpoint")
+        # print("Viewpoint")
         GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, GL.width, GL.height)
         GL.world_to_view = utils.world_view_lookat_simple(position, orientation)
 
@@ -60,7 +60,7 @@ class GL:
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
         # modelos do mundo em alguma estrutura de pilha.
 
-        print("Transform")
+        # print("Transform")
         GL.model_to_world += [utils.model_world(translation, rotation, scale)]
         GL.mvp = utils.mvp(GL)
 
@@ -72,7 +72,7 @@ class GL:
         # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
         # pilha implementada.
 
-        print("Saindo de Transform")
+        # print("Saindo de Transform")
         if len(GL.model_to_world) > 0: GL.model_to_world.pop()
     
     @staticmethod
@@ -89,7 +89,7 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
-        print("TriangleSet")
+        # print("TriangleSet")
         
         ## Transformations
         screen_points = utils.transform_points(point, GL)
@@ -100,7 +100,7 @@ class GL:
         for p in range(0, len(screen_points) - 2, 3):
             triangles += [[screen_points[p][0:2, 0:1], screen_points[p + 1][0:2, 0:1], screen_points[p + 2][0:2, 0:1]]]
         
-        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
+        utils.Rasterizer.render(triangles, colors["diffuseColor"])
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
@@ -116,7 +116,7 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        print("TriangleStripSet")
+        # print("TriangleStripSet")
 
         ## Transformations
         screen_points = utils.transform_points(point, GL)
@@ -128,7 +128,7 @@ class GL:
             triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
             if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
         
-        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
+        utils.Rasterizer.render(triangles, colors["diffuseColor"])
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -145,7 +145,7 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        print("IndexedTriangleStripSet")
+        # print("IndexedTriangleStripSet")
 
         ## Transformations
         screen_points = utils.transform_points(point, GL)
@@ -157,7 +157,7 @@ class GL:
             triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
             if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
         
-        utils.Rasterizer.raster(triangles, colors["diffuseColor"])
+        utils.Rasterizer.render(triangles, colors["diffuseColor"])
 
     @staticmethod
     def box(size, colors):
@@ -169,7 +169,7 @@ class GL:
         # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
         # encontre os vértices e defina os triângulos.
 
-        print("Box")
+        # print("Box")
 
         x = size[0]
         y = size[1]
