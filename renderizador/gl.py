@@ -35,7 +35,7 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, 6)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, 2)
         GL.point_to_screen = utils.point_screen(width, height)
 
     @staticmethod
