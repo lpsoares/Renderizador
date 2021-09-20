@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">
+<X3D>
+    <Scene>
+
+        <Viewpoint position="14 11 24"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+        <NavigationInfo type='"NONE"'/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+
+        <Transform><Shape><Polyline2D lineSegments='30.5 30.5 45.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='50.5 30.5 65.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='70.5 30.5 85.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='90.5 30.5 105.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='110.5 30.5 125.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='130.5 30.5 145.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='150.5 30.5 165.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='170.5 30.5 185.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='190.5 30.5 205.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='210.5 30.5 225.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='230.5 30.5 245.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='250.5 30.5 265.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='270.5 30.5 285.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='290.5 30.5 305.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='310.5 30.5 325.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='330.5 30.5 345.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='350.5 30.5 365.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='370.5 30.5 385.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='390.5 30.5 405.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='410.5 30.5 425.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='430.5 30.5 445.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='450.5 30.5 465.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='470.5 30.5 485.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='490.5 30.5 505.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='510.5 30.5 525.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='530.5 30.5 545.5 380.5'/><Appearance><Material emissiveColor='0 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='545.5 30.5 560.5 380.5'/><Appearance><Material emissiveColor='0 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 55.5 565.5 45.5'/><Appearance><Material emissiveColor='0 1 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 75.5 565.5 65.5'/><Appearance><Material emissiveColor='1 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 95.5 565.5 85.5'/><Appearance><Material emissiveColor='1 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 115.5 565.5 105.5'/><Appearance><Material emissiveColor='0 1 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 135.5 565.5 125.5'/><Appearance><Material emissiveColor='1 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 155.5 565.5 145.5'/><Appearance><Material emissiveColor='1 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 175.5 565.5 165.5'/><Appearance><Material emissiveColor='0 1 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 195.5 565.5 185.5'/><Appearance><Material emissiveColor='1 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 215.5 565.5 205.5'/><Appearance><Material emissiveColor='1 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 235.5 565.5 225.5'/><Appearance><Material emissiveColor='0 1 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 255.5 565.5 245.5'/><Appearance><Material emissiveColor='1 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 275.5 565.5 265.5'/><Appearance><Material emissiveColor='1 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 295.5 565.5 285.5'/><Appearance><Material emissiveColor='0 1 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 315.5 565.5 305.5'/><Appearance><Material emissiveColor='1 0 1'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 335.5 565.5 325.5'/><Appearance><Material emissiveColor='1 1 0'/></Appearance></Shape></Transform>
+        <Transform><Shape><Polyline2D lineSegments='20.5 355.5 565.5 345.5'/><Appearance><Material emissiveColor='0 1 1'/></Appearance></Shape></Transform>
+
+    </Scene>
+</X3D>
