@@ -164,8 +164,8 @@ class GL:
         triangles = []
 
         for i in range(len(index) - 3):
-            triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
-            if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
+            triangles += [[screen_points[index[i + 2]][0:2, 0:1], screen_points[index[i + 1]][0:2, 0:1], screen_points[index[i]][0:2, 0:1]]]
+            if i % 2 == 0: triangles += [[screen_points[index[i]][0:2, 0:1], screen_points[index[i + 1]][0:2, 0:1], screen_points[index[i + 2]][0:2, 0:1]]]
         
         utils.Rasterizer.render(triangles, colors["diffuseColor"])
 
