@@ -105,7 +105,7 @@ def apply_point_transformations(point, gl):
     clip_point = gl.mvp.dot(homogenous_p)
     normalized_clip_point = np.divide(clip_point, clip_point[3][0])
     screen_point = gl.point_to_screen.dot(normalized_clip_point)
-    
+
     return screen_point
 
 def transform_points(point, gl):
@@ -116,7 +116,6 @@ def transform_points(point, gl):
         p = [point[i], point[i + 1], point[i + 2]]
         screen_points += [apply_point_transformations(p, gl)]
     
-    # print(screen_points)
     print("::: Time to transform points: %s seconds :::\n" % (time.time() - start_time))
     return screen_points
 
@@ -126,7 +125,7 @@ class Rasterizer:
     height = None
     gpu_instance = None
     frame_buffer = []
-    sampling = 1
+    sampling = None
 
     class AABB:
         min_x = None

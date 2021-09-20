@@ -19,6 +19,7 @@ class GL:
     height = 600  # altura da tela
     near = 0.01   # plano de corte próximo
     far = 1000    # plano de corte distante
+    sampling_X_ = 2
     
     orientation = None
     eye = None
@@ -35,7 +36,16 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
-        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, 2)
+
+        try:
+            s = int(input("\nSampling nXn: (ex: 2 is 2x2, 3 is 3x3, ...)\nDefault is 2x2, press enter to use default.\n"))
+            GL.sampling_X_ = s
+
+        except: 
+            print("Using default 2x2 sampling")
+
+        print("Sampling: " + str(GL.sampling_X_) + "X" + str(GL.sampling_X_))
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, GL.sampling_X_)
         GL.point_to_screen = utils.point_screen(width, height)
 
     @staticmethod
