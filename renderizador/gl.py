@@ -163,16 +163,16 @@ class GL:
         # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
         # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
         # Você receberá as coordenadas dos pontos no parâmetro cord, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
-        # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
-        # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedFaceSet uma lista informando
-        # como conectar os vértices é informada em coordIndex, o valor -1 indica que a lista
-        # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
+        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim coord[0] é o valor
+        # da coordenada x do primeiro ponto, coord[1] o valor y do primeiro ponto, coord[2]
+        # o valor z da coordenada z do primeiro ponto. Já coord[3] é a coordenada x do
+        # segundo ponto e assim por diante. No IndexedFaceSet uma lista de vértices é informada
+        # em coordIndex, o valor -1 indica que a lista acabou.
+        # A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
         # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
         # depois 2, 3 e 4, e assim por diante.
-        # Adicionalmente essa implementação do IndexedFace suport cores por vértices, assim
-        # a se a flag colorPerVertex estiver habilidades, os vértices também possuirão cores
+        # Adicionalmente essa implementação do IndexedFace aceita cores por vértices, assim
+        # se a flag colorPerVertex estiver habilitada, os vértices também possuirão cores
         # que servem para definir a cor interna dos poligonos, para isso faça um cálculo
         # baricêntrico de que cor deverá ter aquela posição. Da mesma forma se pode definir uma
         # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
