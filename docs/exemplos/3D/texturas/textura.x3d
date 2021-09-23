@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <X3D>
   <Scene>
-    <Viewpoint position='0 0 5'/>
-    <Transform>
+    <Viewpoint position='0 -0.2 2.3'/>
+    <Transform rotation="1 0 0 -1.0">
       <Shape>
         <IndexedFaceSet colorPerVertex='false' coordIndex='0 1 2 -1 2 3 0 -1' texCoordIndex='0 1 2 -1 2 3 0 -1'>
           <Coordinate point='-1 -1 0  1 -1 0  1 1 0  -1 1 0 '/>
