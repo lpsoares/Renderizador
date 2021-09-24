@@ -171,7 +171,11 @@ class GPU:
             img = Image.fromarray(GPU.frame_buffer[GPU.read_framebuffer].color, 'RGB')
         else:
             img = Image.fromarray(GPU.frame_buffer[GPU.read_framebuffer].color, 'RGBA')
-        img.save(GPU.image_file)
+        counter = 0
+        filename = GPU.image_file.split('.')
+        while os.path.exists(filename[0]+str(counter).zfill(3)+'.'+filename[1]):
+            counter += 1
+        img.save(filename[0]+str(counter).zfill(3)+'.'+filename[1])
 
     @staticmethod
     def load_texture(textura):
