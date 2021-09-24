@@ -190,6 +190,7 @@ class GL:
         if current_texture:
             image = gpu.GPU.load_texture(current_texture[0])
             print("\t Matriz com image = {0}".format(image))
+            print("\t Dimensões da image = {0}".format(image.shape))
         print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10

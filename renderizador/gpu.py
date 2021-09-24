@@ -67,7 +67,7 @@ class GPU:
         GPU.clear_color_val = [0, 0, 0]
         GPU.clear_depth_val = 1.0
 
-        # Caminha para arquivos adicionais, como texturas
+        # Caminho para arquivos adicionais, como texturas
         GPU.path = path
 
     @staticmethod
