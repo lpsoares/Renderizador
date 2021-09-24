@@ -9,6 +9,7 @@ Disciplina: Computação Gráfica
 Data: 28 de Agosto de 2020
 """
 
+import os           # Para rotinas do sistema operacional
 import time         # Para operações com tempo, como a duração de renderização
 import argparse     # Para tratar os parâmetros da linha de comando
 
@@ -130,8 +131,10 @@ class Renderizador:
         if args.height:
             self.height = args.height
 
+        path = os.path.dirname(os.path.abspath(self.x3d_file))
+
         # Iniciando simulação de GPU
-        gpu.GPU(self.image_file)
+        gpu.GPU(self.image_file, path)
 
         # Abre arquivo X3D
         self.scene = x3d.X3D(self.x3d_file)
