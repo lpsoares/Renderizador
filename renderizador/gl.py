@@ -183,9 +183,10 @@ class GL:
         print("IndexedFaceSet : ")
         if coord:
             print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        if colorPerVertex:
+        print("colorPerVertex = {0}".format(colorPerVertex))
+        if colorPerVertex and color and colorIndex:
             print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        if texCoord:
+        if texCoord and texCoordIndex:
             print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
         if current_texture:
             image = gpu.GPU.load_texture(current_texture[0])

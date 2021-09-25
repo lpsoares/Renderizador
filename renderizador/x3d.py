@@ -555,7 +555,8 @@ class IndexedFaceSet(X3DComposedGeometryNode):
         self.colorIndex = []
         self.texCoordIndex = []
 
-        self.colorPerVertex = True
+        self.colorPerVertex = True  # valor padrão é True
+        self.normalPerVertex = True  # valor padrão é True
 
         if "coordIndex" in node.attrib:
             coordIndex_str = re.split(r'[,\s]\s*', node.attrib['coordIndex'].strip())
