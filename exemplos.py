@@ -33,6 +33,7 @@ EXEMPLOS.append(["letras", "-i", DIR_EXP+"3D/cores/letras.x3d", "-w", "300", "-h
 EXEMPLOS.append(["textura", "-i", DIR_EXP+"3D/texturas/textura.x3d", "-w", "300", "-h", "200"])
 EXEMPLOS.append(["retang", "-i", DIR_EXP+"3D/retangulos/retangulos.x3d", "-w", "300", "-h", "200"])
 EXEMPLOS.append(["avatar", "-i", DIR_EXP+"3D/avatar/avatar.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["texturas", "-i", DIR_EXP+"3D/texturas/texturas.x3d", "-w", "300", "-h", "200"])
 
 # Lista os exemplos registrados
 for i, titulo in enumerate(EXEMPLOS):
