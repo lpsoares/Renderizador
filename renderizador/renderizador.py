@@ -9,6 +9,7 @@ Disciplina: Computação Gráfica
 Data: 28 de Agosto de 2020
 """
 
+import os           # Para rotinas do sistema operacional
 import time         # Para operações com tempo, como a duração de renderização
 import argparse     # Para tratar os parâmetros da linha de comando
 
@@ -68,10 +69,17 @@ class Renderizador:
         # - DEPTH_ATTACHMENT: alocações para as profundidades da imagem renderizada
         # Obs: Você pode chamar duas vezes a rotina com cada tipo de buffer.
 
+        # Tipos de dados:
+        # - RGB8: Para canais de cores (Vermelho, Verde, Azul) 8bits cada (0-255)
+        # - RGBA8: Para canais de cores (Vermelho, Verde, Azul, Transparência) 8bits cada (0-255)
+        # - DEPTH_COMPONENT16: Para canal de Profundidade de 16bits (half-precision) (0-65535)
+        # - DEPTH_COMPONENT32F: Para canal de Profundidade de 32bits (single-precision) (float)
+
         # Define cor que ira apagar o FrameBuffer quando clear_buffer() invocado
         gpu.GPU.clear_color([0, 0, 0])
 
         # Define a profundidade que ira apagar o FrameBuffer quando clear_buffer() invocado
+        # Assuma 1.0 o mais afastado e -1.0 o mais próximo da camera
         gpu.GPU.clear_depth(1.0)
 
         # Definindo tamanho do Viewport para renderização
@@ -133,8 +141,10 @@ class Renderizador:
         # self.width = 4
         # self.height = 3
 
+        path = os.path.dirname(os.path.abspath(self.x3d_file))
+
         # Iniciando simulação de GPU
-        gpu.GPU(self.image_file)
+        gpu.GPU(self.image_file, path)
 
         # Abre arquivo X3D
         self.scene = x3d.X3D(self.x3d_file)

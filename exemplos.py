@@ -28,9 +28,12 @@ EXEMPLOS.append(["helice", "-i", DIR_EXP+"2D/triangulos/helice.x3d", "-w", "30",
 EXEMPLOS.append(["tri_3D", "-i", DIR_EXP+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200"])
 EXEMPLOS.append(["tira_tri", "-i", DIR_EXP+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200"])
 EXEMPLOS.append(["box", "-i", DIR_EXP+"3D/box/box.x3d", "-w", "300", "-h", "200"])
-# EXEMPLOS.append(["letras", "-i", DIR_EXP+"3D/cores/letras.x3d", "-w", "300", "-h", "200"])
-# EXEMPLOS.append(["cores", "-i", DIR_EXP+"3D/cores/cores.x3d", "-w", "300", "-h", "200"])
-# EXEMPLOS.append(["textura", "-i", DIR_EXP+"3D/textura/textura.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["cores", "-i", DIR_EXP+"3D/cores/cores.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["letras", "-i", DIR_EXP+"3D/cores/letras.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["textura", "-i", DIR_EXP+"3D/texturas/textura.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["retang", "-i", DIR_EXP+"3D/retangulos/retangulos.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["avatar", "-i", DIR_EXP+"3D/avatar/avatar.x3d", "-w", "300", "-h", "200"])
+EXEMPLOS.append(["texturas", "-i", DIR_EXP+"3D/texturas/texturas.x3d", "-w", "300", "-h", "200"])
 
 # Lista os exemplos registrados
 for i, titulo in enumerate(EXEMPLOS):

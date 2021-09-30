@@ -9,6 +9,8 @@ Disciplina: Computação Gráfica
 Data: 31 de Agosto de 2020
 """
 
+import os           # Para rotinas do sistema operacional
+
 # Numpy
 import numpy as np
 
@@ -44,12 +46,13 @@ class GPU:
     height = 40
     image_file = None
     frame_buffer = None
+    path = "."
 
     # Legado, deverá ser REMOVIDO
     width = 1
     height = 1
 
-    def __init__(self, image_file):
+    def __init__(self, image_file, path):
         """Define o nome do arquivo para caso se salvar o framebuffer."""
         GPU.image_file = image_file
 
@@ -63,6 +66,9 @@ class GPU:
         # Cor e profundidade padrão para apagar o FrameBuffer
         GPU.clear_color_val = [0, 0, 0]
         GPU.clear_depth_val = 1.0
+
+        # Caminho para arquivos adicionais, como texturas
+        GPU.path = path
 
     @staticmethod
     def gen_framebuffers(size):
@@ -165,12 +171,17 @@ class GPU:
             img = Image.fromarray(GPU.frame_buffer[GPU.read_framebuffer].color, 'RGB')
         else:
             img = Image.fromarray(GPU.frame_buffer[GPU.read_framebuffer].color, 'RGBA')
-        img.save(GPU.image_file)
+        counter = 0
+        filename = GPU.image_file.split('.')
+        while os.path.exists(filename[0]+str(counter).zfill(3)+'.'+filename[1]):
+            counter += 1
+        img.save(filename[0]+str(counter).zfill(3)+'.'+filename[1])
 
     @staticmethod
     def load_texture(textura):
         """Método para ler textura."""
-        imagem = Image.open(textura)
+        file = os.path.join(GPU.path, textura)
+        imagem = Image.open(file)
         matriz = np.array(imagem)
         return matriz
 

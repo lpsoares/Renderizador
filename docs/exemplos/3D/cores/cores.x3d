@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <X3D>
   <Scene>
-    <Viewpoint position='0 0 5'/>
+    <Viewpoint position='0 0 3'/>
     <Transform>
       <Shape>
         <IndexedFaceSet colorPerVertex='true' colorIndex='0 1 2 -1 2 3 0 -1' coordIndex='0 1 2 -1 2 3 0 -1'>

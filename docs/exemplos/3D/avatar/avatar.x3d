@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position="0 0 10"/>
+    <Transform translation="0 0 0" scale="1 1 1" rotation="0 0 1 0">
+      <Shape>
+        <TriangleSet>
+          <Coordinate point='0 -1.71 0 1 0 0 -1 0 0'/>
+        </TriangleSet>
+        <Appearance>
+          <Material diffuseColor='1 0 0'/>
+        </Appearance>
+      </Shape>
+      <Transform translation="0 0 0" scale="1 1 1" rotation="0 0 1 3.14">
+        <Shape>
+          <TriangleSet>
+            <Coordinate point='0 -1.71 0 1 0 0 -1 0 0'/>
+          </TriangleSet>
+          <Appearance>
+            <Material diffuseColor='0 1 1'/>
+          </Appearance>
+        </Shape>
+        <Transform translation="0 -1.71 0" scale="0.8 0.8 1" rotation="0 0 1 0">
+          <Shape>
+            <TriangleSet>
+              <Coordinate point='0 -1.71 0 1 0 0 -1 0 0'/>
+            </TriangleSet>
+            <Appearance>
+              <Material diffuseColor='0 1 0'/>
+            </Appearance>
+          </Shape>
+        </Transform>
+        <Transform translation="0.7 -1.3 0" scale="0.2 0.9 1" rotation="0 0 1 2.1">
+          <Shape>
+            <TriangleSet>
+              <Coordinate point='0 -1.71 0 1 0 0 -1 0 0'/>
+            </TriangleSet>
+            <Appearance>
+              <Material diffuseColor='0 0 1'/>
+            </Appearance>
+          </Shape>
+          <Transform translation="0 -1.6 0" scale="0.8 0.9 1">
+            <Shape>
+              <TriangleSet>
+                <Coordinate point='0 -1.71 0 1 0 0 -1 0 0'/>
+              </TriangleSet>
+              <Appearance>
+                <Material diffuseColor='1 1 0'/>
+              </Appearance>
+            </Shape>
+          </Transform>
+        </Transform>
+        <Transform translation="-0.7 -1.3 0" scale="0.2 0.9 1" rotation="0 0 1 -2.1">
+          <Shape>
+            <TriangleSet>
+              <Coordinate point='0 -1.71 0 1 0 0 -1 0 0'/>
+            </TriangleSet>
+            <Appearance>
+              <Material diffuseColor='0 0 1'/>
+            </Appearance>
+          </Shape>
+          <Transform translation="0 -1.6 0" scale="0.8 0.9 1">
+            <Shape>
+              <TriangleSet>
+                <Coordinate point='0 -1.71 0 1 0 0 -1 0 0'/>
+              </TriangleSet>
+              <Appearance>
+                <Material diffuseColor='1 1 0'/>
+              </Appearance>
+            </Shape>
+          </Transform>
+        </Transform>
+      </Transform>
+    </Transform>
+  </Scene>
+</X3D>

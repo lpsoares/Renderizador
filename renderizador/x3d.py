@@ -510,7 +510,8 @@ class Viewpoint(X3DViewpointNode):
 
         if 'fieldOfView' in node.attrib:
             self.fieldOfView = float(node.attrib['fieldOfView'].strip())
-
+            if (self.fieldOfView < 0) or (self.fieldOfView > math.pi):
+                self.fieldOfView = math.pi/4
 
     def render(self):
         """Rotina de renderização."""
@@ -554,7 +555,8 @@ class IndexedFaceSet(X3DComposedGeometryNode):
         self.colorIndex = []
         self.texCoordIndex = []
 
-        self.colorPerVertex = True
+        self.colorPerVertex = True  # valor padrão é True
+        self.normalPerVertex = True  # valor padrão é True
 
         if "coordIndex" in node.attrib:
             coordIndex_str = re.split(r'[,\s]\s*', node.attrib['coordIndex'].strip())
