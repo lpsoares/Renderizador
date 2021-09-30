@@ -173,12 +173,12 @@ class Rasterizer:
         sampling = Rasterizer.sampling
         colors = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
 
-        triangle_0_1 = triangle[0][1]
-        triangle_2_1 = triangle[2][1]
-        triangle_1_1 = triangle[1][1]
-        triangle_0_0 = triangle[0][0]
-        triangle_2_0 = triangle[2][0]
-        triangle_1_0 = triangle[1][0]
+        triangle_0_1 = triangle[0][1][0, 0]
+        triangle_2_1 = triangle[2][1][0, 0]
+        triangle_1_1 = triangle[1][1][0, 0]
+        triangle_0_0 = triangle[0][0][0, 0]
+        triangle_2_0 = triangle[2][0][0, 0]
+        triangle_1_0 = triangle[1][0][0, 0]
 
         line1 = (triangle_2_0 - triangle_0_0, triangle_2_1 - triangle_0_1)
         line2 = (triangle_1_0 - triangle_2_0, triangle_1_1 - triangle_2_1)
