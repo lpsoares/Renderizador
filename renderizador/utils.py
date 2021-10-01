@@ -4,6 +4,8 @@ import math
 import time
 
 def model_world(translation, rotation, scale):
+    print("Model world matrix ...")
+
     scale_matrix = np.matrix([
         [scale[0], 0, 0, 0], 
         [0, scale[1], 0, 0],
@@ -22,6 +24,8 @@ def model_world(translation, rotation, scale):
     return translation_matrix.dot(rotation_matrix).dot(scale_matrix)
 
 def world_view_lookat(at, eye, up):
+    print("World view matrix ...")
+
     eye = np.matrix([eye[0], eye[1], eye[2]])
     up = np.matrix([up[0], up[1], up[2]])
 
@@ -44,6 +48,8 @@ def world_view_lookat(at, eye, up):
     return np.linalg.inv(view_to_world)
 
 def world_view_lookat_simple(translation, rotation):
+    print("World view matrix ...")
+
     rotation_matrix = get_quaternion_rotation_matrix(rotation)
     translation_matrix = np.matrix([
         [1, 0, 0, translation[0]], 
@@ -58,6 +64,8 @@ def world_view_lookat_simple(translation, rotation):
     return rotation_matrix_inv.dot(translation_matrix_inv)
 
 def view_point(fovx, near, far, width, height):
+    print("View point matrix ...")
+
     width = width * Rasterizer.sampling
     height = height * Rasterizer.sampling
 
@@ -73,6 +81,8 @@ def view_point(fovx, near, far, width, height):
     ])
 
 def point_screen(width, height):
+    print("Point screen matrix ...")
+
     width = width * Rasterizer.sampling
     height = height * Rasterizer.sampling
 
@@ -84,6 +94,7 @@ def point_screen(width, height):
     ])
 
 def mvp(gl):
+    print("MVP matrix ...")
     return gl.view_to_point.dot(gl.world_to_view).dot(gl.model_to_world[len(gl.model_to_world) - 1])
 
 def get_quaternion_rotation_matrix(rotation):
@@ -103,12 +114,17 @@ def get_quaternion_rotation_matrix(rotation):
 def apply_point_transformations(point, gl):
     homogenous_p = np.matrix([[point[0]], [point[1]], [point[2]], [1]])
     clip_point = gl.mvp.dot(homogenous_p)
+
+    # z-buffer
+    Rasterizer.z_buffer += [clip_point[2][0][0, 0]]
+
     normalized_clip_point = np.divide(clip_point, clip_point[3][0])
     screen_point = gl.point_to_screen.dot(normalized_clip_point)
 
     return screen_point
 
 def transform_points(point, gl):
+    print("\n--> Transforming Points")
     start_time = time.time()
     screen_points = []
 
@@ -124,8 +140,9 @@ class Rasterizer:
     width = None
     height = None
     gpu_instance = None
-    frame_buffer = []
     sampling = None
+    frame_buffer = []
+    z_buffer = []
 
     class AABB:
         min_x = None
@@ -138,7 +155,7 @@ class Rasterizer:
             self.min_y = min_y
             self.max_x = max_x
             self.max_y = max_y
-
+    
     @staticmethod
     def setup(gpu_instance, width, height, sampling):
         print("\n======================================================================")
@@ -147,13 +164,13 @@ class Rasterizer:
         Rasterizer.height = height
         Rasterizer.sampling = sampling
         Rasterizer.frame_buffer = [[0, 0, 0]] * ((sampling ** 2) * width * height)
-    
+
     @staticmethod
     def render(triangles, colors):
         start_time_render = time.time()
         for triangle in triangles:
             start_time_raster = time.time()
-            Rasterizer.raster(triangle, colors)
+            Rasterizer.raster_zig_zag(triangle, colors)
             print("=== Time to raster triangle: %s seconds ===\n" % (time.time() - start_time_raster))
 
         start_time_sample = time.time()
@@ -163,7 +180,7 @@ class Rasterizer:
         print("======================================================================\n")
     
     @staticmethod
-    def raster(triangle, colors):
+    def raster_zig_zag(triangle, colors):
 
         start_time_raster_prep = time.time()
         
@@ -173,16 +190,117 @@ class Rasterizer:
         sampling = Rasterizer.sampling
         colors = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
 
-        triangle_0_1 = triangle[0][1][0, 0]
-        triangle_2_1 = triangle[2][1][0, 0]
-        triangle_1_1 = triangle[1][1][0, 0]
-        triangle_0_0 = triangle[0][0][0, 0]
-        triangle_2_0 = triangle[2][0][0, 0]
-        triangle_1_0 = triangle[1][0][0, 0]
+        triangle_A_y = triangle[0][1][0, 0]
+        triangle_B_y = triangle[2][1][0, 0]
+        triangle_C_y = triangle[1][1][0, 0]
+        triangle_A_x = triangle[0][0][0, 0]
+        triangle_B_x = triangle[2][0][0, 0]
+        triangle_C_x = triangle[1][0][0, 0]
 
-        line1 = (triangle_2_0 - triangle_0_0, triangle_2_1 - triangle_0_1)
-        line2 = (triangle_1_0 - triangle_2_0, triangle_1_1 - triangle_2_1)
-        line3 = (triangle_0_0 - triangle_1_0, triangle_0_1 - triangle_1_1)
+        line1 = (triangle_B_x - triangle_A_x, triangle_B_y - triangle_A_y)
+        line2 = (triangle_C_x - triangle_B_x, triangle_C_y - triangle_B_y)
+        line3 = (triangle_A_x - triangle_C_x, triangle_A_y - triangle_C_y)
+
+        normal1 = (line1[1], - line1[0])
+        normal2 = (line2[1], - line2[0])
+        normal3 = (line3[1], - line3[0])
+
+        dot = [[0, 0], [0, 0], [0, 0]]
+
+        min_tri = triangle[0]
+        max_tri = triangle[0]
+
+        for p in range(1, len(triangle)):
+            if triangle[p][1] > max_tri[1]: max_tri = triangle[p]
+            elif triangle[p][1] < min_tri[1]: min_tri = triangle[p]
+
+        print("--> Time to prep raster %s seconds" % (time.time() - start_time_raster_prep))
+        start_time_raster_process = time.time()
+        
+        doneY = False
+        right = True
+        changed_side = False
+        hit_count = 0
+        just_downed = False
+        x = round(min_tri[0][0, 0])
+        y = round(min_tri[1][0, 0])
+
+        print(x, y, min_tri[0], min_tri[1], "\nAlgorithm\n")
+        while not doneY:
+            dot[0][1] = (y - triangle_A_y) * normal1[1]
+            dot[1][1] = (y - triangle_B_y) * normal2[1]
+            dot[2][1] = (y - triangle_C_y) * normal3[1]
+
+            doneX = False
+            while not doneX:
+                dot[0][0] = (x - triangle_A_x) * normal1[0]
+                dot[1][0] = (x - triangle_B_x) * normal2[0]
+                dot[2][0] = (x - triangle_C_x) * normal3[0]
+
+                print(x, y, "\n")
+                is_inside = True
+                for product in dot:
+                    if product[0] + product[1] > 0:
+                        is_inside = False
+                        hit_count = 0
+                        if (hit_count == 1 and not changed_side) or (hit_count == 0 and just_downed): 
+                            print("Changing sides ", right, not right)
+                            right = not right
+                            changed_side = True
+                            just_downed = False
+
+                        else:
+                            print("Moving down")
+                            changed_side = False
+                            just_downed = True
+
+                            y += 1
+                            # x -= 1 * int(not right) + 1 * int(right)
+                            if right: x -= 1
+                            else: x += 1
+                            doneX = True
+                        
+                        break
+                
+                # print(is_inside, right)
+
+                if is_inside:
+                    hit_count += 1
+                    offset = x * height * sampling + y
+                    frame_buffer[offset] = colors
+                
+                # if x < 0: doneX = True
+                if right: x += 1
+                else: x -= 1
+                # x += 1 * int(right) - 1 * int(not right)
+
+            if y > max_tri[1]:
+                doneY = True
+
+        print("--> Time to process raster %s seconds" % (time.time() - start_time_raster_process))
+        Rasterizer.frame_buffer = frame_buffer
+
+    @staticmethod
+    def raster_AABB(triangle, colors):
+
+        start_time_raster_prep = time.time()
+        
+        ##!! For optimization purposes
+        height = Rasterizer.height
+        frame_buffer = Rasterizer.frame_buffer
+        sampling = Rasterizer.sampling
+        colors = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
+
+        triangle_A_y = triangle[0][1][0, 0]
+        triangle_B_y = triangle[2][1][0, 0]
+        triangle_C_y = triangle[1][1][0, 0]
+        triangle_A_x = triangle[0][0][0, 0]
+        triangle_B_x = triangle[2][0][0, 0]
+        triangle_C_x = triangle[1][0][0, 0]
+
+        line1 = (triangle_B_x - triangle_A_x, triangle_B_y - triangle_A_y)
+        line2 = (triangle_C_x - triangle_B_x, triangle_C_y - triangle_B_y)
+        line3 = (triangle_A_x - triangle_C_x, triangle_A_y - triangle_C_y)
 
         normal1 = (line1[1], - line1[0])
         normal2 = (line2[1], - line2[0])
@@ -201,14 +319,14 @@ class Rasterizer:
         start_time_raster_process = time.time()
         
         for x in range(triangle_AABB.min_x, triangle_AABB.max_x):
-            dot[0][0] = (x - triangle_0_0) * normal1[0]
-            dot[1][0] = (x - triangle_2_0) * normal2[0]
-            dot[2][0] = (x - triangle_1_0) * normal3[0]
+            dot[0][0] = (x - triangle_A_x) * normal1[0]
+            dot[1][0] = (x - triangle_B_x) * normal2[0]
+            dot[2][0] = (x - triangle_C_x) * normal3[0]
 
             for y in range(triangle_AABB.min_y, triangle_AABB.max_y):
-                dot[0][1] = (y - triangle_0_1) * normal1[1]
-                dot[1][1] = (y - triangle_2_1) * normal2[1]
-                dot[2][1] = (y - triangle_1_1) * normal3[1]
+                dot[0][1] = (y - triangle_A_y) * normal1[1]
+                dot[1][1] = (y - triangle_B_y) * normal2[1]
+                dot[2][1] = (y - triangle_C_y) * normal3[1]
 
                 is_inside = True
                 for product in dot:
@@ -270,3 +388,133 @@ class Rasterizer:
                     gpu_instance.draw_pixels([int(x/sampling), y], gpu_instance.RGB8, [r_mean, g_mean, b_mean])
         
         print("--> Time to process sampling %s seconds" % (time.time() - start_time_sampling_process))
+    
+    @staticmethod
+    def render_test(triangles, colors):
+        start_time_render = time.time()
+        for i in range(len(triangles)):
+            start_time_raster = time.time()
+            Rasterizer.raster_test(triangles[i], colors[i], i)
+            print("=== Time to raster triangle: %s seconds ===\n" % (time.time() - start_time_raster))
+
+        start_time_sample = time.time()
+        Rasterizer.sample()
+        print("!!! Time to sample: %s seconds !!!\n" % (time.time() - start_time_sample))
+        print("--- Time to render: %s seconds ---" % (time.time() - start_time_render))
+        print("======================================================================\n")
+    
+    @staticmethod
+    def raster_test(triangle, colors, iterator):
+
+        start_time_raster_prep = time.time()
+        
+        ##!! For optimization purposes
+        height = Rasterizer.height
+        frame_buffer = Rasterizer.frame_buffer
+        sampling = Rasterizer.sampling
+
+        triangle_A_y = triangle[0][1][0, 0]
+        triangle_B_y = triangle[2][1][0, 0]
+        triangle_C_y = triangle[1][1][0, 0]
+        triangle_A_x = triangle[0][0][0, 0]
+        triangle_B_x = triangle[2][0][0, 0]
+        triangle_C_x = triangle[1][0][0, 0]
+        triangle_A_z = 1 / Rasterizer.z_buffer[iterator]
+        triangle_B_z = 1 / Rasterizer.z_buffer[iterator + 2]
+        triangle_C_z = 1 / Rasterizer.z_buffer[iterator + 1]
+
+        B_x_minus_A_x = triangle_B_x - triangle_A_x
+        B_y_minus_A_y = triangle_B_y - triangle_A_y
+
+        C_x_minus_B_x = triangle_C_x - triangle_B_x
+        C_y_minus_B_y = triangle_C_y - triangle_B_y
+
+        A_x_minus_C_x = triangle_A_x - triangle_C_x
+        A_y_minus_C_y = triangle_A_y - triangle_C_y
+
+        line1 = (B_x_minus_A_x, B_y_minus_A_y)
+        line2 = (C_x_minus_B_x, C_y_minus_B_y)
+        line3 = (A_x_minus_C_x, A_y_minus_C_y)
+
+        normal1 = (line1[1], - line1[0])
+        normal2 = (line2[1], - line2[0])
+        normal3 = (line3[1], - line3[0])
+
+        dot = [[0, 0], [0, 0], [0, 0]]
+
+        triangle_AABB = Rasterizer.AABB(int(triangle[0][0, 0]), int(triangle[0][1, 0]), math.ceil(triangle[0][0, 0]), math.ceil(triangle[0][1, 0]))
+        for p in range(1, len(triangle)):
+            if triangle[p][0] > triangle_AABB.max_x: triangle_AABB.max_x = int(triangle[p][0, 0] + 1)
+            if triangle[p][0] < triangle_AABB.min_x: triangle_AABB.min_x = int(triangle[p][0, 0])
+            if triangle[p][1] > triangle_AABB.max_y: triangle_AABB.max_y = int(triangle[p][1, 0] + 1)
+            if triangle[p][1] < triangle_AABB.min_y: triangle_AABB.min_y = int(triangle[p][1, 0])
+
+        alpha_denominator = -(triangle_A_x - triangle_B_x) * (C_y_minus_B_y) + (triangle_A_y - triangle_B_y) * (C_x_minus_B_x)
+        betha_denominator = -(triangle_B_x - triangle_C_x) * (A_y_minus_C_y) + (triangle_B_y - triangle_C_y) * (A_x_minus_C_x)
+        
+        for color in colors:
+            color[0] *= 255
+            color[1] *= 255
+            color[2] *= 255
+
+        vertex_color_1 = colors[0]
+        vertex_color_2 = colors[1]
+        vertex_color_3 = colors[2]
+
+        print("--> Time to prep raster %s seconds" % (time.time() - start_time_raster_prep))
+        start_time_raster_process = time.time()
+        
+        for x in range(triangle_AABB.min_x, triangle_AABB.max_x):
+            x_minus_xA = x - triangle_A_x
+            x_minus_xB = x - triangle_B_x
+            x_minus_xC = x - triangle_C_x
+
+            dot[0][0] = x_minus_xA * normal1[0]
+            dot[1][0] = x_minus_xB * normal2[0]
+            dot[2][0] = x_minus_xC * normal3[0]
+
+            for y in range(triangle_AABB.min_y, triangle_AABB.max_y):
+                y_minus_yA = y - triangle_A_y
+                y_minus_yB = y - triangle_B_y
+                y_minus_yC = y - triangle_C_y
+
+                dot[0][1] = y_minus_yA * normal1[1]
+                dot[1][1] = y_minus_yB * normal2[1]
+                dot[2][1] = y_minus_yC * normal3[1]
+
+                is_inside = True
+                for product in dot:
+                    if product[0] + product[1] > 0:
+                        is_inside = False
+                        break
+
+                if is_inside:
+                    offset = x * height * sampling + y
+                    
+                    alpha = (-(x_minus_xB) * (C_y_minus_B_y) + (y_minus_yB) * (C_x_minus_B_x)) / alpha_denominator
+                    betha = (-(x_minus_xC) * (A_y_minus_C_y) + (y_minus_yC) * (A_x_minus_C_x)) / betha_denominator
+                    gamma = 1 - alpha - betha
+
+                    c = [
+                        vertex_color_1[0] * alpha + vertex_color_2[0] * gamma + vertex_color_3[0] * betha,
+                        vertex_color_1[1] * alpha + vertex_color_2[1] * gamma + vertex_color_3[1] * betha,
+                        vertex_color_1[2] * alpha + vertex_color_2[2] * gamma + vertex_color_3[2] * betha
+                    ]
+
+                    # c = [
+                    #     255,
+                    #     11,
+                    #     111
+                    # ]
+
+                    # z = 1 / (alpha * triangle_A_z + betha * triangle_C_z + gamma * triangle_B_z)
+                    # c = [
+                    #     z * (colors[0][0] / triangle_A_z * alpha + colors[1][0] / triangle_C_z * gamma + colors[2][0] / triangle_B_z * betha),
+                    #     z * (colors[0][1] / triangle_A_z * alpha + colors[1][1] / triangle_C_z * gamma + colors[2][1] / triangle_B_z * betha),
+                    #     z * (colors[0][2] / triangle_A_z * alpha + colors[1][2] / triangle_C_z * gamma + colors[2][2] / triangle_B_z * betha)
+                    # ]
+                    
+                    frame_buffer[offset] = c
+
+        print("--> Time to process raster %s seconds" % (time.time() - start_time_raster_process))
+        Rasterizer.frame_buffer = frame_buffer

@@ -9,7 +9,7 @@ Disciplina: Computação Gráfica
 Data: 13 de setembro de 2021
 """
 
-import gpu          # Simula os recursos de uma GPU
+import gpu
 import utils
 
 class GL:
@@ -32,6 +32,7 @@ class GL:
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
         """Define parametros para câmera de razão de aspecto, plano próximo e distante."""
+        print("\n=== Rasterizer Setup ===")
         GL.width = width
         GL.height = height
         GL.near = near
@@ -45,6 +46,7 @@ class GL:
             print("Using default 2x2 sampling")
 
         print("Sampling: " + str(GL.sampling_X_) + "X" + str(GL.sampling_X_))
+
         utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, GL.sampling_X_)
         GL.point_to_screen = utils.point_screen(width, height)
 
@@ -55,7 +57,7 @@ class GL:
         # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
-        # print("Viewpoint")
+        print("\n=== Viewpoint ===")
         GL.view_to_point = utils.view_point(fieldOfView, GL.near, GL.far, GL.width, GL.height)
         GL.world_to_view = utils.world_view_lookat_simple(position, orientation)
 
@@ -70,7 +72,7 @@ class GL:
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
         # modelos do mundo em alguma estrutura de pilha.
 
-        # print("Transform")
+        print("\n=== Transform in ===")
         GL.model_to_world += [utils.model_world(translation, rotation, scale)]
         GL.mvp = utils.mvp(GL)
 
@@ -82,7 +84,7 @@ class GL:
         # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
         # pilha implementada.
 
-        # print("Saindo de Transform")
+        print("\n=== Transform out ===")
         if len(GL.model_to_world) > 0: GL.model_to_world.pop()
     
     @staticmethod
@@ -197,23 +199,23 @@ class GL:
         square_p8 = (x, -y, -z)
 
         point = [
-                square_p1, square_p2, square_p3,
-                square_p3, square_p4, square_p1,
+            square_p1, square_p2, square_p3,
+            square_p3, square_p4, square_p1,
 
-                square_p7, square_p1, square_p4,
-                square_p4, square_p5, square_p7,
-                
-                square_p8, square_p7, square_p5,
-                square_p5, square_p6, square_p8,
-                
-                square_p8, square_p6, square_p2,
-                square_p2, square_p6, square_p3,
-                
-                square_p6, square_p5, square_p4,
-                square_p4, square_p3, square_p6,
-                
-                square_p8, square_p7, square_p1,
-                square_p1, square_p2, square_p8
+            square_p7, square_p1, square_p4,
+            square_p4, square_p5, square_p7,
+            
+            square_p8, square_p7, square_p5,
+            square_p5, square_p6, square_p8,
+            
+            square_p8, square_p6, square_p2,
+            square_p2, square_p6, square_p3,
+            
+            square_p6, square_p5, square_p4,
+            square_p4, square_p3, square_p6,
+            
+            square_p8, square_p7, square_p1,
+            square_p1, square_p2, square_p8
         ]
 
         point = list(sum(point, ()))
@@ -245,22 +247,40 @@ class GL:
         # implementadado um método para a leitura de imagens.
 
         # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedFaceSet : ")
-        if coord:
-            print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        print("colorPerVertex = {0}".format(colorPerVertex))
-        if colorPerVertex and color and colorIndex:
-            print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        if texCoord and texCoordIndex:
-            print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
-        if current_texture:
-            image = gpu.GPU.load_texture(current_texture[0])
-            print("\t Matriz com image = {0}".format(image))
-            print("\t Dimensões da image = {0}".format(image.shape))
-        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+        # print("IndexedFaceSet : ")
+        # if coord:
+        #     print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
+        # print("colorPerVertex = {0}".format(colorPerVertex))
+        # if colorPerVertex and color and colorIndex:
+        #     print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
+        # if texCoord and texCoordIndex:
+        #     print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
+        # if current_texture:
+        #     image = gpu.GPU.load_texture(current_texture[0])
+        #     print("\t Matriz com image = {0}".format(image))
+            # print("\t Dimensões da image = {0}".format(image.shape))
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixels([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        ## Transformations
+        screen_points = utils.transform_points(coord, GL)
+        
+        ## Raster
+        triangles = []
+        vertex_colors = []
+        
+        for i in range(0, len(coordIndex) - 3, 4):
+            triangles += [[screen_points[coordIndex[i]][0:2, 0:1], screen_points[coordIndex[i + 1]][0:2, 0:1], screen_points[coordIndex[i + 2]][0:2, 0:1]]]
+
+            offset_1 = (colorIndex[i]) * 3
+            offset_2 = (colorIndex[i + 1]) * 3
+            offset_3 = (colorIndex[i + 2]) * 3
+
+            vertex_colors += [[
+                [color[offset_1], color[offset_1 + 1], color[offset_1 + 2]], 
+                [color[offset_2], color[offset_2 + 1], color[offset_2 + 2]], 
+                [color[offset_3], color[offset_3 + 1], color[offset_3 + 2]]
+            ]]
+
+        utils.Rasterizer.render_test(triangles, vertex_colors)
 
     # Para o futuro (Não para versão atual do projeto.)
     def vertex_shader(self, shader):
