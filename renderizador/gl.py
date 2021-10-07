@@ -11,6 +11,7 @@ Data: 13 de setembro de 2021
 
 import gpu
 import utils
+import numpy as np
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -21,18 +22,20 @@ class GL:
     far = 1000    # plano de corte distante
     sampling_X_ = 2
     
-    orientation = None
     eye = None
+    mvp = None
+    orientation = None
     view_to_point = None
     world_to_view = None
-    model_to_world = []
     point_to_screen = None
-    mvp = None
+    transformation_matrix_stack = None
+    model_to_world = []
 
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
         """Define parametros para câmera de razão de aspecto, plano próximo e distante."""
         print("\n=== Rasterizer Setup ===")
+        
         GL.width = width
         GL.height = height
         GL.near = near
@@ -47,7 +50,7 @@ class GL:
 
         print("Sampling: " + str(GL.sampling_X_) + "X" + str(GL.sampling_X_))
 
-        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, GL.sampling_X_)
+        utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, GL.sampling_X_, True)
         GL.point_to_screen = utils.point_screen(width, height)
 
     @staticmethod
@@ -73,7 +76,10 @@ class GL:
         # modelos do mundo em alguma estrutura de pilha.
 
         print("\n=== Transform in ===")
-        GL.model_to_world += [utils.model_world(translation, rotation, scale)]
+        GL.transformation_matrix_stack = utils.model_world(translation, rotation, scale)
+        if len(GL.model_to_world) > 0: GL.transformation_matrix_stack = np.dot(GL.model_to_world[len(GL.model_to_world) - 1], GL.transformation_matrix_stack)
+
+        GL.model_to_world += [GL.transformation_matrix_stack]
         GL.mvp = utils.mvp(GL)
 
     @staticmethod
@@ -110,9 +116,9 @@ class GL:
         triangles = []
 
         for p in range(0, len(screen_points) - 2, 3):
-            triangles += [[screen_points[p][0:2, 0:1], screen_points[p + 1][0:2, 0:1], screen_points[p + 2][0:2, 0:1]]]
+            triangles += [[screen_points[p][0:3, 0:1], screen_points[p + 1][0:3, 0:1], screen_points[p + 2][0:3, 0:1]]]
         
-        utils.Rasterizer.render(triangles, colors["diffuseColor"])
+        utils.Rasterizer.render(triangles=triangles, colors=colors["diffuseColor"])
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
@@ -137,10 +143,10 @@ class GL:
         triangles = []
 
         for i in range(stripCount[0] - 2):
-            triangles += [[screen_points[i + 2][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i][0:2, 0:1]]]
-            if i % 2 == 0: triangles += [[screen_points[i][0:2, 0:1], screen_points[i + 1][0:2, 0:1], screen_points[i + 2][0:2, 0:1]]]
+            triangles += [[screen_points[i + 2][0:3, 0:1], screen_points[i + 1][0:3, 0:1], screen_points[i][0:3, 0:1]]]
+            if i % 2 == 0: triangles += [[screen_points[i][0:3, 0:1], screen_points[i + 1][0:3, 0:1], screen_points[i + 2][0:3, 0:1]]]
         
-        utils.Rasterizer.render(triangles, colors["diffuseColor"])
+        utils.Rasterizer.render(triangles=triangles, colors=colors["diffuseColor"])
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -166,10 +172,10 @@ class GL:
         triangles = []
 
         for i in range(len(index) - 3):
-            triangles += [[screen_points[index[i + 2]][0:2, 0:1], screen_points[index[i + 1]][0:2, 0:1], screen_points[index[i]][0:2, 0:1]]]
-            if i % 2 == 0: triangles += [[screen_points[index[i]][0:2, 0:1], screen_points[index[i + 1]][0:2, 0:1], screen_points[index[i + 2]][0:2, 0:1]]]
+            triangles += [[screen_points[index[i + 2]][0:3, 0:1], screen_points[index[i + 1]][0:3, 0:1], screen_points[index[i]][0:3, 0:1]]]
+            if i % 2 == 0: triangles += [[screen_points[index[i]][0:3, 0:1], screen_points[index[i + 1]][0:3, 0:1], screen_points[index[i + 2]][0:3, 0:1]]]
         
-        utils.Rasterizer.render(triangles, colors["diffuseColor"])
+        utils.Rasterizer.render(triangles=triangles, colors=colors["diffuseColor"])
 
     @staticmethod
     def box(size, colors):
@@ -248,39 +254,47 @@ class GL:
 
         # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         # print("IndexedFaceSet : ")
-        # if coord:
-        #     print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        # print("colorPerVertex = {0}".format(colorPerVertex))
-        # if colorPerVertex and color and colorIndex:
-        #     print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        # if texCoord and texCoordIndex:
-        #     print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
-        # if current_texture:
-        #     image = gpu.GPU.load_texture(current_texture[0])
-        #     print("\t Matriz com image = {0}".format(image))
-            # print("\t Dimensões da image = {0}".format(image.shape))
 
         ## Transformations
         screen_points = utils.transform_points(coord, GL)
         
         ## Raster
+        vertex_color = colorPerVertex and color and colorIndex
+        has_texture = texCoord and texCoordIndex and current_texture
+        input_color = [] if vertex_color else colors["diffuseColor"]
         triangles = []
-        vertex_colors = []
-        
+        texture = []
+        uvs = []
+
+        if has_texture:
+            texture = gpu.GPU.load_texture(current_texture[0])
+
         for i in range(0, len(coordIndex) - 3, 4):
-            triangles += [[screen_points[coordIndex[i]][0:2, 0:1], screen_points[coordIndex[i + 1]][0:2, 0:1], screen_points[coordIndex[i + 2]][0:2, 0:1]]]
+            triangles += [[screen_points[coordIndex[i]][0:3, 0:1], screen_points[coordIndex[i + 1]][0:3, 0:1], screen_points[coordIndex[i + 2]][0:3, 0:1]]]
 
-            offset_1 = (colorIndex[i]) * 3
-            offset_2 = (colorIndex[i + 1]) * 3
-            offset_3 = (colorIndex[i + 2]) * 3
+            if has_texture:
+                offset_1 = (texCoordIndex[i]) * 2
+                offset_2 = (texCoordIndex[i + 1]) * 2
+                offset_3 = (texCoordIndex[i + 2]) * 2
 
-            vertex_colors += [[
-                [color[offset_1], color[offset_1 + 1], color[offset_1 + 2]], 
-                [color[offset_2], color[offset_2 + 1], color[offset_2 + 2]], 
-                [color[offset_3], color[offset_3 + 1], color[offset_3 + 2]]
-            ]]
+                uvs += [[
+                    [texCoord[offset_1], texCoord[offset_1 + 1]],
+                    [texCoord[offset_2], texCoord[offset_2 + 1]],
+                    [texCoord[offset_3], texCoord[offset_3 + 1]]
+                ]]
 
-        utils.Rasterizer.render_test(triangles, vertex_colors)
+            elif vertex_color:
+                offset_1 = (colorIndex[i]) * 3
+                offset_2 = (colorIndex[i + 1]) * 3
+                offset_3 = (colorIndex[i + 2]) * 3
+
+                input_color += [[
+                    [color[offset_1], color[offset_1 + 1], color[offset_1 + 2]], 
+                    [color[offset_2], color[offset_2 + 1], color[offset_2 + 2]], 
+                    [color[offset_3], color[offset_3 + 1], color[offset_3 + 2]]
+                ]]
+
+        utils.Rasterizer.render(triangles=triangles, colors=input_color, vertex_color=vertex_color, texture=texture, uv=uvs, has_texture=has_texture)
 
     # Para o futuro (Não para versão atual do projeto.)
     def vertex_shader(self, shader):

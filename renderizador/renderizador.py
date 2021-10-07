@@ -138,8 +138,8 @@ class Renderizador:
         if args.height:
             self.height = args.height
         
-        self.width = 15
-        self.height = 15
+        # self.width = 15
+        # self.height = 15
 
         path = os.path.dirname(os.path.abspath(self.x3d_file))
 
