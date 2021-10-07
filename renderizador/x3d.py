@@ -272,6 +272,7 @@ class Appearance(X3DAppearanceNode):
         if self.imageTexture:
             self.imageTexture.render()
 
+
 class Shape(X3DShapeNode):
     """Define aparência e geometria, que são usados para criar objetos renderizados."""
 
@@ -300,7 +301,7 @@ class Shape(X3DShapeNode):
                 self.geometry = Box(child)
             elif child.tag == "IndexedFaceSet":
                 self.geometry = IndexedFaceSet(child)
-
+        
     def render(self):
         """Rotina de renderização."""
         if self.appearance:
