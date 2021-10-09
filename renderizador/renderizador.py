@@ -16,16 +16,16 @@ import argparse     # Para tratar os parâmetros da linha de comando
 import gl           # Recupera rotinas de suporte ao X3D
 
 import interface    # Janela de visualização baseada no Matplotlib
-import gpu          # Simula os recursos de uma GPU
+import gpu
 
 import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
 
 # Deprecated
 import rotinas      # Desatualizado possui rotinas antigas de suporte ao X3D (legado)
+import utils
 
 LARGURA = 60  # Valor padrão para largura da tela
 ALTURA = 40   # Valor padrão para altura da tela
-
 
 class Renderizador:
     """Realiza a renderização da cena informada."""
@@ -88,6 +88,7 @@ class Renderizador:
     def pre(self):
         """Rotinas pré renderização."""
         # Função invocada antes do processo de renderização iniciar.
+        utils.RenderProcesses.run_pre_render()
 
         # Limpa o frame buffers atual
         gpu.GPU.clear_buffer()
@@ -99,6 +100,7 @@ class Renderizador:
     def pos(self):
         """Rotinas pós renderização."""
         # Função invocada após o processo de renderização terminar.
+        utils.RenderProcesses.run_post_render()
 
         # Método para a troca dos buffers (NÃO IMPLEMENTADO)
         gpu.GPU.swap_buffers()
@@ -138,8 +140,8 @@ class Renderizador:
         if args.height:
             self.height = args.height
         
-        # self.width = 15
-        # self.height = 15
+        # self.width = 1270
+        # self.height = 720
 
         path = os.path.dirname(os.path.abspath(self.x3d_file))
 
@@ -175,6 +177,7 @@ class Renderizador:
         # Coleta o tempo antes da renderização
         start = time.process_time()
 
+        utils.RenderProcesses.setup(self.scene)
         # Laço principal de renderização
         self.pre()  # executa rotina pré renderização
         self.scene.render()  # faz o traversal no grafo de cena

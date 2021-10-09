@@ -1,4 +1,4 @@
-import enum
+from PIL import Image
 import numpy as np
 import math
 import time
@@ -132,19 +132,40 @@ def transform_points(point, gl):
     print("::: Time to transform points: %s seconds :::\n" % (time.time() - start_time))
     return screen_points
 
+class RenderProcesses:
+
+    pre_render = []
+    post_render = []
+    scene = None
+    
+    @staticmethod
+    def setup(scene):
+        RenderProcesses.scene = scene
+
+    @staticmethod
+    def run_pre_render():
+        print("\n*************** Pre rendering ***************\n")
+        for process in RenderProcesses.pre_render:
+            process()
+        print("*************** Rendering ***************")
+        
+    @staticmethod
+    def run_post_render():
+        print("\n*************** Post rendering ***************\n")
+        for process in RenderProcesses.post_render:
+            process()
+        print("*************** Done ***************\n")
+
 class Rasterizer:
 
     width = None
     height = None
-    gpu_instance = None
-    sampling = None
-    frame_buffer = []
-    z_buffer = []
     z_test = False
-
-    class State(enum.Enum):
-        SEEKING = 1
-        FILLING = 2
+    sampling = None
+    gpu_instance = None
+    z_buffer = []
+    frame_buffer = []
+    mip_maps_textures = {}
 
     class AABB:
         min_x = None
@@ -160,7 +181,6 @@ class Rasterizer:
     
     @staticmethod
     def setup(gpu_instance, width, height, sampling, z_test):
-        print("\n======================================================================")
         Rasterizer.gpu_instance = gpu_instance
         Rasterizer.width = width
         Rasterizer.height = height
@@ -170,6 +190,9 @@ class Rasterizer:
 
         if z_test:
             Rasterizer.z_buffer = [None] * ((sampling ** 2) * width * height)
+        
+        RenderProcesses.pre_render += [Rasterizer.mip_maps]
+        RenderProcesses.post_render += [Rasterizer.sample]
 
     @staticmethod
     def render(triangles, colors, vertex_color=False, texture=None, uv=None, has_texture=False):
@@ -183,11 +206,86 @@ class Rasterizer:
 
             print("=== Time to raster triangle: %s seconds ===\n" % (time.time() - start_time_raster))
 
-        start_time_sample = time.time()
-        Rasterizer.sample()
-        print("!!! Time to sample: %s seconds !!!\n" % (time.time() - start_time_sample))
-        print("--- Time to render: %s seconds ---" % (time.time() - start_time_render))
+        print("--- Time to render triangle: %s seconds ---" % (time.time() - start_time_render))
         print("======================================================================\n")
+
+    @staticmethod
+    def mip_maps():
+        start_mip_maps_time = time.time()
+        start_time_mip_maps_prep = time.time()
+
+        scene = RenderProcesses.scene
+
+        if scene.current_appearance == None or scene.current_appearance.imageTexture == None: return
+
+        textures = scene.current_appearance.imageTexture.url
+        current_texture = textures[0]
+
+        texture = Rasterizer.gpu_instance.load_texture(current_texture)
+
+        ## Dict
+        im = Image.fromarray(texture)
+        im.save("renderizador/mip_maps_textures_debug/test0.png")
+
+        shape = texture.shape[0] if texture.shape[0] < texture.shape[1] else texture.shape[1]
+        levels = int(math.log(shape)/math.log(2))
+        
+        points = []
+        pixel = []
+
+        print("Name of texture: " + current_texture)
+        print("Numer of mip maps levels: " + str(levels))
+
+        print("--> Time to prep mip maps %s seconds" % (time.time() - start_time_mip_maps_prep))
+
+        for level in range(1, levels + 1):
+            start_time_mip_maps_process = time.time()
+            new_texture = texture
+            d = level * 2
+            d_squared = d ** 2
+            shape_column = len(texture) - d - 1
+            shape_row = len(texture[0]) - d - 1
+
+            for column in range(0, shape_column, d):
+                
+                points = []
+                for c in range(column, column + d):
+                    points += [c]
+                
+                for row in range(0, shape_row, d):
+                    for r in range(row, row + d):
+                        for i in range(d):
+                            points += [r]
+
+                    r_mean = 0
+                    g_mean = 0
+                    b_mean = 0
+
+                    for i in range(d):
+                        p0 = points[i]
+                        tex_p0 = texture[p0]
+
+                        for j in range(d):
+                            p1 = points[d + j * d]
+                            tex_p0_p1 = tex_p0[p1]
+
+                            pixel += [[p0, p1]]
+                            r_mean += tex_p0_p1[0]
+                            g_mean += tex_p0_p1[1]
+                            b_mean += tex_p0_p1[2]
+
+                    for p in pixel:
+                        new_texture[p[0]][p[1]] = [r_mean / d_squared, g_mean / d_squared, b_mean / d_squared, 255]
+
+                    points = points[:d]
+                    pixel = []
+                
+            print("--> Time to process mip maps level %d is %s seconds" % (level, time.time() - start_time_mip_maps_process))
+
+            im = Image.fromarray(new_texture)
+            im.save("renderizador/mip_maps_textures_debug/test%d.png" % (level))
+
+        print("|||| Time to pre process mip maps levels: %s seconds ||||\n" % (time.time() - start_mip_maps_time))
 
     @staticmethod
     def raster(triangle, colors=None, vertex_color=False, texture=None, uv=None, has_texture=False):
@@ -307,7 +405,7 @@ class Rasterizer:
 
                     elif has_texture:
                         u = ((uv_1[0] * alpha + uv_2[0] * gamma + uv_3[0] * betha) / z) * tex_shape_x
-                        v = ((uv_1[1] * alpha + uv_2[1] * gamma + uv_3[1] * betha) / z) * - tex_shape_y + tex_shape_y
+                        v = ((uv_1[1] * alpha + uv_2[1] * gamma + uv_3[1] * betha) / z) * - tex_shape_y
                         
                         # frame_buffer[offset] = [int(v) * 255, int(u) * 255, 0]
                         frame_buffer[offset] = texture[int(v)][int(u)]
@@ -320,7 +418,8 @@ class Rasterizer:
 
     @staticmethod
     def sample():
-
+        
+        start_time_sample = time.time()
         start_time_sample_prep = time.time()
 
         ##!! For optimization purposes
@@ -360,3 +459,4 @@ class Rasterizer:
                     gpu_instance.draw_pixels([int(x / sampling), y], gpu_instance.RGB8, [r_mean, g_mean, b_mean])
         
         print("--> Time to process sampling %s seconds" % (time.time() - start_time_sampling_process))
+        print("!!! Time to sample: %s seconds !!!\n" % (time.time() - start_time_sample))

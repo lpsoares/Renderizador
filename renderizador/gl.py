@@ -52,6 +52,7 @@ class GL:
 
         utils.Rasterizer.setup(gpu.GPU, GL.width, GL.height, GL.sampling_X_, True)
         GL.point_to_screen = utils.point_screen(width, height)
+        print("\n======================================================================")
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -90,7 +91,7 @@ class GL:
         # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
         # pilha implementada.
 
-        print("\n=== Transform out ===")
+        print("=== Transform out ===")
         if len(GL.model_to_world) > 0: GL.model_to_world.pop()
     
     @staticmethod
