@@ -264,11 +264,7 @@ class GL:
         has_texture = texCoord and texCoordIndex and current_texture
         input_color = [] if vertex_color else colors["diffuseColor"]
         triangles = []
-        texture = []
         uvs = []
-
-        if has_texture:
-            texture = gpu.GPU.load_texture(current_texture[0])
 
         for i in range(0, len(coordIndex) - 3, 4):
             triangles += [[screen_points[coordIndex[i]][0:3, 0:1], screen_points[coordIndex[i + 1]][0:3, 0:1], screen_points[coordIndex[i + 2]][0:3, 0:1]]]
@@ -295,7 +291,7 @@ class GL:
                     [color[offset_3], color[offset_3 + 1], color[offset_3 + 2]]
                 ]]
 
-        utils.Rasterizer.render(triangles=triangles, colors=input_color, vertex_color=vertex_color, texture=texture, uv=uvs, has_texture=has_texture)
+        utils.Rasterizer.render(triangles=triangles, colors=input_color, vertex_color=vertex_color, texture=current_texture, uv=uvs, has_texture=has_texture)
 
     # Para o futuro (Não para versão atual do projeto.)
     def vertex_shader(self, shader):
