@@ -201,12 +201,12 @@ class Rasterizer:
         for i in range(len(triangles)):
             start_time_raster = time.time()
             if vertex_color: Rasterizer.raster(triangle=triangles[i], colors=colors[i], vertex_color=vertex_color)
-            elif has_texture: Rasterizer.raster(triangle=triangles[i], texture=texture, uv=uv[i], has_texture=has_texture)
+            elif has_texture: Rasterizer.raster(triangle=triangles[i], texture=texture[0], uv=uv[i], has_texture=has_texture)
             else: Rasterizer.raster(triangle=triangles[i], colors=colors)
 
             print("=== Time to raster triangle: %s seconds ===\n" % (time.time() - start_time_raster))
 
-        print("--- Time to render triangle: %s seconds ---" % (time.time() - start_time_render))
+        print("--- Time to render triangles: %s seconds ---" % (time.time() - start_time_render))
         print("======================================================================\n")
 
     @staticmethod
@@ -220,31 +220,33 @@ class Rasterizer:
 
         textures = scene.current_appearance.imageTexture.url
         current_texture = textures[0]
-
+        Rasterizer.mip_maps_textures[current_texture] = []
         texture = Rasterizer.gpu_instance.load_texture(current_texture)
 
         ## Dict
-        im = Image.fromarray(texture)
-        im.save("renderizador/mip_maps_textures_debug/test0.png")
+        Rasterizer.mip_maps_textures[current_texture] += [texture.copy()]
+        # im = Image.fromarray(texture)
+        # im.save("renderizador/mip_maps_textures_debug/test0.png")
 
+        d = 1
+        same_tex_shape = True
         shape = texture.shape[0] if texture.shape[0] < texture.shape[1] else texture.shape[1]
         levels = int(math.log(shape)/math.log(2))
         
         points = []
-        pixel = []
 
         print("Name of texture: " + current_texture)
         print("Numer of mip maps levels: " + str(levels))
-
         print("--> Time to prep mip maps %s seconds" % (time.time() - start_time_mip_maps_prep))
 
         for level in range(1, levels + 1):
             start_time_mip_maps_process = time.time()
-            new_texture = texture
-            d = level * 2
+            d = d * 2
+            new_texture = texture[:int(texture.shape[0] / d)][:int(texture.shape[1] / d)] if not same_tex_shape else texture
             d_squared = d ** 2
-            shape_column = len(texture) - d - 1
-            shape_row = len(texture[0]) - d - 1
+
+            shape_column = len(texture) - d + 1
+            shape_row = len(texture[0]) - d + 1
 
             for column in range(0, shape_column, d):
                 
@@ -262,28 +264,30 @@ class Rasterizer:
                     b_mean = 0
 
                     for i in range(d):
-                        p0 = points[i]
-                        tex_p0 = texture[p0]
+                        tex_p0 = texture[points[i]]
 
                         for j in range(d):
-                            p1 = points[d + j * d]
-                            tex_p0_p1 = tex_p0[p1]
+                            tex_p0_p1 = tex_p0[points[d + j * d]]
 
-                            pixel += [[p0, p1]]
                             r_mean += tex_p0_p1[0]
                             g_mean += tex_p0_p1[1]
                             b_mean += tex_p0_p1[2]
 
-                    for p in pixel:
-                        new_texture[p[0]][p[1]] = [r_mean / d_squared, g_mean / d_squared, b_mean / d_squared, 255]
+                    r_mean /= d_squared
+                    g_mean /= d_squared
+                    b_mean /= d_squared
+
+                    for p_column in range(column, column + d):
+                        for p_row in range(row, row + d):
+                            new_texture[p_column][p_row] = [r_mean, g_mean, b_mean, 255]
 
                     points = points[:d]
-                    pixel = []
-                
+            
             print("--> Time to process mip maps level %d is %s seconds" % (level, time.time() - start_time_mip_maps_process))
-
-            im = Image.fromarray(new_texture)
-            im.save("renderizador/mip_maps_textures_debug/test%d.png" % (level))
+            
+            Rasterizer.mip_maps_textures[current_texture] += [new_texture.copy()]
+            # im = Image.fromarray(new_texture)
+            # im.save("renderizador/mip_maps_textures_debug/test%d.png" % (level))
 
         print("|||| Time to pre process mip maps levels: %s seconds ||||\n" % (time.time() - start_mip_maps_time))
 
@@ -334,9 +338,6 @@ class Rasterizer:
             if triangle[p][0] < triangle_AABB.min_x: triangle_AABB.min_x = int(triangle[p][0, 0])
             if triangle[p][1] > triangle_AABB.max_y: triangle_AABB.max_y = int(triangle[p][1, 0] + 1)
             if triangle[p][1] < triangle_AABB.min_y: triangle_AABB.min_y = int(triangle[p][1, 0])
-
-        alpha_denominator = -(triangle_A_x - triangle_B_x) * (C_y_minus_B_y) + (triangle_A_y - triangle_B_y) * (C_x_minus_B_x)
-        betha_denominator = -(triangle_B_x - triangle_C_x) * (A_y_minus_C_y) + (triangle_B_y - triangle_C_y) * (A_x_minus_C_x)
         
         if vertex_color:
             for color in colors:
@@ -349,18 +350,25 @@ class Rasterizer:
             vertex_color_3 = [i * triangle_B_z for i in colors[2]]
         
         elif has_texture:
+            texture = Rasterizer.mip_maps_textures[texture]
+            tex_shape_x = texture[0].shape[0] - 1
+            tex_shape_y = texture[0].shape[1] - 1
             uv_1 = [i * triangle_A_z for i in uv[0]]
             uv_2 = [i * triangle_C_z for i in uv[1]]
             uv_3 = [i * triangle_B_z for i in uv[2]]
-            tex_shape_x = texture.shape[0] - 1
-            tex_shape_y = texture.shape[1] - 1
+
+            ##!! Remove
+            texture = texture[0]
 
         else:
             colors = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
 
+        alpha_denominator = -(triangle_A_x - triangle_B_x) * (C_y_minus_B_y) + (triangle_A_y - triangle_B_y) * (C_x_minus_B_x)
+        betha_denominator = -(triangle_B_x - triangle_C_x) * (A_y_minus_C_y) + (triangle_B_y - triangle_C_y) * (A_x_minus_C_x)
+
         print("--> Time to prep raster %s seconds" % (time.time() - start_time_raster_prep))
         start_time_raster_process = time.time()
-        
+
         for x in range(triangle_AABB.min_x, triangle_AABB.max_x):
             x_minus_xA = x - triangle_A_x
             x_minus_xB = x - triangle_B_x
@@ -369,7 +377,7 @@ class Rasterizer:
             dot[0][0] = x_minus_xA * normal1[0]
             dot[1][0] = x_minus_xB * normal2[0]
             dot[2][0] = x_minus_xC * normal3[0]
-
+            
             for y in range(triangle_AABB.min_y, triangle_AABB.max_y):
                 y_minus_yA = y - triangle_A_y
                 y_minus_yB = y - triangle_B_y
@@ -407,6 +415,14 @@ class Rasterizer:
                         u = ((uv_1[0] * alpha + uv_2[0] * gamma + uv_3[0] * betha) / z) * tex_shape_x
                         v = ((uv_1[1] * alpha + uv_2[1] * gamma + uv_3[1] * betha) / z) * - tex_shape_y
                         
+                        # du_dx = u10 - u00
+                        # du_dy = u01 - u00
+                        # dv_dx = v10 - v00
+                        # dv_dy = v01 - u00
+
+                        # L = max(math.sqrt(du_dx ** 2 + dv_dx ** 2), math.sqrt(du_dy ** 2 + dv_dy ** 2))
+                        # D = math.log2(L)
+
                         # frame_buffer[offset] = [int(v) * 255, int(u) * 255, 0]
                         frame_buffer[offset] = texture[int(v)][int(u)]
                         continue

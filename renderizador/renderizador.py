@@ -142,7 +142,7 @@ class Renderizador:
         
         # self.width = 1270
         # self.height = 720
-
+ 
         path = os.path.dirname(os.path.abspath(self.x3d_file))
 
         # Iniciando simulação de GPU
