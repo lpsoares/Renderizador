@@ -223,13 +223,11 @@ class Rasterizer:
         Rasterizer.mip_maps_textures[current_texture] = []
         texture = Rasterizer.gpu_instance.load_texture(current_texture)
 
-        ## Dict
         Rasterizer.mip_maps_textures[current_texture] += [texture.copy()]
         # im = Image.fromarray(texture)
         # im.save("renderizador/mip_maps_textures_debug/test0.png")
 
         d = 1
-        same_tex_shape = True
         shape = texture.shape[0] if texture.shape[0] < texture.shape[1] else texture.shape[1]
         levels = int(math.log(shape)/math.log(2))
         
@@ -242,22 +240,19 @@ class Rasterizer:
         for level in range(1, levels + 1):
             start_time_mip_maps_process = time.time()
             d = d * 2
-            new_texture = texture[:int(texture.shape[0] / d)][:int(texture.shape[1] / d)] if not same_tex_shape else texture
             d_squared = d ** 2
+            shape_normalized = int(shape / d)
+            new_texture = texture[:shape_normalized][:shape_normalized, :shape_normalized].copy()
 
             shape_column = len(texture) - d + 1
             shape_row = len(texture[0]) - d + 1
 
             for column in range(0, shape_column, d):
-                
-                points = []
-                for c in range(column, column + d):
-                    points += [c]
-                
+                points = [c for c in range(column, column + d)]
+
                 for row in range(0, shape_row, d):
                     for r in range(row, row + d):
-                        for i in range(d):
-                            points += [r]
+                        points += [r] * d
 
                     r_mean = 0
                     g_mean = 0
@@ -276,11 +271,8 @@ class Rasterizer:
                     r_mean /= d_squared
                     g_mean /= d_squared
                     b_mean /= d_squared
-
-                    for p_column in range(column, column + d):
-                        for p_row in range(row, row + d):
-                            new_texture[p_column][p_row] = [r_mean, g_mean, b_mean, 255]
-
+                    
+                    new_texture[int(column / d)][int(row / d)] = [r_mean, g_mean, b_mean, 255]
                     points = points[:d]
             
             print("--> Time to process mip maps level %d is %s seconds" % (level, time.time() - start_time_mip_maps_process))
@@ -439,33 +431,38 @@ class Rasterizer:
         start_time_sample_prep = time.time()
 
         ##!! For optimization purposes
+        size_y = Rasterizer.height
         sampling = Rasterizer.sampling
+        sampling_square = sampling ** 2
         frame_buffer = Rasterizer.frame_buffer
         gpu_instance = Rasterizer.gpu_instance
         frame_buffer_len = len(frame_buffer)
         sampled_size_x = Rasterizer.width * sampling
         sampled_size_y = Rasterizer.height * sampling
-        size_y = Rasterizer.height
-        sampling_square = sampling ** 2
 
         print("--> Time to prep sampling %s seconds" % (time.time() - start_time_sample_prep))
         start_time_sampling_process = time.time()
         
         for x in range(0, sampled_size_x, sampling):
+            x_offset = x * sampled_size_y
+            
             for y in range(size_y):
-                y_offset = x * sampled_size_y + y * sampling
+                y_offset = x_offset + y * sampling
                 r_mean = 0
                 g_mean = 0
                 b_mean = 0
                 
                 for i in range(sampling):
-                    for j in range(sampling):
-                        offset = i * sampled_size_y + j + y_offset
+                    offset_x = i * sampled_size_y + y_offset
 
-                        if offset == frame_buffer_len: break 
-                        r_mean += frame_buffer[offset][0]
-                        g_mean += frame_buffer[offset][1]
-                        b_mean += frame_buffer[offset][2]
+                    for j in range(sampling):
+                        offset = offset_x + j
+                        
+                        if offset == frame_buffer_len: break
+                        color = frame_buffer[offset]
+                        r_mean += color[0]
+                        g_mean += color[1]
+                        b_mean += color[2]
 
                 if r_mean > 0 or g_mean > 0 or b_mean > 0:
                     r_mean /= sampling_square
