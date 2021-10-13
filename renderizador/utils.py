@@ -324,6 +324,9 @@ class Rasterizer:
 
         dot = [[0, 0], [0, 0], [0, 0]]
 
+        alpha_denominator = -(triangle_A_x - triangle_B_x) * (C_y_minus_B_y) + (triangle_A_y - triangle_B_y) * (C_x_minus_B_x)
+        betha_denominator = -(triangle_B_x - triangle_C_x) * (A_y_minus_C_y) + (triangle_B_y - triangle_C_y) * (A_x_minus_C_x)
+        
         triangle_AABB = Rasterizer.AABB(int(triangle[0][0, 0]), int(triangle[0][1, 0]), int(triangle[0][0, 0] + 1), int(triangle[0][1, 0] + 1))
         for p in range(1, len(triangle)):
             if triangle[p][0] > triangle_AABB.max_x: triangle_AABB.max_x = int(triangle[p][0, 0] + 1)
@@ -342,21 +345,40 @@ class Rasterizer:
             vertex_color_3 = [i * triangle_B_z for i in colors[2]]
         
         elif has_texture:
+
             texture = Rasterizer.mip_maps_textures[texture]
-            tex_shape_x = texture[0].shape[0] - 1
-            tex_shape_y = texture[0].shape[1] - 1
             uv_1 = [i * triangle_A_z for i in uv[0]]
             uv_2 = [i * triangle_C_z for i in uv[1]]
             uv_3 = [i * triangle_B_z for i in uv[2]]
 
-            ##!! Remove
-            texture = texture[0]
+            def get_uv(x, y):
+                alpha = (-(x - triangle_B_x) * (C_y_minus_B_y) + (y - triangle_B_y) * (C_x_minus_B_x)) / alpha_denominator
+                betha = (-(x - triangle_C_x) * (A_y_minus_C_y) + (y - triangle_C_y) * (A_x_minus_C_x)) / betha_denominator
+                gamma = 1 - alpha - betha
+                z = triangle_A_z * alpha + triangle_C_z * gamma + triangle_B_z * betha
+
+                # return u, v
+                return ((uv_1[0] * alpha + uv_2[0] * gamma + uv_3[0] * betha) / z), ((uv_1[1] * alpha + uv_2[1] * gamma + uv_3[1] * betha) / z)
+
+            u00, v00 = get_uv(triangle_A_x, triangle_A_y)
+            u10, v10 = get_uv(triangle_A_x + 1, triangle_A_y)
+            u01, v01 = get_uv(triangle_A_x, triangle_A_y - 1)
+
+            du_dx = (u10 - u00) * texture[0].shape[0]
+            du_dy = (u01 - u00) * texture[0].shape[0]
+            dv_dx = (v10 - v00) * texture[0].shape[0]
+            dv_dy = (v01 - u00) * texture[0].shape[0]
+
+            L = max(math.sqrt(du_dx ** 2 + dv_dx ** 2), math.sqrt(du_dy ** 2 + dv_dy ** 2))
+            D = round(math.log2(L))
+
+            print("--> Mip maps level chosen for triangle: %d" % (D))
+            texture = texture[D]
+            tex_shape_x = texture.shape[0] - 1
+            tex_shape_y = texture.shape[1] - 1
 
         else:
             colors = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
-
-        alpha_denominator = -(triangle_A_x - triangle_B_x) * (C_y_minus_B_y) + (triangle_A_y - triangle_B_y) * (C_x_minus_B_x)
-        betha_denominator = -(triangle_B_x - triangle_C_x) * (A_y_minus_C_y) + (triangle_B_y - triangle_C_y) * (A_x_minus_C_x)
 
         print("--> Time to prep raster %s seconds" % (time.time() - start_time_raster_prep))
         start_time_raster_process = time.time()
@@ -396,7 +418,7 @@ class Rasterizer:
                     if z_test:
                         if z_buffer[offset] == None or z_buffer[offset] < z: z_buffer[offset] = z
                         else: continue
-                    
+
                     if vertex_color:
                         colors = [
                             (vertex_color_1[0] * alpha + vertex_color_2[0] * gamma + vertex_color_3[0] * betha) / z,
@@ -406,14 +428,6 @@ class Rasterizer:
                     elif has_texture:
                         u = ((uv_1[0] * alpha + uv_2[0] * gamma + uv_3[0] * betha) / z) * tex_shape_x
                         v = ((uv_1[1] * alpha + uv_2[1] * gamma + uv_3[1] * betha) / z) * - tex_shape_y
-                        
-                        # du_dx = u10 - u00
-                        # du_dy = u01 - u00
-                        # dv_dx = v10 - v00
-                        # dv_dy = v01 - u00
-
-                        # L = max(math.sqrt(du_dx ** 2 + dv_dx ** 2), math.sqrt(du_dy ** 2 + dv_dy ** 2))
-                        # D = math.log2(L)
 
                         # frame_buffer[offset] = [int(v) * 255, int(u) * 255, 0]
                         frame_buffer[offset] = texture[int(v)][int(u)]
