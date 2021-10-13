@@ -21,6 +21,7 @@ class FrameBuffer:
     """Organiza objetos FrameBuffer (FrameBuffer Objects)."""
 
     def __init__(self):
+        """Iniciando propriedades do FramBuffer."""
         self.color = np.empty(0)
         self.depth = np.empty(0)
 
@@ -42,15 +43,11 @@ class GPU:
     DEPTH_ATTACHMENT = 1  # Para FrameBuffer Object identificar memória de imagem de profundidade
 
     # Atributos estáticos
-    width = 60
-    height = 40
+    width = 60     # Legado, deverá ser REMOVIDO
+    height = 40    # Legado, deverá ser REMOVIDO
     image_file = None
     frame_buffer = None
     path = "."
-
-    # Legado, deverá ser REMOVIDO
-    width = 1
-    height = 1
 
     def __init__(self, image_file, path):
         """Define o nome do arquivo para caso se salvar o framebuffer."""
@@ -150,10 +147,11 @@ class GPU:
     @staticmethod
     def draw_pixels(coord, mode, data):
         """Define o valor do pixel no framebuffer."""
-        if mode in (GPU.RGB8, GPU.RGBA8):  # cores
-            GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
-        elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
-            GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
+        if coord and data:
+            if mode in (GPU.RGB8, GPU.RGBA8):  # cores
+                GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
+            elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
+                GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
 
     @staticmethod
     def read_pixels(coord, mode):
