@@ -506,7 +506,7 @@ class Viewpoint(X3DViewpointNode):
         self.orientation = [0, 0, 1, 0]    # Valores padrão
         self.fieldOfView = math.pi/4       # Valores padrão
 
-        if node:
+        if node is not None:
             if 'position' in node.attrib:
                 position_str = re.split(r'[,\s]\s*', node.attrib['position'].strip())
                 self.position = [float(point) for point in position_str]
