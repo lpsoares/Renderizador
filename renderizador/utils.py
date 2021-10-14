@@ -360,14 +360,17 @@ class Rasterizer:
                 # return u, v
                 return ((uv_1[0] * alpha + uv_2[0] * gamma + uv_3[0] * betha) / z), ((uv_1[1] * alpha + uv_2[1] * gamma + uv_3[1] * betha) / z)
 
-            u00, v00 = get_uv(triangle_A_x, triangle_A_y)
-            u10, v10 = get_uv(triangle_A_x + 1, triangle_A_y)
-            u01, v01 = get_uv(triangle_A_x, triangle_A_y - 1)
+            x_center = (triangle_A_x + triangle_B_x + triangle_C_x) / 3
+            y_center = (triangle_A_y + triangle_B_y + triangle_C_y) / 3
 
+            u00, v00 = get_uv(x_center, y_center)
+            u10, v10 = get_uv(x_center + 1, y_center)
+            u01, v01 = get_uv(x_center, y_center - 1)
+            
             du_dx = (u10 - u00) * texture[0].shape[0]
             du_dy = (u01 - u00) * texture[0].shape[0]
             dv_dx = (v10 - v00) * texture[0].shape[0]
-            dv_dy = (v01 - u00) * texture[0].shape[0]
+            dv_dy = (v01 - v00) * texture[0].shape[0]
 
             L = max(math.sqrt(du_dx ** 2 + dv_dx ** 2), math.sqrt(du_dy ** 2 + dv_dy ** 2))
             D = round(math.log2(L))
