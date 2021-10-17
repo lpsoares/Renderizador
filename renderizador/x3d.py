@@ -109,14 +109,19 @@ class Scene:
 
     def __init__(self, node):
         self.children = []
-        for child in node: # garante pegar o Viewpoint primeiro que tudo
-            clean(child) # remove namespace
-            if child.tag == "Viewpoint":
-                self.children.append(Viewpoint(child))
+        viewpoint = None
+
         for child in node:
             clean(child) # remove namespace
             if child.tag == "Transform":
                 self.children.append(Transform(child))
+            elif child.tag == "Viewpoint":
+                viewpoint = Viewpoint(child)
+
+        if viewpoint: # garante tratar o Viewpoint primeiro que tudo
+            self.children.insert(0, viewpoint)
+        else:  # cria um viewpoint se não definido
+            self.children.insert(0, Viewpoint())
 
     def render(self):
         """Rotina de renderização."""
@@ -496,23 +501,25 @@ class X3DViewpointNode(X3DBindableNode):
 class Viewpoint(X3DViewpointNode):
     """Define um ponto de vista que fornece uma vista em perspectiva da cena."""
 
-    def __init__(self, node):
+    def __init__(self, node=None):
         super().__init__() # Chama construtor da classe pai
         self.position = [0, 0, 10]         # Valores padrão
         self.orientation = [0, 0, 1, 0]    # Valores padrão
         self.fieldOfView = math.pi/4       # Valores padrão
-        if 'position' in node.attrib:
-            position_str = re.split(r'[,\s]\s*', node.attrib['position'].strip())
-            self.position = [float(point) for point in position_str]
 
-        if 'orientation' in node.attrib:
-            orientation_str = re.split(r'[,\s]\s*', node.attrib['orientation'].strip())
-            self.orientation = [float(point) for point in orientation_str]
+        if node is not None:
+            if 'position' in node.attrib:
+                position_str = re.split(r'[,\s]\s*', node.attrib['position'].strip())
+                self.position = [float(point) for point in position_str]
 
-        if 'fieldOfView' in node.attrib:
-            self.fieldOfView = float(node.attrib['fieldOfView'].strip())
-            if (self.fieldOfView < 0) or (self.fieldOfView > math.pi):
-                self.fieldOfView = math.pi/4
+            if 'orientation' in node.attrib:
+                orientation_str = re.split(r'[,\s]\s*', node.attrib['orientation'].strip())
+                self.orientation = [float(point) for point in orientation_str]
+
+            if 'fieldOfView' in node.attrib:
+                self.fieldOfView = float(node.attrib['fieldOfView'].strip())
+                if (self.fieldOfView < 0) or (self.fieldOfView > math.pi):
+                    self.fieldOfView = math.pi/4
 
     def render(self):
         """Rotina de renderização."""
