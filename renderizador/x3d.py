@@ -815,7 +815,6 @@ class X3DViewpointNode(X3DBindableNode):
         self.position = SFVec3f(node, "position", [0, 0, 10])
         self.orientation = SFRotation(node, "orientation", [0, 0, 1, 0])
 
-
 class Viewpoint(X3DViewpointNode):
     """Define um ponto de vista que fornece uma vista em perspectiva da cena."""
 
