@@ -10,7 +10,6 @@ Data: 28 de Agosto de 2020
 """
 
 import os           # Para rotinas do sistema operacional
-import time         # Para operações com tempo, como a duração de renderização
 import argparse     # Para tratar os parâmetros da linha de comando
 
 import gl           # Recupera rotinas de suporte ao X3D
@@ -118,6 +117,21 @@ class Renderizador:
         x3d.X3D.renderer["IndexedTriangleStripSet"] = gl.GL.indexedTriangleStripSet
         x3d.X3D.renderer["Box"] = gl.GL.box
         x3d.X3D.renderer["IndexedFaceSet"] = gl.GL.indexedFaceSet
+        x3d.X3D.renderer["Sphere"] = gl.GL.sphere
+        x3d.X3D.renderer["NavigationInfo"] = gl.GL.navigationInfo
+        x3d.X3D.renderer["DirectionalLight"] = gl.GL.directionalLight
+        x3d.X3D.renderer["PointLight"] = gl.GL.pointLight
+        x3d.X3D.renderer["Fog"] = gl.GL.fog
+        x3d.X3D.renderer["TimeSensor"] = gl.GL.timeSensor
+        x3d.X3D.renderer["SplinePositionInterpolator"] = gl.GL.splinePositionInterpolator
+        x3d.X3D.renderer["OrientationInterpolator"] = gl.GL.orientationInterpolator
+
+    def render(self):
+        """Laço principal de renderização."""
+        self.pre()  # executa rotina pré renderização
+        self.scene.render()  # faz o traversal no grafo de cena
+        self.pos()  # executa rotina pós renderização
+        return gpu.GPU.get_frame_buffer()
 
     def main(self):
         """Executa a renderização."""
@@ -127,6 +141,7 @@ class Renderizador:
         parser.add_argument("-o", "--output", help="arquivo 2D de saída (imagem)")
         parser.add_argument("-w", "--width", help="resolução horizonta", type=int)
         parser.add_argument("-h", "--height", help="resolução vertical", type=int)
+        parser.add_argument("-p", "--pause", help="começa simulação em pausa", action='store_true')
         parser.add_argument("-q", "--quiet", help="não exibe janela", action='store_true')
         args = parser.parse_args() # parse the arguments
         if args.input:
@@ -169,24 +184,12 @@ class Renderizador:
         # Configura o sistema para a renderização.
         self.setup()
 
-        # Coleta o tempo antes da renderização
-        start = time.process_time()
-
-        # Laço principal de renderização
-        self.pre()  # executa rotina pré renderização
-        self.scene.render()  # faz o traversal no grafo de cena
-        self.pos()  # executa rotina pós renderização
-
-        # Calcula o tempo ao concluir a renderização
-        elapsed_time = time.process_time() - start
-
         # Se no modo silencioso salvar imagem e não mostrar janela de visualização
         if args.quiet:
             gpu.GPU.save_image()  # Salva imagem em arquivo
         else:
             window.set_saver(gpu.GPU.save_image)  # pasa a função para salvar imagens
-            window.preview(gpu.GPU.get_frame_buffer(), elapsed_time)  # mostra visualização
-
+            window.preview(args.pause, self.render)  # mostra visualização
 
 if __name__ == '__main__':
     renderizador = Renderizador()

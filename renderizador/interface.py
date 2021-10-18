@@ -9,11 +9,13 @@ Disciplina: Computação Gráfica
 Data: 31 de Agosto de 2020
 """
 
+import time         # Para operações com tempo, como a duração de renderização
+
 # Matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from matplotlib.widgets import Button, TextBox, CheckButtons
-
+import matplotlib.animation as animation
 
 class Interface:
     """Interface para usuário/desenvolvedor verificar resultados da renderização."""
@@ -22,8 +24,10 @@ class Interface:
     linhas = []        # linhas a serem desenhadas
     poligonos = []     # poligonos a serem desenhados
 
-    def __init__(self, width, height):
+    last_time = 0      # para calculo de FPS
 
+    def __init__(self, width, height):
+        """Inicializa Interface Gráfica."""
         self.width = width
         self.height = height
 
@@ -101,20 +105,21 @@ class Interface:
         points = triangles["vertices"]
         color = triangles["appearance"].material.emissiveColor
 
-        # converte pontos
-        x_values = [pt[0] for pt in points] + [points[0][0]]
-        y_values = [pt[1] for pt in points] + [points[0][1]]
+        if points:
+            # converte pontos
+            x_values = [pt[0] for pt in points] + [points[0][0]]
+            y_values = [pt[1] for pt in points] + [points[0][1]]
 
-        # desenha as linhas com os pontos
-        line, = self.axes.plot(x_values, y_values, marker='o', color=color, linestyle="-")  # "ro-"
-        self.geometrias.append(line)
+            # desenha as linhas com os pontos  op:"ro-"
+            line, = self.axes.plot(x_values, y_values, marker='o', color=color, linestyle="-")
+            self.geometrias.append(line)
 
-        poly, = self.axes.fill(x_values, y_values, color=color+[0.4])
-        self.geometrias.append(poly)
+            poly, = self.axes.fill(x_values, y_values, color=color+[0.4])
+            self.geometrias.append(poly)
 
-        # desenha texto se requisitado
-        if text:
-            self.annotation(points)
+            # desenha texto se requisitado
+            if text:
+                self.annotation(points)
 
     def exibe_geometrias_grid(self, label):
         """Exibe e esconde as geometrias/grid sobre a tela da interface gráfica."""
@@ -139,10 +144,19 @@ class Interface:
             print("Salvando imagem")
             self.image_saver()
 
-    def preview(self, data, time):
+    def preview(self, pause, func):
         """Realização a visualização na tela da interface gráfica."""
         extent = (0, self.width, self.height, 0)
-        self.axes.imshow(data, interpolation='nearest', extent=extent)
+
+        # Coleta o tempo antes da renderização
+        start = time.process_time()
+
+        data = func()
+
+        # Calcula o tempo ao concluir a renderização
+        elapsed_time = time.process_time() - start
+
+        image = self.axes.imshow(data, interpolation='nearest', extent=extent)
 
         for pontos in Interface.pontos:
             self.draw_points(pontos, text=True)
@@ -157,15 +171,39 @@ class Interface:
         for geometria in self.geometrias:
             geometria.set_visible(False)
 
-        # Configura texto da interface
-        axbox = plt.axes([0.18, 0.02, 0.15, 0.06])
-        TextBox(axbox, 'Tempo (s) ', initial="{:.4f}".format(time))
-
         # Configura todos os botões da interface
         bgeogrid = CheckButtons(plt.axes([0.78, 0.02, 0.18, 0.10]), ['Grid', 'Geometria'])
         bgeogrid.on_clicked(self.exibe_geometrias_grid)
 
         bsave = Button(plt.axes([0.4, 0.02, 0.15, 0.06]), 'Salvar')
         bsave.on_clicked(self.save_image)
+
+        # Animação de quadros
+        def animate(_frame_number):
+
+            # Executa a função recebida como parâmetro no método principal
+            data = func()
+
+            # Atualiza a imagem renderizada
+            image.set_array(data)
+
+            # Calcula e atualiza a quantidade de Quadros Por Segundo
+            fps = "{:.1f}".format(1/(time.process_time() - Interface.last_time))
+            time_box.set_val(fps)
+            time_box.cursor_index = len(fps)
+            Interface.last_time = time.process_time()
+
+            return image, time_box
+
+        # Para cálculo de FPS
+        Interface.last_time = time.process_time()
+
+        # Configura texto da interface
+        time_box_pos = plt.axes([0.18, 0.02, 0.15, 0.06])
+        if pause:
+            time_box = TextBox(time_box_pos, 'Tempo (s) ', initial="{:.4f}".format(elapsed_time))
+        else:
+            time_box = TextBox(time_box_pos, 'FPS ', initial="0.0")
+            _ = animation.FuncAnimation(self.fig, animate, interval=1, blit=False)
 
         plt.show()

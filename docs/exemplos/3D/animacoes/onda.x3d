@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+  
+    <Viewpoint position="0 0 10"/>
+    
+    <TimeSensor DEF='relogio' cycleInterval='30' loop='true'/>
+    
+    <SplinePositionInterpolator DEF="move" closed="true" key="0.00 0.20 0.40 0.60 0.80 1.00" keyValue="-4 -3 0  -2 3 0  0 -3 0  2 3 0  4 -3 0  -4 -3 0"/>
+    
+    <Transform DEF='triangulo'>
+      <Shape>
+        <IndexedFaceSet coordIndex='0 1 2 -1'>
+          <Coordinate point='-1 0 0   1 0 0   0 1 0'/>
+        </IndexedFaceSet>
+        <Appearance>
+          <Material diffuseColor='1.0 1.0 1.0'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <ROUTE fromNode='relogio' fromField='fraction_changed' toNode='move' toField='set_fraction'/>
+    <ROUTE fromNode='move' fromField='value_changed' toNode='triangulo' toField='translation'/>
+
+  </Scene>
+</X3D>
