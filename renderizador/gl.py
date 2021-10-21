@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+# pylint: disable=invalid-name
+
 """
 Biblioteca Gráfica / Graphics Library.
 
@@ -9,9 +11,11 @@ Disciplina: Computação Gráfica
 Data: 13 de setembro de 2021
 """
 
-import gpu
 import utils
 import numpy as np
+import time         # Para operações com tempo
+
+import gpu          # Simula os recursos de uma GPU
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -292,6 +296,145 @@ class GL:
                 ]]
 
         utils.Rasterizer.render(triangles=triangles, colors=input_color, vertex_color=vertex_color, texture=current_texture, uv=uvs, has_texture=has_texture)
+        
+    @staticmethod
+    def sphere(radius, colors):
+        """Função usada para renderizar Esferas."""
+        # A função sphere é usada para desenhar esferas na cena. O esfera é centrada no
+        # (0, 0, 0) no sistema de coordenadas local. O argumento radius especifica o
+        # raio da esfera que está sendo criada. Para desenha essa esfera você vai
+        # precisar tesselar ela em triângulos, para isso encontre os vértices e defina
+        # os triângulos.
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
+        print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
+
+    @staticmethod
+    def navigationInfo(headlight):
+        """Características físicas do avatar do visualizador e do modelo de visualização."""
+        # O campo do headlight especifica se um navegador deve acender um luz direcional que
+        # sempre aponta na direção que o usuário está olhando. Definir este campo como TRUE
+        # faz com que o visualizador forneça sempre uma luz do ponto de vista do usuário.
+        # A luz headlight deve ser direcional, ter intensidade = 1, cor = (1 1 1),
+        # ambientIntensity = 0,0 e direção = (0 0 −1).
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("NavigationInfo : headlight = {0}".format(headlight)) # imprime no terminal
+
+    @staticmethod
+    def directionalLight(ambientIntensity, color, intensity, direction):
+        """Luz direcional ou paralela."""
+        # Define uma fonte de luz direcional que ilumina ao longo de raios paralelos
+        # em um determinado vetor tridimensional. Possui os campos básicos ambientIntensity,
+        # cor, intensidade. O campo de direção especifica o vetor de direção da iluminação
+        # que emana da fonte de luz no sistema de coordenadas local. A luz é emitida ao
+        # longo de raios paralelos de uma distância infinita.
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("DirectionalLight : ambientIntensity = {0}".format(ambientIntensity))
+        print("DirectionalLight : color = {0}".format(color)) # imprime no terminal
+        print("DirectionalLight : intensity = {0}".format(intensity)) # imprime no terminal
+        print("DirectionalLight : direction = {0}".format(direction)) # imprime no terminal
+
+    @staticmethod
+    def pointLight(ambientIntensity, color, intensity, location):
+        """Luz pontual."""
+        # Fonte de luz pontual em um local 3D no sistema de coordenadas local. Uma fonte
+        # de luz pontual emite luz igualmente em todas as direções; ou seja, é omnidirecional.
+        # Possui os campos básicos ambientIntensity, cor, intensidade. Um nó PointLight ilumina
+        # a geometria em um raio de sua localização. O campo do raio deve ser maior ou igual a
+        # zero. A iluminação do nó PointLight diminui com a distância especificada.
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("PointLight : ambientIntensity = {0}".format(ambientIntensity))
+        print("PointLight : color = {0}".format(color)) # imprime no terminal
+        print("PointLight : intensity = {0}".format(intensity)) # imprime no terminal
+        print("PointLight : location = {0}".format(location)) # imprime no terminal
+
+    @staticmethod
+    def fog(visibilityRange, color):
+        """Névoa."""
+        # O nó Fog fornece uma maneira de simular efeitos atmosféricos combinando objetos
+        # com a cor especificada pelo campo de cores com base nas distâncias dos
+        # vários objetos ao visualizador. A visibilidadeRange especifica a distância no
+        # sistema de coordenadas local na qual os objetos são totalmente obscurecidos
+        # pela névoa. Os objetos localizados fora de visibilityRange do visualizador são
+        # desenhados com uma cor de cor constante. Objetos muito próximos do visualizador
+        # são muito pouco misturados com a cor do nevoeiro.
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("Fog : color = {0}".format(color)) # imprime no terminal
+        print("Fog : visibilityRange = {0}".format(visibilityRange))
+
+    @staticmethod
+    def timeSensor(cycleInterval, loop):
+        """Gera eventos conforme o tempo passa."""
+        # Os nós TimeSensor podem ser usados para muitas finalidades, incluindo:
+        # Condução de simulações e animações contínuas; Controlar atividades periódicas;
+        # iniciar eventos de ocorrência única, como um despertador;
+        # Se, no final de um ciclo, o valor do loop for FALSE, a execução é encerrada.
+        # Por outro lado, se o loop for TRUE no final de um ciclo, um nó dependente do
+        # tempo continua a execução no próximo ciclo. O ciclo de um nó TimeSensor dura
+        # cycleInterval segundos. O valor de cycleInterval deve ser maior que zero.
+
+        # Deve retornar a fração de tempo passada em fraction_changed
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("TimeSensor : cycleInterval = {0}".format(cycleInterval)) # imprime no terminal
+        print("TimeSensor : loop = {0}".format(loop))
+
+        # Esse método já está implementado para os alunos como exemplo
+        epoch = time.time()  # time in seconds since the epoch as a floating point number.
+        fraction_changed = (epoch % cycleInterval) / cycleInterval
+
+        return fraction_changed
+
+    @staticmethod
+    def splinePositionInterpolator(set_fraction, key, keyValue, closed):
+        """Interpola não linearmente entre uma lista de vetores 3D."""
+        # Interpola não linearmente entre uma lista de vetores 3D. O campo keyValue possui
+        # uma lista com os valores a serem interpolados, key possui uma lista respectiva de chaves
+        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
+        # zeroa a um. O campo keyValue deve conter exatamente tantos vetores 3D quanto os
+        # quadros-chave no key. O campo closed especifica se o interpolador deve tratar a malha
+        # como fechada, com uma transições da última chave para a primeira chave. Se os keyValues
+        # na primeira e na última chave não forem idênticos, o campo closed será ignorado.
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
+        print("SplinePositionInterpolator : key = {0}".format(key)) # imprime no terminal
+        print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
+        print("SplinePositionInterpolator : closed = {0}".format(closed))
+
+        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
+        value_changed = [0.0, 0.0, 0.0]
+        
+        return value_changed
+
+    @staticmethod
+    def orientationInterpolator(set_fraction, key, keyValue):
+        """Interpola entre uma lista de valores de rotação especificos."""
+        # Interpola rotações são absolutas no espaço do objeto e, portanto, não são cumulativas.
+        # Uma orientação representa a posição final de um objeto após a aplicação de uma rotação.
+        # Um OrientationInterpolator interpola entre duas orientações calculando o caminho mais
+        # curto na esfera unitária entre as duas orientações. A interpolação é linear em
+        # comprimento de arco ao longo deste caminho. Os resultados são indefinidos se as duas
+        # orientações forem diagonalmente opostas. O campo keyValue possui uma lista com os
+        # valores a serem interpolados, key possui uma lista respectiva de chaves
+        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
+        # zeroa a um. O campo keyValue deve conter exatamente tantas rotações 3D quanto os
+        # quadros-chave no key.
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        print("OrientationInterpolator : set_fraction = {0}".format(set_fraction))
+        print("OrientationInterpolator : key = {0}".format(key)) # imprime no terminal
+        print("OrientationInterpolator : keyValue = {0}".format(keyValue))
+
+        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
+        value_changed = [0, 0, 1, 0]
+
+        return value_changed
 
     # Para o futuro (Não para versão atual do projeto.)
     def vertex_shader(self, shader):

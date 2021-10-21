@@ -216,9 +216,9 @@ class Rasterizer:
 
         scene = RenderProcesses.scene
 
-        if scene.current_appearance == None or scene.current_appearance.imageTexture == None: return
+        if scene.current_appearance == None or scene.current_appearance.texture == None: return
 
-        textures = scene.current_appearance.imageTexture.url
+        textures = scene.current_appearance.texture.url
         current_texture = textures[0]
         Rasterizer.mip_maps_textures[current_texture] = []
         texture = Rasterizer.gpu_instance.load_texture(current_texture)

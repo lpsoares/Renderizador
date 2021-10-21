@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+  
+    <Viewpoint position="0 0 10"/>
+    <NavigationInfo headlight='false'/>
+    
+    <DirectionalLight direction="0.577 -0.577 -0.577"/>
+    
+    <Transform translation="-2 0 0">
+      <Shape>
+        <Sphere radius='1'/>
+        <Appearance>
+          <Material specularColor='0.0 0.0 0.0' diffuseColor='0.5 0.5 1.0'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <Transform translation="2 0 0">
+      <Shape>
+        <Sphere radius='1'/>
+        <Appearance>
+          <Material specularColor='0.5 0.5 1.0' diffuseColor='0.5 0.5 1.0' shininess='0.2'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+  </Scene>
+</X3D>

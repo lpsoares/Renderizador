@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+  
+    <Viewpoint position="0 5 8" orientation="1 0 0 -0.5"/>
+    <NavigationInfo headlight='false'/>
+    <DirectionalLight direction="0.577 -0.577 -0.577"/>
+
+    <TimeSensor DEF='relogio' cycleInterval='60' loop='true'/>
+    
+    <OrientationInterpolator DEF='rotacao' key='0.00 0.25 0.50 0.75 1.00' keyValue='0 1 0 0 0 1 0 1.57079 0 1 0 3.14159 0 1 0 4.7123889 0 1 0 6.2831852'/>
+
+    <Transform DEF='piramide'>
+      <Shape>
+        <IndexedFaceSet coordIndex='0 1 4 -1  1 2 4 -1  2 3 4 -1  3 0 4 -1'>
+          <Coordinate point='-1 0 1   1 0 1   1 0 -1   -1 0 -1   0 1 0'/>
+        </IndexedFaceSet>
+        <Appearance>
+          <Material diffuseColor='0.5 0.5 0.5'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <ROUTE fromNode='relogio' fromField='fraction_changed' toNode='rotacao' toField='set_fraction'/>
+    <ROUTE fromNode='rotacao' fromField='value_changed' toNode='piramide' toField='rotation'/>
+
+  </Scene>
+</X3D>
