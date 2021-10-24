@@ -22,6 +22,7 @@ import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz t
 # Deprecated
 import rotinas      # Desatualizado possui rotinas antigas de suporte ao X3D (legado)
 import utils
+import time
 
 LARGURA = 60  # Valor padrão para largura da tela
 ALTURA = 40   # Valor padrão para altura da tela
@@ -130,10 +131,14 @@ class Renderizador:
 
     def render(self):
         """Laço principal de renderização."""
-        utils.RenderProcesses.setup(self.scene)
+        print("\n++++++++ Started rendering frame ++++++++")
+        start_time_render = time.time()
         self.pre()  # executa rotina pré renderização
         self.scene.render()  # faz o traversal no grafo de cena
         self.pos()  # executa rotina pós renderização
+        print("+++ Time to render frame: %s seconds +++" % (time.time() - start_time_render))
+        print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+
         return gpu.GPU.get_frame_buffer()
 
     def main(self):
@@ -189,6 +194,7 @@ class Renderizador:
 
         # Configura o sistema para a renderização.
         self.setup()
+        utils.RenderProcesses.setup(self.scene)
 
         # Se no modo silencioso salvar imagem e não mostrar janela de visualização
         if args.quiet:
@@ -196,7 +202,7 @@ class Renderizador:
         else:
             window.set_saver(gpu.GPU.save_image)  # pasa a função para salvar imagens
             window.preview(args.pause, self.render)  # mostra visualização
-
+        
 if __name__ == '__main__':
     renderizador = Renderizador()
     renderizador.main()

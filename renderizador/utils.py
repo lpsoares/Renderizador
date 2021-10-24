@@ -3,6 +3,8 @@ import numpy as np
 import math
 import time
 
+from numpy.lib.twodim_base import tri
+
 def model_world(translation, rotation, scale):
     print("Model world matrix ...")
 
@@ -117,6 +119,7 @@ def apply_point_transformations(point, gl):
     normalized_clip_point = np.divide(clip_point, clip_point[3][0])
     screen_point = gl.point_to_screen.dot(normalized_clip_point)
 
+    screen_point[3][0] = screen_point[2][0]
     screen_point[2][0] = clip_point[2][0]
     return screen_point
 
@@ -131,6 +134,70 @@ def transform_points(point, gl):
     
     print("::: Time to transform points: %s seconds :::\n" % (time.time() - start_time))
     return screen_points
+
+def hermite_interpolation(key, keyValue, closed, set_fraction):
+    Rasterizer.clear_flag = True
+    s = 0
+    list_size = 3
+
+    for k in range(len(key)):
+        if set_fraction < key[k]:
+            k -= 1
+            s = (set_fraction - key[k]) / (key[k + 1] - key[k])
+            break
+
+    k_offset = (k) * list_size
+    k_plus_one_offset = (k + 1) * list_size
+    k_plus_two_offset = (k + 2) * list_size
+    k_minus_one_offset = (k - 1) * list_size
+
+    if k_plus_one_offset >= len(keyValue):
+        if not closed: return [0, 0, 0]
+        k_plus_one_offset = 0
+        k_plus_two_offset = list_size
+
+    if k_plus_two_offset >= len(keyValue):
+        if not closed: return [0, 0, 0]
+        k_plus_two_offset = 0
+
+    v_k_minus_one = [0, 0, 0]
+    if k_minus_one_offset >= 0:
+        v_k_minus_one = keyValue[k_minus_one_offset : k_minus_one_offset + list_size]
+
+    v_k = keyValue[k_offset : k_offset + list_size]
+    v_k_plus_one = keyValue[k_plus_one_offset : k_plus_one_offset + list_size]
+    v_k_plus_two = keyValue[k_plus_two_offset : k_plus_two_offset  + list_size]
+
+    T_0 = [(v_k_plus_one[i] - v_k_minus_one[i]) / 2 for i in range(list_size)]
+    T_1 = [(v_k_plus_two[i] - v_k[i]) / 2 for i in range(list_size)]
+
+    hermite_H = np.matrix([
+        [2, -2, 1, 1], 
+        [-3, 3, -2, -1],
+        [0, 0, 1, 0],
+        [1, 0, 0, 0]
+    ])
+
+    S = np.matrix([[s ** 3, s ** 2, s, 1]])
+    C = np.matrix([v_k, v_k_plus_one, T_0, T_1])
+    V_s = np.dot(S, np.dot(hermite_H, C))
+
+    return V_s.tolist()[0]
+
+def linear_interpolation(key, keyValue, set_fraction):
+    Rasterizer.clear_flag = True
+    t = 0
+
+    for k in range(len(key)):
+        if set_fraction < key[k]:
+            t = (set_fraction - key[k - 1]) / (key[k] - key[k - 1])
+            break
+    
+    prev_value = keyValue[(k - 1) * 4 + 3]
+    k *= 4
+    value_changed = [keyValue[k], keyValue[k + 1], keyValue[k + 2], prev_value + (t * (keyValue[k + 3] - prev_value))]
+
+    return value_changed
 
 class RenderProcesses:
 
@@ -156,6 +223,23 @@ class RenderProcesses:
             process()
         print("*************** Done ***************\n")
 
+class Light:
+    
+    # considering just directional light implelented
+    has_light = False
+    ambient_intensity = None
+    color = None
+    intensity = None
+    direction = None
+    
+    @staticmethod
+    def setup(ambient_intensity, color, intensity, direction):
+        Light.ambient_intensity = ambient_intensity
+        Light.direction = [-d for d in direction]
+        Light.intensity = intensity
+        Light.has_light = True
+        Light.color = color
+
 class Rasterizer:
 
     width = None
@@ -163,6 +247,8 @@ class Rasterizer:
     z_test = False
     sampling = None
     gpu_instance = None
+    buffer_length = None
+    clear_flag = False
     z_buffer = []
     frame_buffer = []
     mip_maps_textures = {}
@@ -185,24 +271,32 @@ class Rasterizer:
         Rasterizer.width = width
         Rasterizer.height = height
         Rasterizer.sampling = sampling
-        Rasterizer.frame_buffer = [[0, 0, 0]] * ((sampling ** 2) * width * height)
         Rasterizer.z_test = z_test
-
-        if z_test:
-            Rasterizer.z_buffer = [None] * ((sampling ** 2) * width * height)
-        
+        Rasterizer.buffer_length = (Rasterizer.sampling ** 2) * width * height
         RenderProcesses.pre_render += [Rasterizer.mip_maps]
         RenderProcesses.post_render += [Rasterizer.sample]
+        Rasterizer.prepare_frame()
+
+    @staticmethod
+    def prepare_frame():
+        Rasterizer.frame_buffer = [[0, 0, 0]] * (Rasterizer.buffer_length)
+
+        if Rasterizer.z_test:
+            Rasterizer.z_buffer = [None] * (Rasterizer.buffer_length)
 
     @staticmethod
     def render(triangles, colors, vertex_color=False, texture=None, uv=None, has_texture=False):
         start_time_render = time.time()
+        if Rasterizer.clear_flag: Rasterizer.prepare_frame()
+        raster = Rasterizer.raster
+        has_light = Light.has_light
 
         for i in range(len(triangles)):
             start_time_raster = time.time()
-            if vertex_color: Rasterizer.raster(triangle=triangles[i], colors=colors[i], vertex_color=vertex_color)
-            elif has_texture: Rasterizer.raster(triangle=triangles[i], texture=texture[0], uv=uv[i], has_texture=has_texture)
-            else: Rasterizer.raster(triangle=triangles[i], colors=colors)
+            if vertex_color: raster(triangle=triangles[i], colors=colors[i], vertex_color=vertex_color)
+            elif has_texture: raster(triangle=triangles[i], texture=texture[0], uv=uv[i], has_texture=has_texture)
+            elif has_light: raster(triangle=triangles[i], colors=colors, has_light=has_light)
+            else: raster(triangle=triangles[i], colors=colors)
 
             print("=== Time to raster triangle: %s seconds ===\n" % (time.time() - start_time_raster))
 
@@ -211,12 +305,12 @@ class Rasterizer:
 
     @staticmethod
     def mip_maps():
-        start_mip_maps_time = time.time()
-        start_time_mip_maps_prep = time.time()
 
         scene = RenderProcesses.scene
-
         if scene.current_appearance == None or scene.current_appearance.texture == None: return
+        
+        start_mip_maps_time = time.time()
+        start_time_mip_maps_prep = time.time()
 
         textures = scene.current_appearance.texture.url
         current_texture = textures[0]
@@ -284,7 +378,7 @@ class Rasterizer:
         print("|||| Time to pre process mip maps levels: %s seconds ||||\n" % (time.time() - start_mip_maps_time))
 
     @staticmethod
-    def raster(triangle, colors=None, vertex_color=False, texture=None, uv=None, has_texture=False):
+    def raster(triangle, colors=None, vertex_color=False, texture=None, uv=None, has_texture=False, has_light=False):
 
         start_time_raster_prep = time.time()
         
@@ -380,6 +474,48 @@ class Rasterizer:
             tex_shape_x = texture.shape[0] - 1
             tex_shape_y = texture.shape[1] - 1
 
+        elif has_light:
+
+            I_ia = Light.ambient_intensity
+            I_i = Light.intensity
+            I_Lrgb = Light.color
+
+            O_Ergb = colors["emissiveColor"]
+            O_Drgb = colors["diffuseColor"]
+            O_Srgb = colors["specularColor"]
+
+            # do not exist
+            O_a = 0
+            shiness = colors["shininess"]
+
+            L = np.asarray(Light.direction)
+            v = np.array([0, 0, 1])
+
+            # normal vector, flat shading, change after? 
+            A_z = triangle[0][2][0, 0]
+            B_z = triangle[2][2][0, 0]
+            C_z = triangle[1][2][0, 0]
+
+            V0 = np.matrix([C_x_minus_B_x, C_y_minus_B_y, C_z - B_z])
+            V1 = np.matrix([B_x_minus_A_x, B_y_minus_A_y, B_z - A_z])
+
+            # normalize ??
+            # N = np.cross(V1, V0)[0]
+            V0_cross_V1 = np.cross(V1, V0)
+            N = np.divide(V0_cross_V1, np.linalg.norm(V0_cross_V1))[0]
+
+            N_dot_L = np.dot(N, L)
+            L_plus_V = np.add(L, v)
+            L_plus_V_normalized = np.divide(L_plus_V, np.linalg.norm(L_plus_V))
+            
+            proximity = L_plus_V_normalized.dot(N)
+            diffuse_i = [c * I_i * N_dot_L for c in O_Drgb]
+            ambient_i = [c * I_ia * O_a for c in O_Drgb]
+            specular_i = [c * I_i * proximity ** (shiness * 128) for c in O_Srgb]
+            
+            I_rgb = [255 * (O_Ergb[c] + I_Lrgb[c] * (ambient_i[c] + specular_i[c] + diffuse_i[c])) for c in range(3)]
+            colors = I_rgb
+
         else:
             colors = [colors[0] * 255, colors[1] * 255, colors[2] * 255]
 
@@ -432,9 +568,11 @@ class Rasterizer:
                         u = ((uv_1[0] * alpha + uv_2[0] * gamma + uv_3[0] * betha) / z) * tex_shape_x
                         v = ((uv_1[1] * alpha + uv_2[1] * gamma + uv_3[1] * betha) / z) * - tex_shape_y
 
-                        # frame_buffer[offset] = [int(v) * 255, int(u) * 255, 0]
-                        frame_buffer[offset] = texture[int(v)][int(u)]
-                        continue
+                        # colors = [int(v) * 255, int(u) * 255, 0]
+                        colors = texture[int(v)][int(u)]
+
+                    if has_light:
+                        pass
 
                     frame_buffer[offset] = colors
 
