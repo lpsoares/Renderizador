@@ -39,7 +39,6 @@ class GL:
     def setup(width, height, near=0.01, far=1000):
         """Define parametros para câmera de razão de aspecto, plano próximo e distante."""
         print("\n=== Rasterizer Setup ===")
-        
         GL.width = width
         GL.height = height
         GL.near = near
@@ -111,7 +110,6 @@ class GL:
         # triângulo, e assim por diante.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet
         # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
-
         # print("TriangleSet")
         
         ## Transformations
@@ -119,11 +117,12 @@ class GL:
         
         ## Raster
         triangles = []
+        input_color = colors if utils.Light.has_light else colors["diffuseColor"]
 
         for p in range(0, len(screen_points) - 2, 3):
             triangles += [[screen_points[p][0:3, 0:1], screen_points[p + 1][0:3, 0:1], screen_points[p + 2][0:3, 0:1]]]
         
-        utils.Rasterizer.render(triangles=triangles, colors=colors["diffuseColor"])
+        utils.Rasterizer.render(triangles=triangles, colors=input_color)
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
@@ -138,7 +137,6 @@ class GL:
         # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
-
         # print("TriangleStripSet")
 
         ## Transformations
@@ -146,12 +144,13 @@ class GL:
         
         ## Raster
         triangles = []
+        input_color = colors if utils.Light.has_light else colors["diffuseColor"]
 
         for i in range(stripCount[0] - 2):
             triangles += [[screen_points[i + 2][0:3, 0:1], screen_points[i + 1][0:3, 0:1], screen_points[i][0:3, 0:1]]]
             if i % 2 == 0: triangles += [[screen_points[i][0:3, 0:1], screen_points[i + 1][0:3, 0:1], screen_points[i + 2][0:3, 0:1]]]
         
-        utils.Rasterizer.render(triangles=triangles, colors=colors["diffuseColor"])
+        utils.Rasterizer.render(triangles=triangles, colors=input_color)
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -167,7 +166,6 @@ class GL:
         # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
-
         # print("IndexedTriangleStripSet")
 
         ## Transformations
@@ -175,12 +173,13 @@ class GL:
         
         ## Raster
         triangles = []
+        input_color = colors if utils.Light.has_light else colors["diffuseColor"]
 
         for i in range(len(index) - 3):
             triangles += [[screen_points[index[i + 2]][0:3, 0:1], screen_points[index[i + 1]][0:3, 0:1], screen_points[index[i]][0:3, 0:1]]]
             if i % 2 == 0: triangles += [[screen_points[index[i]][0:3, 0:1], screen_points[index[i + 1]][0:3, 0:1], screen_points[index[i + 2]][0:3, 0:1]]]
         
-        utils.Rasterizer.render(triangles=triangles, colors=colors["diffuseColor"])
+        utils.Rasterizer.render(triangles=triangles, colors=input_color)
 
     @staticmethod
     def box(size, colors):
@@ -256,8 +255,6 @@ class GL:
         # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
         # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
         # implementadado um método para a leitura de imagens.
-
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         # print("IndexedFaceSet : ")
 
         ## Transformations
@@ -266,12 +263,16 @@ class GL:
         ## Raster
         vertex_color = colorPerVertex and color and colorIndex
         has_texture = texCoord and texCoordIndex and current_texture
-        input_color = [] if vertex_color else colors["diffuseColor"]
+
+        if vertex_color: input_color = []
+        elif utils.Light.has_light: input_color = colors
+        else: input_color = colors["diffuseColor"]
+
         triangles = []
         uvs = []
 
         for i in range(0, len(coordIndex) - 3, 4):
-            triangles += [[screen_points[coordIndex[i]][0:3, 0:1], screen_points[coordIndex[i + 1]][0:3, 0:1], screen_points[coordIndex[i + 2]][0:3, 0:1]]]
+            triangles += [[screen_points[coordIndex[i]], screen_points[coordIndex[i + 1]], screen_points[coordIndex[i + 2]]]]
 
             if has_texture:
                 offset_1 = (texCoordIndex[i]) * 2
@@ -306,7 +307,6 @@ class GL:
         # precisar tesselar ela em triângulos, para isso encontre os vértices e defina
         # os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
         print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
 
@@ -319,8 +319,9 @@ class GL:
         # A luz headlight deve ser direcional, ter intensidade = 1, cor = (1 1 1),
         # ambientIntensity = 0,0 e direção = (0 0 −1).
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("NavigationInfo : headlight = {0}".format(headlight)) # imprime no terminal
+        # print("NavigationInfo : headlight = {0}".format(headlight)) # imprime no terminal
+        if headlight:
+            utils.Light.setup(ambient_intensity=0, color=[1, 1, 1], intensity=1, direction=[0, 0, -1])
 
     @staticmethod
     def directionalLight(ambientIntensity, color, intensity, direction):
@@ -331,12 +332,81 @@ class GL:
         # que emana da fonte de luz no sistema de coordenadas local. A luz é emitida ao
         # longo de raios paralelos de uma distância infinita.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("DirectionalLight : ambientIntensity = {0}".format(ambientIntensity))
-        print("DirectionalLight : color = {0}".format(color)) # imprime no terminal
-        print("DirectionalLight : intensity = {0}".format(intensity)) # imprime no terminal
-        print("DirectionalLight : direction = {0}".format(direction)) # imprime no terminal
+        # print("DirectionalLight : ambientIntensity = {0}".format(ambientIntensity))
+        # print("DirectionalLight : color = {0}".format(color)) # imprime no terminal
+        # print("DirectionalLight : intensity = {0}".format(intensity)) # imprime no terminal
+        # print("DirectionalLight : direction = {0}".format(direction)) # imprime no terminal
 
+        utils.Light.setup(ambient_intensity=ambientIntensity, color=color, intensity=intensity, direction=direction)
+
+    @staticmethod
+    def timeSensor(cycleInterval, loop):
+        """Gera eventos conforme o tempo passa."""
+        # Os nós TimeSensor podem ser usados para muitas finalidades, incluindo:
+        # Condução de simulações e animações contínuas; Controlar atividades periódicas;
+        # iniciar eventos de ocorrência única, como um despertador;
+        # Se, no final de um ciclo, o valor do loop for FALSE, a execução é encerrada.
+        # Por outro lado, se o loop for TRUE no final de um ciclo, um nó dependente do
+        # tempo continua a execução no próximo ciclo. O ciclo de um nó TimeSensor dura
+        # cycleInterval segundos. O valor de cycleInterval deve ser maior que zero.
+
+        # Deve retornar a fração de tempo passada em fraction_changed
+
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        # print("TimeSensor : cycleInterval = {0}".format(cycleInterval)) # imprime no terminal
+        # print("TimeSensor : loop = {0}".format(loop))
+    
+        # Esse método já está implementado para os alunos como exemplo
+        epoch = time.time()  # time in seconds since the epoch as a floating point number.
+        fraction_changed = (epoch % cycleInterval) / cycleInterval
+
+        return fraction_changed
+
+    @staticmethod
+    def splinePositionInterpolator(set_fraction, key, keyValue, closed):
+        """Interpola não linearmente entre uma lista de vetores 3D."""
+        # Interpola não linearmente entre uma lista de vetores 3D. O campo keyValue possui
+        # uma lista com os valores a serem interpolados, key possui uma lista respectiva de chaves
+        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
+        # zeroa a um. O campo keyValue deve conter exatamente tantos vetores 3D quanto os
+        # quadros-chave no key. O campo closed especifica se o interpolador deve tratar a malha
+        # como fechada, com uma transições da última chave para a primeira chave. Se os keyValues
+        # na primeira e na última chave não forem idênticos, o campo closed será ignorado.
+
+        # print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
+        # print("SplinePositionInterpolator : key = {0}".format(key)) # imprime no terminal
+        # print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
+        # print("SplinePositionInterpolator : closed = {0}".format(closed))
+
+        return utils.hermite_interpolation(key=key, keyValue=keyValue, closed=closed, set_fraction=set_fraction)
+
+    @staticmethod
+    def orientationInterpolator(set_fraction, key, keyValue):
+        """Interpola entre uma lista de valores de rotação especificos."""
+        # Interpola rotações são absolutas no espaço do objeto e, portanto, não são cumulativas.
+        # Uma orientação representa a posição final de um objeto após a aplicação de uma rotação.
+        # Um OrientationInterpolator interpola entre duas orientações calculando o caminho mais
+        # curto na esfera unitária entre as duas orientações. A interpolação é linear em
+        # comprimento de arco ao longo deste caminho. Os resultados são indefinidos se as duas
+        # orientações forem diagonalmente opostas. O campo keyValue possui uma lista com os
+        # valores a serem interpolados, key possui uma lista respectiva de chaves
+        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
+        # zeroa a um. O campo keyValue deve conter exatamente tantas rotações 3D quanto os
+        # quadros-chave no key.
+
+        # print("OrientationInterpolator : set_fraction = {0}".format(set_fraction))
+        # print("OrientationInterpolator : key = {0}".format(key)) # imprime no terminal
+        # print("OrientationInterpolator : keyValue = {0}".format(keyValue))
+
+        return utils.linear_interpolation(key=key, keyValue=keyValue, set_fraction=set_fraction)
+
+    # Para o futuro (Não para versão atual do projeto.)
+    def vertex_shader(self, shader):
+        """Para no futuro implementar um vertex shader."""
+
+    def fragment_shader(self, shader):
+        """Para no futuro implementar um fragment shader."""
+    
     @staticmethod
     def pointLight(ambientIntensity, color, intensity, location):
         """Luz pontual."""
@@ -366,79 +436,3 @@ class GL:
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Fog : color = {0}".format(color)) # imprime no terminal
         print("Fog : visibilityRange = {0}".format(visibilityRange))
-
-    @staticmethod
-    def timeSensor(cycleInterval, loop):
-        """Gera eventos conforme o tempo passa."""
-        # Os nós TimeSensor podem ser usados para muitas finalidades, incluindo:
-        # Condução de simulações e animações contínuas; Controlar atividades periódicas;
-        # iniciar eventos de ocorrência única, como um despertador;
-        # Se, no final de um ciclo, o valor do loop for FALSE, a execução é encerrada.
-        # Por outro lado, se o loop for TRUE no final de um ciclo, um nó dependente do
-        # tempo continua a execução no próximo ciclo. O ciclo de um nó TimeSensor dura
-        # cycleInterval segundos. O valor de cycleInterval deve ser maior que zero.
-
-        # Deve retornar a fração de tempo passada em fraction_changed
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TimeSensor : cycleInterval = {0}".format(cycleInterval)) # imprime no terminal
-        print("TimeSensor : loop = {0}".format(loop))
-
-        # Esse método já está implementado para os alunos como exemplo
-        epoch = time.time()  # time in seconds since the epoch as a floating point number.
-        fraction_changed = (epoch % cycleInterval) / cycleInterval
-
-        return fraction_changed
-
-    @staticmethod
-    def splinePositionInterpolator(set_fraction, key, keyValue, closed):
-        """Interpola não linearmente entre uma lista de vetores 3D."""
-        # Interpola não linearmente entre uma lista de vetores 3D. O campo keyValue possui
-        # uma lista com os valores a serem interpolados, key possui uma lista respectiva de chaves
-        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
-        # zeroa a um. O campo keyValue deve conter exatamente tantos vetores 3D quanto os
-        # quadros-chave no key. O campo closed especifica se o interpolador deve tratar a malha
-        # como fechada, com uma transições da última chave para a primeira chave. Se os keyValues
-        # na primeira e na última chave não forem idênticos, o campo closed será ignorado.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
-        print("SplinePositionInterpolator : key = {0}".format(key)) # imprime no terminal
-        print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
-        print("SplinePositionInterpolator : closed = {0}".format(closed))
-
-        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
-        value_changed = [0.0, 0.0, 0.0]
-        
-        return value_changed
-
-    @staticmethod
-    def orientationInterpolator(set_fraction, key, keyValue):
-        """Interpola entre uma lista de valores de rotação especificos."""
-        # Interpola rotações são absolutas no espaço do objeto e, portanto, não são cumulativas.
-        # Uma orientação representa a posição final de um objeto após a aplicação de uma rotação.
-        # Um OrientationInterpolator interpola entre duas orientações calculando o caminho mais
-        # curto na esfera unitária entre as duas orientações. A interpolação é linear em
-        # comprimento de arco ao longo deste caminho. Os resultados são indefinidos se as duas
-        # orientações forem diagonalmente opostas. O campo keyValue possui uma lista com os
-        # valores a serem interpolados, key possui uma lista respectiva de chaves
-        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
-        # zeroa a um. O campo keyValue deve conter exatamente tantas rotações 3D quanto os
-        # quadros-chave no key.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("OrientationInterpolator : set_fraction = {0}".format(set_fraction))
-        print("OrientationInterpolator : key = {0}".format(key)) # imprime no terminal
-        print("OrientationInterpolator : keyValue = {0}".format(keyValue))
-
-        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
-        value_changed = [0, 0, 1, 0]
-
-        return value_changed
-
-    # Para o futuro (Não para versão atual do projeto.)
-    def vertex_shader(self, shader):
-        """Para no futuro implementar um vertex shader."""
-
-    def fragment_shader(self, shader):
-        """Para no futuro implementar um fragment shader."""
