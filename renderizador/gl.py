@@ -349,6 +349,12 @@ class GL:
         #         k1 += 1
         #         k2 += 1
 
+        # for i in screen_points:
+        #     print([int(i[0][0, 0]), int(i[1][0, 0])])
+        #     gpu.GPU.draw_pixels([int(i[0][0, 0]), int(i[1][0, 0])], gpu.GPU.RGB8, [255, 255, 255])
+
+        # return
+
         for i in range(stack_count):
             k1 = i * (sector_count + 1)
             k2 = k1 + sector_count + 1
