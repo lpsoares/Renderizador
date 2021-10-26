@@ -524,6 +524,10 @@ class Rasterizer:
             specular_i = [c * I_i * proximity ** (shiness * 128) for c in O_Srgb]
             
             I_rgb = [255 * (O_Ergb[c] + I_Lrgb[c] * (ambient_i[c] + specular_i[c] + diffuse_i[c])) for c in range(3)]
+
+            for c in range(3):
+                if I_rgb[c] > 255: I_rgb[c] = 255
+
             colors = I_rgb
 
         else:
