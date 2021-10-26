@@ -16,6 +16,7 @@ import numpy as np
 import time         # Para operações com tempo
 
 import gpu          # Simula os recursos de uma GPU
+import math
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -309,6 +310,47 @@ class GL:
 
         print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
         print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
+
+        sector_count = 12
+        stack_count = 12
+        point = []
+
+        sector_step = 2 * math.pi / sector_count;
+        stack_step = math.pi / stack_count;
+
+        for i in range(stack_count):
+            stack_angle = math.pi / 2 - i * stack_step;
+            xy = radius * math.cos(stack_angle);
+            z = radius * math.sin(stack_angle);
+
+            for j in range(sector_count):
+                sector_angle = j * sector_step
+
+                x = xy * math.cos(sector_angle);
+                y = xy * math.sin(sector_angle);
+                point += [x, y, z];
+        
+        ## Transformations
+        screen_points = utils.transform_points(point, GL)
+        indices = []
+
+        for i in range(stack_count):
+            k1 = i * (sector_count + 1);
+            k2 = k1 + sector_count + 1;
+
+            for j in range(sector_count):
+
+                if i != 0:
+                    indices += [k1, k1 + 1, k2]
+
+                if i != (stack_count - 1):
+                    indices += [k1 + 1, k2 + 1, k2]
+                
+                k1 += 1
+                k2 += 1
+
+        print(indices, len(screen_points))
+        # utils.Rasterizer.render(triangles=triangles, colors=colors)
 
     @staticmethod
     def navigationInfo(headlight):
