@@ -119,8 +119,15 @@ def apply_point_transformations(point, gl):
     normalized_clip_point = np.divide(clip_point, clip_point[3][0])
     screen_point = gl.point_to_screen.dot(normalized_clip_point)
 
-    screen_point[3][0] = screen_point[2][0]
-    screen_point[2][0] = clip_point[2][0]
+    world = gl.transformation_matrix_stack.dot(homogenous_p)
+    screen_point = np.matrix([[screen_point[0][0][0, 0]], 
+        [screen_point[1][0][0, 0]], 
+        [clip_point[2][0][0, 0]], 
+        [world[0][0][0, 0]], 
+        [world[1][0][0, 0]],
+        [world[2][0][0, 0]]
+        ])
+
     return screen_point
 
 def transform_points(point, gl):
@@ -490,19 +497,23 @@ class Rasterizer:
             L = np.asarray(Light.direction)
             v = np.array([0, 0, 1])
 
-            # normal vector, flat shading, change after? 
-            A_z = triangle[0][2][0, 0]
-            B_z = triangle[2][2][0, 0]
-            C_z = triangle[1][2][0, 0]
+            A_z = triangle[0][5][0, 0]
+            B_z = triangle[2][5][0, 0]
+            C_z = triangle[1][5][0, 0]
 
-            V0 = np.matrix([C_x_minus_B_x, C_y_minus_B_y, C_z - B_z])
-            V1 = np.matrix([B_x_minus_A_x, B_y_minus_A_y, B_z - A_z])
+            A_x = triangle[0][3][0, 0]
+            A_y = triangle[0][4][0, 0]
+            B_x = triangle[2][3][0, 0]
+            B_y = triangle[2][4][0, 0]
+            C_x = triangle[1][3][0, 0]
+            C_y = triangle[1][4][0, 0]
 
-            # normalize ??
-            # N = np.cross(V1, V0)[0]
-            V0_cross_V1 = np.cross(V1, V0)
+            V0 = np.matrix([C_x - B_x, C_y - B_y, C_z - B_z])
+            V1 = np.matrix([B_x - A_x, B_y - A_y, B_z - A_z])
+
+            V0_cross_V1 = np.cross(V0, V1)
             N = np.divide(V0_cross_V1, np.linalg.norm(V0_cross_V1))[0]
-
+            
             N_dot_L = np.dot(N, L)
             L_plus_V = np.add(L, v)
             L_plus_V_normalized = np.divide(L_plus_V, np.linalg.norm(L_plus_V))

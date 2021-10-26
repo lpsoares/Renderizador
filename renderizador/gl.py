@@ -121,7 +121,7 @@ class GL:
         input_color = colors if utils.Light.has_light else colors["diffuseColor"]
 
         for p in range(0, len(screen_points) - 2, 3):
-            triangles += [[screen_points[p][0:3, 0:1], screen_points[p + 1][0:3, 0:1], screen_points[p + 2][0:3, 0:1]]]
+            triangles += [[screen_points[p], screen_points[p + 1], screen_points[p + 2]]]
         
         utils.Rasterizer.render(triangles=triangles, colors=input_color)
 
@@ -148,8 +148,8 @@ class GL:
         input_color = colors if utils.Light.has_light else colors["diffuseColor"]
 
         for i in range(stripCount[0] - 2):
-            triangles += [[screen_points[i + 2][0:3, 0:1], screen_points[i + 1][0:3, 0:1], screen_points[i][0:3, 0:1]]]
-            if i % 2 == 0: triangles += [[screen_points[i][0:3, 0:1], screen_points[i + 1][0:3, 0:1], screen_points[i + 2][0:3, 0:1]]]
+            triangles += [[screen_points[i + 2], screen_points[i + 1], screen_points[i]]]
+            if i % 2 == 0: triangles += [[screen_points[i], screen_points[i + 1], screen_points[i + 2]]]
         
         utils.Rasterizer.render(triangles=triangles, colors=input_color)
 
@@ -177,8 +177,8 @@ class GL:
         input_color = colors if utils.Light.has_light else colors["diffuseColor"]
 
         for i in range(len(index) - 3):
-            triangles += [[screen_points[index[i + 2]][0:3, 0:1], screen_points[index[i + 1]][0:3, 0:1], screen_points[index[i]][0:3, 0:1]]]
-            if i % 2 == 0: triangles += [[screen_points[index[i]][0:3, 0:1], screen_points[index[i + 1]][0:3, 0:1], screen_points[index[i + 2]][0:3, 0:1]]]
+            triangles += [[screen_points[index[i + 2]], screen_points[index[i + 1]], screen_points[index[i]]]]
+            if i % 2 == 0: triangles += [[screen_points[index[i]], screen_points[index[i + 1]], screen_points[index[i + 2]]]]
         
         utils.Rasterizer.render(triangles=triangles, colors=input_color)
 
@@ -333,24 +333,39 @@ class GL:
         ## Transformations
         screen_points = utils.transform_points(point, GL)
         indices = []
+        triangles = []
+
+        # for i in range(stack_count):
+        #     k1 = i * (sector_count + 1);
+        #     k2 = k1 + sector_count + 1;
+
+        #     for j in range(sector_count):
+        #         if i != 0:
+        #             indices += [k1, k1 + 1, k2]
+
+        #         if i != (stack_count - 1):
+        #             indices += [k1 + 1, k2 + 1, k2]
+                
+        #         k1 += 1
+        #         k2 += 1
 
         for i in range(stack_count):
-            k1 = i * (sector_count + 1);
-            k2 = k1 + sector_count + 1;
+            k1 = i * (sector_count + 1)
+            k2 = k1 + sector_count + 1
 
             for j in range(sector_count):
-
+                if (k1 + 1 >= len(screen_points) or k2 + 1 >= len(screen_points)): break
                 if i != 0:
-                    indices += [k1, k1 + 1, k2]
+                    triangles += [[screen_points[k1], screen_points[k1 + 1], screen_points[k2]]]
 
                 if i != (stack_count - 1):
-                    indices += [k1 + 1, k2 + 1, k2]
+                    triangles += [[screen_points[k1 + 1], screen_points[k2 + 1], screen_points[k2]]]
                 
                 k1 += 1
                 k2 += 1
 
-        print(indices, len(screen_points))
-        # utils.Rasterizer.render(triangles=triangles, colors=colors)
+        # print(indices, len(screen_points))
+        utils.Rasterizer.render(triangles=triangles, colors=colors)
 
     @staticmethod
     def navigationInfo(headlight):
