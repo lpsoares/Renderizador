@@ -475,7 +475,6 @@ class Rasterizer:
             tex_shape_y = texture.shape[1] - 1
 
         elif has_light:
-
             I_ia = Light.ambient_intensity
             I_i = Light.intensity
             I_Lrgb = Light.color
@@ -571,7 +570,7 @@ class Rasterizer:
                         # colors = [int(v) * 255, int(u) * 255, 0]
                         colors = texture[int(v)][int(u)]
 
-                    if has_light:
+                    elif has_light:
                         pass
 
                     frame_buffer[offset] = colors
