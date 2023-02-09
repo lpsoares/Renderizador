@@ -3,7 +3,7 @@
 <X3D>
     <Scene>
 
-        <Viewpoint position="14 11 24"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+        <Viewpoint position="300 200 500"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
         <NavigationInfo type='"NONE"'/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
 
         <Transform><Shape><Polyline2D lineSegments='30.5 30.5 45.5 380.5'/><Appearance><Material emissiveColor='1 0 0'/></Appearance></Shape></Transform>
@@ -49,6 +49,6 @@
         <Transform><Shape><Polyline2D lineSegments='20.5 315.5 565.5 305.5'/><Appearance><Material emissiveColor='1 0 1'/></Appearance></Shape></Transform>
         <Transform><Shape><Polyline2D lineSegments='20.5 335.5 565.5 325.5'/><Appearance><Material emissiveColor='1 1 0'/></Appearance></Shape></Transform>
         <Transform><Shape><Polyline2D lineSegments='20.5 355.5 565.5 345.5'/><Appearance><Material emissiveColor='0 1 1'/></Appearance></Shape></Transform>
-
+        
     </Scene>
 </X3D>
