@@ -65,8 +65,8 @@ class GL:
         print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
         print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
         # Exemplo:
-        pos_x = gpu.GPU.width//2
-        pos_y = gpu.GPU.height//2
+        pos_x = GL.width//2
+        pos_y = GL.height//2
         gpu.GPU.set_pixel(pos_x, pos_y, 255, 0, 0) # altera um pixel da imagem (u, v, r, g, b)
 
     @staticmethod

@@ -43,8 +43,6 @@ class GPU:
     DEPTH_ATTACHMENT = 1  # Para FrameBuffer Object identificar memória de imagem de profundidade
 
     # Atributos estáticos
-    width = 60     # Legado, deverá ser REMOVIDO
-    height = 40    # Legado, deverá ser REMOVIDO
     image_file = None
     frame_buffer = None
     path = "."
@@ -136,6 +134,9 @@ class GPU:
             color = [clr_r, clr_g, clr_b, clr_a]
         else:  # caso não tenha o valor de alpha
             color = [clr_r, clr_g, clr_b]
+        fb_dim = GPU.frame_buffer[GPU.draw_framebuffer].color.shape
+        if coord_u < 0 or coord_u >= fb_dim[1] or coord_v < 0 or coord_v >= fb_dim[0]:
+            raise Exception(f"Acesso irregular a posição [{coord_u}, {coord_v}] do Framebuffer {fb_dim[1], fb_dim[0]}")
         GPU.frame_buffer[GPU.draw_framebuffer].color[coord_v][coord_u] = color
 
     # Obsoleto, parar de usar no futuro
