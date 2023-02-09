@@ -19,9 +19,6 @@ import gpu          # Simula os recursos de uma GPU
 
 import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
 
-# Deprecated
-import rotinas      # Desatualizado possui rotinas antigas de suporte ao X3D (legado)
-
 LARGURA = 60  # Valor padrão para largura da tela
 ALTURA = 40   # Valor padrão para altura da tela
 
@@ -104,11 +101,10 @@ class Renderizador:
 
     def mapping(self):
         """Mapeamento de funções para as rotinas de renderização."""
-        # Rotinas antigas ainda no arquivo rotinas.py
-        x3d.X3D.renderer["Polypoint2D"] = rotinas.polypoint2D
-        x3d.X3D.renderer["Polyline2D"] = rotinas.polyline2D
-        x3d.X3D.renderer["TriangleSet2D"] = rotinas.triangleSet2D
         # Rotinas encapsuladas na classe GL (Graphics Library)
+        x3d.X3D.renderer["Polypoint2D"] = gl.GL.polypoint2D
+        x3d.X3D.renderer["Polyline2D"] = gl.GL.polyline2D
+        x3d.X3D.renderer["TriangleSet2D"] = gl.GL.triangleSet2D
         x3d.X3D.renderer["TriangleSet"] = gl.GL.triangleSet
         x3d.X3D.renderer["Viewpoint"] = gl.GL.viewpoint
         x3d.X3D.renderer["Transform_in"] = gl.GL.transform_in
