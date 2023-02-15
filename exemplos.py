@@ -57,15 +57,9 @@ if escolha.isnumeric():
 else:
     opcoes = [element for element in TESTE if element[0] == escolha][0]
 
-# Checka qual Python está instalado
-interpreter = "python"
-try:
-    output = subprocess.check_output("python -V")
-    if int(output.decode("utf-8")[7:8]) < 3:
-        interpreter = "python3"
-except (FileNotFoundError):
-    interpreter = "python3"
-
 # Roda renderizador com os parâmetros necessário para o exemplo escolhido
-print("Abrindo arquivo: {0}".format(opcoes[2]))
+interpreter = sys.executable
+print('Abrindo arquivo: "{0}"'.format(opcoes[2]))
+print("> ", interpreter, "renderizador/renderizador.py", " ".join(opcoes[1:]), "\n")
+
 subprocess.call([interpreter, "renderizador/renderizador.py"] + opcoes[1:])
