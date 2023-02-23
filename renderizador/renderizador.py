@@ -89,8 +89,8 @@ class Renderizador:
         gpu.GPU.clear_buffer()
 
         # Recursos que podem ser úteis:
-        # Define o valor do pixel no framebuffer: draw_pixels(coord, mode, data)
-        # Retorna o valor do pixel no framebuffer: read_pixels(coord, mode)
+        # Define o valor do pixel no framebuffer: draw_pixel(coord, mode, data)
+        # Retorna o valor do pixel no framebuffer: read_pixel(coord, mode)
 
     def pos(self):
         """Rotinas pós renderização."""

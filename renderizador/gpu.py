@@ -126,27 +126,8 @@ class GPU:
         if GPU.frame_buffer[GPU.draw_framebuffer].depth.size != 0:
             GPU.frame_buffer[GPU.draw_framebuffer].depth[:] = GPU.clear_depth_val
 
-    # Obsoleto, parar de usar no futuro
     @staticmethod
-    def set_pixel(coord_u, coord_v, clr_r, clr_g, clr_b, clr_a=-1):
-        """Troca a cor de um pixel no framebuffer."""
-        if clr_a >= 0:  # caso tenha o valor de alpha
-            color = [clr_r, clr_g, clr_b, clr_a]
-        else:  # caso não tenha o valor de alpha
-            color = [clr_r, clr_g, clr_b]
-        fb_dim = GPU.frame_buffer[GPU.draw_framebuffer].color.shape
-        if coord_u < 0 or coord_u >= fb_dim[1] or coord_v < 0 or coord_v >= fb_dim[0]:
-            raise Exception(f"Acesso irregular a posição [{coord_u}, {coord_v}] do Framebuffer {fb_dim[1], fb_dim[0]}")
-        GPU.frame_buffer[GPU.draw_framebuffer].color[coord_v][coord_u] = color
-
-    # Obsoleto, parar de usar no futuro
-    @staticmethod
-    def set_depth(coord_u, coord_v, depth):
-        """Troca a profundidade de um pixel no framebuffer."""
-        GPU.frame_buffer[GPU.draw_framebuffer].depth[coord_v][coord_u] = depth
-
-    @staticmethod
-    def draw_pixels(coord, mode, data):
+    def draw_pixel(coord, mode, data):
         """Define o valor do pixel no framebuffer."""
         if coord and data:
             if mode in (GPU.RGB8, GPU.RGBA8):  # cores
@@ -155,7 +136,7 @@ class GPU:
                 GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
 
     @staticmethod
-    def read_pixels(coord, mode):
+    def read_pixel(coord, mode):
         """Retorna o valor do pixel no framebuffer."""
         if mode in (GPU.RGB8, GPU.RGBA8):  # cores
             data = GPU.frame_buffer[GPU.read_framebuffer].color[coord[1]][coord[0]]
