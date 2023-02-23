@@ -130,6 +130,9 @@ class GPU:
     def draw_pixel(coord, mode, data):
         """Define o valor do pixel no framebuffer."""
         if coord and data:
+            fb_dim = GPU.frame_buffer[GPU.draw_framebuffer].color.shape
+            if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
+                raise Exception(f"Acesso irregular a posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
             if mode in (GPU.RGB8, GPU.RGBA8):  # cores
                 GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
             elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade

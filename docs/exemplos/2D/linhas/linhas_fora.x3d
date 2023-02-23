@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">
+<X3D>
+    <Scene>
+
+        <Viewpoint position="15 10 24"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+        <NavigationInfo type='"NONE"'/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='-2.5 10.0 15.0 -2.5'/>
+                <Appearance>
+                    <Material emissiveColor='0.5 0.5 0.5'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='15.0 -2.5 32.5 10.0'/>
+                <Appearance>
+                    <Material emissiveColor='0.5 0.5 0.5'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='32.5 10.0 15.0 22.5'/>
+                <Appearance>
+                    <Material emissiveColor='0.5 0.5 0.5'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='15.0 22.5 -2.5 10.0'/>
+                <Appearance>
+                    <Material emissiveColor='0.5 0.5 0.5'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='3.0 -10.0 3.0 30.0'/>
+                <Appearance>
+                    <Material emissiveColor='0.8 0.8 0.8'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='27.0 -10.0 27.0 30.0'/>
+                <Appearance>
+                    <Material emissiveColor='0.8 0.8 0.8'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='-10.0 3.0 40.0 3.0'/>
+                <Appearance>
+                    <Material emissiveColor='0.8 0.8 0.8'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='-10.0 17.0 40.0 17.0'/>
+                <Appearance>
+                    <Material emissiveColor='0.8 0.8 0.8'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='-100.0 10.0 130.0 10.0'/>
+                <Appearance>
+                    <Material emissiveColor='1.0 1.0 1.0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+        <Transform>
+            <Shape>
+                <Polyline2D lineSegments='15.0 -100.0 15.0 120.0'/>
+                <Appearance>
+                    <Material emissiveColor='1.0 1.0 1.0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+
+    </Scene>
+</X3D>
