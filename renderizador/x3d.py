@@ -227,13 +227,14 @@ class X3D:
     ----------
     root : Element
         raiz do grafo de cena X3D em XMl
-    width : int
-        largura tela que será renderizada (deprecated)
-    height : int
-        altura tela que será renderizada (deprecated)
 
     current_color : {list[3]} (static)
         dicionário com as cores no formato RGB usadas no momento ["diffuseColor", "emissiveColor"]
+    current_appearance : X3DAppearanceNode (static)
+        objeto de aparencia em X3D
+    current_texture = String (static)
+        URL das texturas
+
     preview : interface (static)
          sistema de preview para geometrias 2D simples
     render : {} (static)
@@ -257,8 +258,6 @@ class X3D:
     def __init__(self, filename):
         """Constroi o atributo para a raiz do grafo X3D."""
         self.root = xml.etree.ElementTree.parse(filename).getroot()
-        self.width = 60  # Valor padrão de largura da tela
-        self.height = 40  # Valor padrão de altura da tela
         self.scene = None  # Referência para o objeto da cena
 
     def set_preview(self, preview):
