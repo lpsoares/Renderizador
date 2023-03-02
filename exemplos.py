@@ -29,6 +29,7 @@ TESTE.append(["tri_alta", "-i", DIR+"2D/triangulos/triangulos_alta.x3d", "-w", "
 # Exemplos 3D
 TESTE.append(["tri_3D", "-i", DIR+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["tira_tri", "-i", DIR+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["um_tri", "-i", DIR+"3D/triangulos/um_triangulo.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["box", "-i", DIR+"3D/box/box.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["cores", "-i", DIR+"3D/cores/cores.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["letras", "-i", DIR+"3D/cores/letras.x3d", "-w", "300", "-h", "200", "-p"])
@@ -40,9 +41,15 @@ TESTE.append(["esferas", "-i", DIR+"3D/iluminacao/esferas.x3d", "-w", "180", "-h
 TESTE.append(["onda", "-i", DIR+"3D/animacoes/onda.x3d", "-w", "300", "-h", "200"])
 TESTE.append(["piramide", "-i", DIR+"3D/animacoes/piramide.x3d", "-w", "300", "-h", "200"])
 
-# Lista os exemplos registrados
-for i, titulo in enumerate(TESTE):
-    print("{0} : {1}".format(i, titulo[0]))
+# Lista os exemplos registrados (em 3 colunas)
+colunas = 4
+t = -(len(TESTE)//-colunas)
+for i in range(t):
+    for j in range(colunas):
+        d = i+j*t
+        if d < len(TESTE):
+            print("{0:2} : {1:16}".format(d, TESTE[d][0]), end="")
+    print()
 
 # Se um parâmetro fornecido, usar ele como escolha do exemplo
 outra_opcoes = []  # caso usuario passe opções que deverão ser repassadas, por exemplo: --quiet
