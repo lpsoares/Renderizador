@@ -12,8 +12,9 @@ Data: <DATA DE INÍCIO DA IMPLEMENTAÇÃO>
 """
 
 import time         # Para operações com tempo
-
 import gpu          # Simula os recursos de uma GPU
+import math         # Funções matemáticas
+import numpy as np  # Biblioteca do Numpy
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
