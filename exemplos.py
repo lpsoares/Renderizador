@@ -28,8 +28,8 @@ TESTE.append(["tri_alta", "-i", DIR+"2D/triangulos/triangulos_alta.x3d", "-w", "
 
 # Exemplos 3D
 TESTE.append(["tri_3D", "-i", DIR+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200", "-p"])
-TESTE.append(["tira_tri", "-i", DIR+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["um_tri", "-i", DIR+"3D/triangulos/um_triangulo.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["tira_tri", "-i", DIR+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["box", "-i", DIR+"3D/box/box.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["cores", "-i", DIR+"3D/cores/cores.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["letras", "-i", DIR+"3D/cores/letras.x3d", "-w", "300", "-h", "200", "-p"])
@@ -48,7 +48,7 @@ for i in range(t):
     for j in range(colunas):
         d = i+j*t
         if d < len(TESTE):
-            print("{0:2} : {1:16}".format(d, TESTE[d][0]), end="")
+            print("{0:2} : {1:15}".format(d, TESTE[d][0]), end="")
     print()
 
 # Se um parâmetro fornecido, usar ele como escolha do exemplo
@@ -62,9 +62,17 @@ else:
 
 # Verifica se a escolha do exemplo foi pelo índice ou primeiro argumento da lista
 if escolha.isnumeric():
-    opcoes = TESTE[int(escolha)]
+    numero = int(escolha)
+    if 0 < numero < len(TESTE):
+        opcoes = TESTE[int(escolha)]
+    else:
+        sys.exit("Opção inválida!")
 else:
-    opcoes = [element for element in TESTE if element[0] == escolha][0]
+    opcoes = [element for element in TESTE if element[0] == escolha]
+    if len(opcoes) > 0:    
+        opcoes = opcoes[0]
+    else:
+        sys.exit("Opção inválida!")
 
 # Roda renderizador com os parâmetros necessário para o exemplo escolhido
 interpreter = sys.executable
