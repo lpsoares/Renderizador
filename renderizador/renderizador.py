@@ -170,7 +170,7 @@ class Renderizador:
 
         # Se no modo silencioso não configurar janela de visualização
         if not args.quiet:
-            window = interface.Interface(self.width, self.height)
+            window = interface.Interface(self.width, self.height, self.x3d_file)
             self.scene.set_preview(window)
 
         # carrega os dados do grafo de cena
