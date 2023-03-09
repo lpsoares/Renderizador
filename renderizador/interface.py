@@ -130,7 +130,7 @@ class Interface:
             self.fig.canvas.flush_events()
         elif label == 'Grid':
             self.grid = not self.grid
-            self.axes.grid(b=self.grid, which='both')
+            self.axes.grid(self.grid, which='both')
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
 

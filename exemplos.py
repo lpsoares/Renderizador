@@ -27,8 +27,9 @@ TESTE.append(["helice", "-i", DIR+"2D/triangulos/helice.x3d", "-w", "30", "-h", 
 TESTE.append(["tri_alta", "-i", DIR+"2D/triangulos/triangulos_alta.x3d", "-w", "600", "-h", "400", "-p"])
 
 # Exemplos 3D
-TESTE.append(["tri_3D", "-i", DIR+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["um_tri", "-i", DIR+"3D/triangulos/um_triangulo.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["var_tri", "-i", DIR+"3D/triangulos/varios_triangulos.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["tri_3D", "-i", DIR+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["tira_tri", "-i", DIR+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["box", "-i", DIR+"3D/box/box.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["cores", "-i", DIR+"3D/cores/cores.x3d", "-w", "300", "-h", "200", "-p"])
@@ -63,7 +64,7 @@ else:
 # Verifica se a escolha do exemplo foi pelo índice ou primeiro argumento da lista
 if escolha.isnumeric():
     numero = int(escolha)
-    if 0 < numero < len(TESTE):
+    if 0 <= numero < len(TESTE):
         opcoes = TESTE[int(escolha)]
     else:
         sys.exit("Opção inválida!")
