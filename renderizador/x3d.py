@@ -30,13 +30,16 @@ def get_colors(appearance):
         "diffuseColor": [0.8, 0.8, 0.8],  # Valor padrão
         "emissiveColor": [0.0, 0.0, 0.0],  # Valor padrão
         "specularColor": [0.0, 0.0, 0.0],  # Valor padrão
-        "shininess": 0.2  # Valor padrão
+        "shininess": 0.2,  # Valor padrão
+        "transparency": 0.0  # Valor padrão
     }
     if appearance and appearance.material:
         colors["diffuseColor"] = appearance.material.diffuseColor
         colors["emissiveColor"] = appearance.material.emissiveColor
         colors["specularColor"] = appearance.material.specularColor
         colors["shininess"] = appearance.material.shininess
+        colors["transparency"] = appearance.material.transparency
+
     return colors
 
 
@@ -230,6 +233,7 @@ class X3D:
 
     current_color : {list[3]} (static)
         dicionário com as cores no formato RGB usadas no momento ["diffuseColor", "emissiveColor"]
+        além dos valores de transparencia ["transparency"]
     current_appearance : X3DAppearanceNode (static)
         objeto de aparencia em X3D
     current_texture = String (static)
@@ -248,7 +252,8 @@ class X3D:
 
     current_color = {  # controle de cor instantânea
         "diffuseColor": [0.8, 0.8, 0.8],
-        "emissiveColor": [0.0, 0.0, 0.0]
+        "emissiveColor": [0.0, 0.0, 0.0],
+        "transparency": 0.0,
     }
     current_appearance = None  # objeto de aparencia atual
     current_texture = []  # controle de texturas instantâneas
@@ -488,16 +493,18 @@ class Material(X3DMaterialNode):
         self.ambientIntensity = SFFloat(node, "ambientIntensity", 0.2)
         self.diffuseColor = SFColor(node, "diffuseColor", [0.8, 0.8, 0.8])
         self.emissiveColor = SFColor(node, "emissiveColor", [0.0, 0.0, 0.0])
-        self.shininess = SFFloat(node, "shininess", 0.2)
         self.specularColor = SFColor(node, "specularColor", [0.0, 0.0, 0.0])
+        self.shininess = SFFloat(node, "shininess", 0.2)
         self.transparency = SFFloat(node, "transparency", 0.0)
 
     def render(self):
         """Rotina de renderização."""
+        X3D.current_color["ambientIntensity"] = self.ambientIntensity
         X3D.current_color["diffuseColor"] = self.diffuseColor
         X3D.current_color["emissiveColor"] = self.emissiveColor
         X3D.current_color["specularColor"] = self.specularColor
         X3D.current_color["shininess"] = self.shininess
+        X3D.current_color["transparency"] = self.transparency
 
 
 class X3DTextureNode(X3DAppearanceChildNode):

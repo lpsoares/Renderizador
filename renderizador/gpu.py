@@ -134,18 +134,34 @@ class GPU:
             if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
                 raise Exception(f"Acesso irregular a posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
             if mode in (GPU.RGB8, GPU.RGBA8):  # cores
-                GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
+                if GPU.frame_buffer[GPU.draw_framebuffer].color.size != 0:
+                    GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
+                else:
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de cor")
             elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
-                GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
+                if GPU.frame_buffer[GPU.draw_framebuffer].depth.size != 0:
+                    GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
+                else:
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de profundidade")
 
     @staticmethod
     def read_pixel(coord, mode):
         """Retorna o valor do pixel no framebuffer."""
-        if mode in (GPU.RGB8, GPU.RGBA8):  # cores
-            data = GPU.frame_buffer[GPU.read_framebuffer].color[coord[1]][coord[0]]
-        elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
-            data = GPU.frame_buffer[GPU.read_framebuffer].depth[coord[1]][coord[0]]
-        return data
+        if coord:
+            fb_dim = GPU.frame_buffer[GPU.read_framebuffer].color.shape
+            if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
+                raise Exception(f"Acesso irregular de leitura na posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
+            if mode in (GPU.RGB8, GPU.RGBA8):  # cores
+                if GPU.frame_buffer[GPU.draw_framebuffer].color.size != 0:
+                    data = GPU.frame_buffer[GPU.read_framebuffer].color[coord[1]][coord[0]]
+                else:
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de cor")
+            elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
+                if GPU.frame_buffer[GPU.draw_framebuffer].depth.size != 0:
+                    data = GPU.frame_buffer[GPU.read_framebuffer].depth[coord[1]][coord[0]]
+                else:
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de profundidade")
+            return data
 
     @staticmethod
     def save_image():

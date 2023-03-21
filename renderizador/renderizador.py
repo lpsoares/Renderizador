@@ -54,6 +54,8 @@ class Renderizador:
         # - FRAMEBUFFER: Faz o bind para leitura e escrita no framebuffer
 
         # Aloca memória no FrameBuffer para um tipo e tamanho especificado de buffer
+
+        # Memória de Framebuffer para canal de cores
         gpu.GPU.framebuffer_storage(
             self.framebuffers["FRONT"],
             gpu.GPU.COLOR_ATTACHMENT,
@@ -61,6 +63,16 @@ class Renderizador:
             self.width,
             self.height
         )
+
+        # Descomente as seguintes linhas se for usar um Framebuffer para profundidade
+        # gpu.GPU.framebuffer_storage(
+        #     self.framebuffers["FRONT"],
+        #     gpu.GPU.DEPTH_ATTACHMENT,
+        #     gpu.GPU.DEPTH_COMPONENT32F,
+        #     self.width,
+        #     self.height
+        # )
+    
         # Opções:
         # - COLOR_ATTACHMENT: alocações para as cores da imagem renderizada
         # - DEPTH_ATTACHMENT: alocações para as profundidades da imagem renderizada
@@ -112,8 +124,8 @@ class Renderizador:
         x3d.X3D.renderer["Transform_out"] = gl.GL.transform_out
         x3d.X3D.renderer["TriangleStripSet"] = gl.GL.triangleStripSet
         x3d.X3D.renderer["IndexedTriangleStripSet"] = gl.GL.indexedTriangleStripSet
-        x3d.X3D.renderer["Box"] = gl.GL.box
         x3d.X3D.renderer["IndexedFaceSet"] = gl.GL.indexedFaceSet
+        x3d.X3D.renderer["Box"] = gl.GL.box
         x3d.X3D.renderer["Sphere"] = gl.GL.sphere
         x3d.X3D.renderer["NavigationInfo"] = gl.GL.navigationInfo
         x3d.X3D.renderer["DirectionalLight"] = gl.GL.directionalLight

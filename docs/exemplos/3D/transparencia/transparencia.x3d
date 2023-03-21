@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+  
+    <NavigationInfo headlight="false"/> <!-- You can ignore this node for the moment -->
+
+    <Viewpoint position="0 0 10"/> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/navigation.html -->
+
+    <!-- Esquerda -->
+    <Transform translation="-6 0 -10"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='0 -4 0 5 4 0 -5 4 0 '/>
+        </TriangleSet>
+        <Appearance>
+          <Material emissiveColor='0 1 0'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <!-- Direita -->
+    <Transform translation="6 0 -10"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='0 -4 0 5 4 0 -5 4 0 '/>
+        </TriangleSet>
+        <Appearance>
+          <Material emissiveColor='0 0 1'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <!-- Meio -->
+    <Transform translation="0 0 -6"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='0 -4 0 5 4 0 -5 4 0 '/>
+        </TriangleSet>
+        <Appearance>
+          <Material emissiveColor='1 0 0' transparency='0.4'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <!-- Losango -->
+    <Transform translation="2.25 0 -4"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='-2 0 0 2 0 0 0 2 0'/>
+        </TriangleSet>
+        <Appearance>
+          <Material emissiveColor='1 1 0'  transparency='0.3'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+    <Transform translation="2.25 0 -4"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='2 0 0 -2 0 0 0 -2 0'/>
+        </TriangleSet>
+        <Appearance>
+          <Material emissiveColor='1 1 0'  transparency='0.3'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+  </Scene>
+</X3D>
