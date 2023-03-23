@@ -135,7 +135,10 @@ class GPU:
                 raise Exception(f"Acesso irregular a posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
             if mode in (GPU.RGB8, GPU.RGBA8):  # cores
                 if GPU.frame_buffer[GPU.draw_framebuffer].color.size != 0:
-                    GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
+                    if all( 0 <= i <= 255 for i in data):
+                        GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
+                    else:
+                        raise Exception(f"Valores do Frame buffer devem ser inteiros e estar entre 0 e 255")    
                 else:
                     raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de cor")
             elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
