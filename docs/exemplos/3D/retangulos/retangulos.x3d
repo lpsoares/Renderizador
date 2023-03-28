@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <X3D>
   <Scene>
+
+    <NavigationInfo headlight="false"/> <!-- You can ignore this node for the moment -->
     <Viewpoint position='0 0 10'/>
+
     <Transform rotation="0 0 1 0">
       <Shape>
         <IndexedFaceSet coordIndex='0 1 2 -1 1 3 2 -1'>
