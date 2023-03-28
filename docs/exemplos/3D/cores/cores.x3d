@@ -4,7 +4,9 @@
     <Viewpoint position='0 0 3'/>
     <Transform>
       <Shape>
-        <IndexedFaceSet colorPerVertex='true' colorIndex='0 1 2 -1 2 3 0 -1' coordIndex='0 1 2 -1 2 3 0 -1'>
+        <IndexedFaceSet colorPerVertex='true' 
+         colorIndex='0 1 2 -1 2 3 0 -1'
+         coordIndex='0 1 2 -1 2 3 0 -1'>
           <Coordinate point='-1 -1 0 1 -1 0 1 1 0 -1 1 0'/>
           <Color color='1 0 0 0 1 0 0 0 1 1 1 0'/>
         </IndexedFaceSet>
