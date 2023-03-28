@@ -63,6 +63,7 @@ TESTE.append(["piramide", "-i", DIR+"3D/animacoes/piramide.x3d", "-w", "300", "-
 
 # Novos
 TESTE.append(["leques", "-i", DIR+"3D/cores/leques.x3d", "-w", "480", "-h", "320", "-p"])
+TESTE.append(["flechas", "-i", DIR+"3D/cores/flechas.x3d", "-w", "480", "-h", "320", "-p"])
 
 # Lista os exemplos registrados (em 3 colunas)
 colunas = 4
