@@ -37,3 +37,27 @@
     </Transform>
   </Scene>
 </X3D>
+
+
+<!-- 
+
+near = 0.01
+far = 1000
+
+Z no objeto e mundo 0.5 ou -0.5
+
+Z no espaço da câmera -9.5 ou -10.5
+
+Matriz de Projeção:
+[[ 1.37417368  0.          0.          0.        ]
+ [ 0.          2.06126053  0.          0.        ]
+ [ 0.          0.         -1.00002    -0.200002  ]
+ [ 0.          0.         -1.          0.        ]]
+        
+valores de Z = 643763/62500    ou 2325047/250000
+valores de W = 21/2            ou 19/2
+
+Valores de Z para os vértices:
+0.98097219 ou ; 0.97896716 
+
+-->
