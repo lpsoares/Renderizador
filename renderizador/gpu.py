@@ -129,41 +129,96 @@ class GPU:
     @staticmethod
     def draw_pixel(coord, mode, data):
         """Define o valor do pixel no framebuffer."""
-        if coord and data:
-            fb_dim = GPU.frame_buffer[GPU.draw_framebuffer].color.shape
-            if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
-                raise Exception(f"Acesso irregular a posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
+        if coord and np.any(data):
             if mode in (GPU.RGB8, GPU.RGBA8):  # cores
+
+                #  Verifica se o Framebuffer do canal de cor foi alocado
                 if GPU.frame_buffer[GPU.draw_framebuffer].color.size != 0:
-                    if all( 0 <= i <= 255 for i in data):
+
+                    # Coleta a dimensão do Framebuffer para o canal de cor
+                    fb_dim = GPU.frame_buffer[GPU.draw_framebuffer].color.shape
+
+                    # Verifica se escrita é em um local válido
+                    if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
+                        raise Exception(f"Acesso irregular de escrita na posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
+
+                    # Verifica se os dados estão no tamanho certo e em uma faixa suportada
+                    if isinstance(data, (list, tuple, np.ndarray)) and (len(data) == (mode+2)) and all( 0 <= i <= 255 for i in data):
+                        # Grava dados no Framebuffer
                         GPU.frame_buffer[GPU.draw_framebuffer].color[coord[1]][coord[0]] = data
                     else:
-                        raise Exception(f"Valores do Frame buffer devem ser inteiros e estar entre 0 e 255")    
+                        raise Exception(f"Valores do Frame buffer devem estar em um vetor de dimensão [{mode+2}] ser inteiros e estar entre 0 e 255")
                 else:
                     raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de cor")
+
             elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
+
+                #  Verifica se o Framebuffer do canal de profundidade foi alocado
                 if GPU.frame_buffer[GPU.draw_framebuffer].depth.size != 0:
-                    GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
+
+                    # Coleta a dimensão do Framebuffer para o canal de profundidade
+                    fb_dim = GPU.frame_buffer[GPU.draw_framebuffer].depth.shape
+
+                    # Verifica se escrita é em um local válido
+                    if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
+                        raise Exception(f"Acesso irregular de escrita na posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
+
+                    # Verifica se os dados estão no tamanho certo e em um formato suportado
+                    if isinstance(data, (list, tuple, np.ndarray)) and (len(data)==1) and isinstance(data[0], (int, float)):
+                        # Grava dados no Framebuffer
+                        GPU.frame_buffer[GPU.draw_framebuffer].depth[coord[1]][coord[0]] = data
+                    else:
+                        raise Exception(f"Valores do Frame buffer devem ser um vetor com um único valor numérico: {data}")
+                    
                 else:
                     raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de profundidade")
+
+            else:
+                raise Exception(f"Modo inválido de leitura do Frame buffer ({mode})")
+
 
     @staticmethod
     def read_pixel(coord, mode):
         """Retorna o valor do pixel no framebuffer."""
         if coord:
-            fb_dim = GPU.frame_buffer[GPU.read_framebuffer].color.shape
-            if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
-                raise Exception(f"Acesso irregular de leitura na posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
             if mode in (GPU.RGB8, GPU.RGBA8):  # cores
+
+                #  Verifica se o Framebuffer do canal de cor foi alocado
                 if GPU.frame_buffer[GPU.draw_framebuffer].color.size != 0:
+                    
+                    # Coleta a dimensão do Framebuffer para o canal de cor
+                    fb_dim = GPU.frame_buffer[GPU.read_framebuffer].color.shape
+
+                    # Verifica se leitura é em um local válido
+                    if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
+                        raise Exception(f"Acesso irregular de leitura na posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
+
                     data = GPU.frame_buffer[GPU.read_framebuffer].color[coord[1]][coord[0]]
+
                 else:
                     raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de cor")
+
             elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
+
+                #  Verifica se o Framebuffer do canal de profundidade foi alocado
                 if GPU.frame_buffer[GPU.draw_framebuffer].depth.size != 0:
+
+                    # Coleta a dimensão do Framebuffer para o canal de profundidade
+                    fb_dim = GPU.frame_buffer[GPU.read_framebuffer].depth.shape
+
+                    # Verifica se leitura é em um local válido                    
+                    if coord[0] < 0 or coord[0] >= fb_dim[1] or coord[1] < 0 or coord[1] >= fb_dim[0]:
+                        raise Exception(f"Acesso irregular de leitura na posição [{coord[0]}, {coord[1]}] do Framebuffer {fb_dim[1], fb_dim[0]}")
+
                     data = GPU.frame_buffer[GPU.read_framebuffer].depth[coord[1]][coord[0]]
+
                 else:
                     raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de profundidade")
+
+            else:
+                raise Exception(f"Modo inválido de leitura do Frame buffer ({mode})")
+
+            # Retorna valor dos dados do Framebuffer
             return data
 
     @staticmethod
