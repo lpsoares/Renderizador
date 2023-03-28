@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position="0 0 10" fieldOfView="0.50" orientation="0 1 0 1.5708"/>
+    <NavigationInfo headlight='false'/>
+
+    <Transform translation="-50 0 0" rotation="0 0.8 0.6 -0.6">
+      <Shape>
+        <Box size="8 8 8"/>
+        <Appearance>
+          <Material emissiveColor="0.3 0.6 0.4"/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <Transform translation="-50 0 20">
+      <Shape>
+        <Sphere radius='8'/>
+        <Appearance>
+          <Material emissiveColor="0.6 0.7 0.8"/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+
+  </Scene>
+</X3D>

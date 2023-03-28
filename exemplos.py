@@ -42,10 +42,15 @@ TESTE.append(["avatar", "-i", DIR+"3D/avatar/avatar.x3d", "-w", "300", "-h", "20
 TESTE.append(["retang", "-i", DIR+"3D/retangulos/retangulos.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["transp", "-i", DIR+"3D/transparencia/transparencia.x3d", "-w", "300", "-h", "200", "-p"])
 
-# Interpolações e Texturas
+# Interpolações de Cores
 TESTE.append(["cores", "-i", DIR+"3D/cores/cores.x3d", "-w", "300", "-h", "200", "-p"])
+
+# Texturas
 TESTE.append(["textura", "-i", DIR+"3D/texturas/textura.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["texturas", "-i", DIR+"3D/texturas/texturas.x3d", "-w", "300", "-h", "200", "-p"])
+
+# Primitivas 3D
+TESTE.append(["primitivas", "-i", DIR+"3D/box/primitivas.x3d", "-w", "300", "-h", "200", "-p"])
 
 # Iluminação
 TESTE.append(["tri_3D", "-i", DIR+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200", "-p"])
