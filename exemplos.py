@@ -54,7 +54,7 @@ TESTE.append(["primitivas", "-i", DIR+"3D/box/primitivas.x3d", "-w", "300", "-h"
 
 # Iluminação
 TESTE.append(["tri_3D", "-i", DIR+"3D/triangulos/triang3d.x3d", "-w", "300", "-h", "200", "-p"])
-TESTE.append(["um_box", "-i", DIR+"3D/box/box.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["caixas", "-i", DIR+"3D/box/box.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["esferas", "-i", DIR+"3D/iluminacao/esferas.x3d", "-w", "180", "-h", "120", "-p"])
 
 # Animações
