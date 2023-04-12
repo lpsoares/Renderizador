@@ -238,7 +238,7 @@ class GPU:
     def load_texture(textura):
         """Método para ler textura."""
         file = os.path.join(GPU.path, textura)
-        imagem = Image.open(file)
+        imagem = Image.open(file).transpose(Image.TRANSPOSE)
         matriz = np.array(imagem)
         return matriz
 
