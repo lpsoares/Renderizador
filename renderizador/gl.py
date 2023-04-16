@@ -48,10 +48,18 @@ class GL:
         print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
 
         # Exemplo:
+
+        # Define um ponto no centro da tela
         pos_x = GL.width//2
         pos_y = GL.height//2
-        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0])  # altera pixel (u, v, tipo, r, g, b)
-        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        
+        # Aloca dicionário de Vertex Buffer Objects
+        vbo = gpu.GPU.gen_buffers()
+        vbo["screenPosition"] = [ [pos_x, pos_y], ]
+        vbo["color"] = [255, 0, 0] # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        
+        # Desenha os pontos
+        gpu.GPU.draw_array(gpu.GPU.POINTS, vbo)
         
     @staticmethod
     def polyline2D(lineSegments, colors):
@@ -70,10 +78,18 @@ class GL:
         print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
         
         # Exemplo:
+
+        # Define um ponto no centro da tela
         pos_x = GL.width//2
         pos_y = GL.height//2
-        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 255])  # altera pixel (u, v, tipo, r, g, b)
-        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        
+        # Aloca dicionário de Vertex Buffer Objects
+        vbo = gpu.GPU.gen_buffers()
+        vbo["screenPosition"] = [ [pos_x, pos_y], ]
+        vbo["color"] = [255, 0, 0] # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        
+        # Desenha os pontos
+        gpu.GPU.draw_array(gpu.GPU.LINES, vbo)
 
     @staticmethod
     def triangleSet2D(vertices, colors):
@@ -111,6 +127,15 @@ class GL:
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
         print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
+
+        def vertex_shader(vbo):
+            return vbo
+        
+        def fragment_shader(vbo):
+            return vbo
+                
+        gpu.GPU.shader_source(gpu.GPU.VERTEX_SHADER, vertex_shader)
+        gpu.GPU.shader_source(gpu.GPU.FRAGMENT_SHADER, fragment_shader)
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
@@ -203,8 +228,17 @@ class GL:
         print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
         print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        # Exemplo:
+
+        # Aloca dicionário de Vertex Buffer Objects
+        vbo = gpu.GPU.gen_buffers()
+        vbo["vertexPosition"] = [ [-1, -1, 0], [1, -1, 0], [0, 1, 0], ]
+        vbo["vertexColor"] = [255, 0, 0] # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
+        # Desenha os triângulos na ordem dos índices
+        indices = [0, 1, 2]
+        gpu.GPU.draw_elements(gpu.GPU.POINTS, vbo, indices)
+        
 
     @staticmethod
     def box(size, colors):

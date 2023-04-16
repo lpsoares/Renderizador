@@ -25,14 +25,21 @@ class FrameBuffer:
         self.color = np.empty(0)
         self.depth = np.empty(0)
 
+# class VertexBufferObject:
+#     """Armazena informação sobre os vértices."""
+
+# class VertexArrayObject:
+#     """Armazena informação para renderizar objetos."""
+
 
 class GPU:
     """Classe que representa o funcionamento de uma GPU."""
 
-    # Constantes a serem usadas com Enum para definir estados
-    DRAW_FRAMEBUFFER = 0b01
-    READ_FRAMEBUFFER = 0b10
-    FRAMEBUFFER = 0b11
+    # Constantes a serem usadas com Enum
+    
+    DRAW_FRAMEBUFFER = 0b01 # para definir em que framebuffer desenhar pixels
+    READ_FRAMEBUFFER = 0b10 # para definir em que framebuffer ler pixels
+    FRAMEBUFFER = 0b11 # para definir em que framebuffer desenhar e ler pixels
 
     RGB8 = 0b001  # Valores para Vermelho, Verde, Azul de 8bits cada (0-255)
     RGBA8 = 0b010  # Valores para Vermelho, Verde, Azul e Transpareência de 8bits cada (0-255)
@@ -42,10 +49,25 @@ class GPU:
     COLOR_ATTACHMENT = 0  # Para FrameBuffer Object identificar memória de imagem de cores
     DEPTH_ATTACHMENT = 1  # Para FrameBuffer Object identificar memória de imagem de profundidade
 
+    VERTEX_SHADER = 0     # Define o vertex shader
+    FRAGMENT_SHADER = 1   # Define o fragment shader
+
+    POINTS         = 0b000 # primitiva geométrica de pontos
+    LINES          = 0b001 # primitiva geométrica de linhas
+    LINE_STRIP     = 0b010 # primitiva geométrica de sequencia de linhas
+    TRIANGLES      = 0b100 # primitiva geométrica de triângulos
+    TRIANGLE_STRIP = 0b101 # primitiva geométrica de tira de triângulos
+    TRIANGLE_FAN   = 0b110 # primitiva geométrica de leque de triângulos
+
     # Atributos estáticos
     image_file = None
     frame_buffer = None
     path = "."
+    vertex_shader = lambda vbo: vbo
+    fragment_shader = lambda vbo: vbo
+
+    # Para desenhar
+    para_desenhar = []
 
     def __init__(self, image_file, path):
         """Define o nome do arquivo para caso se salvar o framebuffer."""
@@ -235,6 +257,10 @@ class GPU:
         img.save(filename[0]+str(counter).zfill(3)+'.'+filename[1])
 
     @staticmethod
+    def swap_buffers():
+        """Método para a troca dos buffers (NÃO IMPLEMENTADA)."""
+
+    @staticmethod
     def load_texture(textura):
         """Método para ler textura."""
         file = os.path.join(GPU.path, textura)
@@ -248,5 +274,47 @@ class GPU:
         return GPU.frame_buffer[GPU.read_framebuffer].color
 
     @staticmethod
-    def swap_buffers():
-        """Método para a troca dos buffers (NÃO IMPLEMENTADA)."""
+    def gen_buffers():
+        """Estrutura para um dicionário de Vertex Buffer Objects."""
+        # Cada VBO deve ser indexado por um tipo de dado, como: posições, cores, uv.
+        # Cada VBO deve possuir uma lista de dados
+        # Na prática retornando um dicionário vazio
+        return dict()
+    
+    @staticmethod
+    def draw_array(type, vbo, first=0, last=None):
+        """Trata os Vertex Buffer Objects como um Vertex Array Object."""
+        # first é o primeiro vértice e last o último a ser desenhado
+        
+        out = GPU.vertex_shader(vbo)
+        GPU.fragment_shader(out)
+
+        screenPosition = vbo["screenPosition"][first:last] if "screenPosition" in vbo else None
+        vertexColor = vbo["vertexColor"][first:last] if "vertexColor" in vbo else None
+
+        if type == GPU.POINTS and screenPosition:
+            # desenha no framebuffer
+            GPU.draw_pixel(screenPosition, GPU.RGB8, vertexColor)  # altera pixel ([x, y], tipo, [r, g, b])
+
+    @staticmethod
+    def draw_elements(type, vbo, indices, count=None):
+        """Trata os Vertex Buffer Objects como um Vertex Array Object."""
+        # count é a quantidade de indices a serem desenhados
+
+        elementArray = indices[0:count]
+        screenPosition = vbo["screenPosition"] if "screenPosition" in vbo else None
+        vertexColor = vbo["vertexColor"] if "vertexColor" in vbo else None
+
+        if type == GPU.POINTS and screenPosition:
+            # desenha no framebuffer
+            GPU.draw_pixel(screenPosition, GPU.RGB8, vertexColor)  # altera pixel ([x, y], tipo, [r, g, b])
+
+    @staticmethod
+    def shader_source(type, function):
+        if type == GPU.VERTEX_SHADER:
+            GPU.vertex_shader = function
+        elif type == GPU.FRAGMENT_SHADER:
+            GPU.fragment_shader = function
+        else:
+            pass
+
