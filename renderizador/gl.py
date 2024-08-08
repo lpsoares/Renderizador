@@ -33,7 +33,7 @@ class GL:
         GL.far = far
 
     @staticmethod
-    def polypoint2D(point, colors):
+    def polypoint2D(point: list[float], colors: dict[str,list[float]]) -> None:
         """Função usada para renderizar Polypoint2D."""
         # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
         # de pontos x, y sempre na ordem. Assim point[0] é o valor da coordenada x do
@@ -43,15 +43,15 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polypoint2D
         # você pode assumir inicialmente o desenho dos pontos com a cor emissiva (emissiveColor).
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Polypoint2D : pontos = {0}".format(point)) # imprime no terminal pontos
-        print("Polypoint2D : colors = {0}".format(colors)) # imprime no terminal as cores
 
-        # Exemplo:
-        pos_x = GL.width//2
-        pos_y = GL.height//2
-        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 0])  # altera pixel (u, v, tipo, r, g, b)
-        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        color = np.array(colors["emissiveColor"])*255
+
+        for i in range(0,len(point),2):
+            x = int(point[i])
+            y = int(point[i+1])
+            
+            gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8,color)
+
         
     @staticmethod
     def polyline2D(lineSegments, colors):
