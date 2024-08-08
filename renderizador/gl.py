@@ -76,6 +76,24 @@ class GL:
         # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
 
     @staticmethod
+    def circle2D(radius, colors):
+        """Função usada para renderizar Circle2D."""
+        # Nessa função você receberá um valor de raio e deverá desenhar o contorno de
+        # um círculo.
+        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Circle2D
+        # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
+
+        print("Circle2D : radius = {0}".format(radius)) # imprime no terminal
+        print("Circle2D : colors = {0}".format(colors)) # imprime no terminal as cores
+        
+        # Exemplo:
+        pos_x = GL.width//2
+        pos_y = GL.height//2
+        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 255])  # altera pixel (u, v, tipo, r, g, b)
+        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
+
+    @staticmethod
     def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
         # Nessa função você receberá os vertices de um triângulo no parâmetro vertices,

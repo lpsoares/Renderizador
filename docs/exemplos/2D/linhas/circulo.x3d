@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">
+<X3D>
+    <Scene>
+
+        <Viewpoint position="14 9 24"/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+        <NavigationInfo type='"NONE"'/>  <!-- Como exemplo de renderização 2D esse nó não deve ser levado em consideração -->
+
+        <Transform>
+            <Shape>
+                <Circle2D radius='16'/>
+                <Appearance>
+                    <Material emissiveColor='1 1 0'/>
+                </Appearance>
+            </Shape>
+        </Transform>
+    </Scene>
+</X3D>

@@ -10,18 +10,22 @@ Data: 31 de Agosto de 2020
 """
 
 import time         # Para operações com tempo, como a duração de renderização
+import numpy as np  # Para operações matemáticas
 
 # Matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from matplotlib.widgets import Button, TextBox, CheckButtons
 import matplotlib.animation as animation
+import matplotlib.patheffects as path_effects
+
 
 class Interface:
     """Interface para usuário/desenvolvedor verificar resultados da renderização."""
 
     pontos = []        # pontos a serem desenhados
     linhas = []        # linhas a serem desenhadas
+    circulos = []      # circulos a serem desenhados
     poligonos = []     # poligonos a serem desenhados
 
     last_time = 0      # para calculo de FPS
@@ -100,6 +104,22 @@ class Interface:
         if text:
             self.annotation(points)
 
+    def draw_circles(self, circles, text=False):
+        """Exibe contornos de círculos na tela da interface gráfica."""
+        radius = circles["radius"]
+        color = circles["appearance"].material.emissiveColor
+
+        # desenha o contorno de um círculo
+        x_values = [radius * np.sin(np.radians(i)) for i in range(0, 360, 2)]
+        y_values = [radius * np.cos(np.radians(i)) for i in range(0, 360, 2)]
+        circle, = self.axes.plot(x_values, y_values, marker='', color=color, linestyle="-")
+        circle.set_path_effects([path_effects.withStroke(linewidth=3, foreground='black')])
+        self.geometrias.append(circle)
+
+        # desenha texto se requisitado
+        if text:
+            self.annotation([[0,0]]) # Centro sempre no (0,0)
+
     def draw_triangle(self, triangles, text=False):
         """Exibe triângulos na tela da interface gráfica."""
         points = triangles["vertices"]
@@ -163,6 +183,9 @@ class Interface:
 
         for linha in Interface.linhas:
             self.draw_lines(linha, text=True)
+
+        for circulo in Interface.circulos:
+            self.draw_circles(circulo, text=True)
 
         for poligono in Interface.poligonos:
             self.draw_triangle(poligono, text=True)

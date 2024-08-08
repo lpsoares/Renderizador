@@ -185,6 +185,8 @@ def SFNode(node, name, default):
                 return Polypoint2D(child)
             if child.tag == "Polyline2D":
                 return Polyline2D(child)
+            if child.tag == "Circle2D":
+                return Circle2D(child)
             if child.tag == "TriangleSet2D":
                 return TriangleSet2D(child)
             if child.tag == "TriangleSet":
@@ -762,6 +764,31 @@ class Polyline2D(X3DGeometryNode):
         colors = get_colors(appearance)
         if self.lineSegments:
             X3D.renderer["Polyline2D"](lineSegments=self.lineSegments, colors=colors)
+
+
+class Circle2D(X3DGeometryNode):
+    """Uma linha que forma um círculo no sistema de coordenadas 2D."""
+
+    def __init__(self, node):
+        """Parse do nó X3D."""
+        super().__init__(node) # Chama construtor da classe pai
+        self.radius = SFFloat(node, "radius", 1)
+
+        # Preview
+        if X3D.preview:
+            radius = self.radius
+            X3D.preview.circulos.append({'appearance': X3D.current_appearance,
+                                         'radius': radius})
+
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        if "Circle2D" not in X3D.renderer:
+            raise Exception("Circle2D não foi implementado.")
+
+        colors = get_colors(appearance)
+        if self.radius:
+            X3D.renderer["Circle2D"](radius=self.radius, colors=colors)
+
 
 class TriangleSet2D(X3DGeometryNode):
     """Especifica um conjunto de triângulos no sistema de coordenadas 2D local."""

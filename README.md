@@ -41,3 +41,6 @@ Lista de exemplos:
 2. octogono
 3. tri_2D
 4. helice
+...
+
+Se quiser ver os arquivos localmente, rode: python3 -m http.server

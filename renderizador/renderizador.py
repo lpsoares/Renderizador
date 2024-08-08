@@ -117,6 +117,7 @@ class Renderizador:
         # Rotinas encapsuladas na classe GL (Graphics Library)
         x3d.X3D.renderer["Polypoint2D"] = gl.GL.polypoint2D
         x3d.X3D.renderer["Polyline2D"] = gl.GL.polyline2D
+        x3d.X3D.renderer["Circle2D"] = gl.GL.circle2D
         x3d.X3D.renderer["TriangleSet2D"] = gl.GL.triangleSet2D
         x3d.X3D.renderer["TriangleSet"] = gl.GL.triangleSet
         x3d.X3D.renderer["Viewpoint"] = gl.GL.viewpoint
