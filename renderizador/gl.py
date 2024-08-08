@@ -52,9 +52,10 @@ class GL:
             
             gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8,color)
 
-        
+
+    
     @staticmethod
-    def polyline2D(lineSegments, colors):
+    def polyline2D(lineSegments : list[float], colors : dict[str,list[float]]) -> None:
         """Função usada para renderizar Polyline2D."""
         # Nessa função você receberá os pontos de uma linha no parâmetro lineSegments, esses
         # pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o valor da
@@ -66,14 +67,37 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
         # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
 
-        print("Polyline2D : lineSegments = {0}".format(lineSegments)) # imprime no terminal
-        print("Polyline2D : colors = {0}".format(colors)) # imprime no terminal as cores
-        
-        # Exemplo:
-        pos_x = GL.width//2
-        pos_y = GL.height//2
-        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 255])  # altera pixel (u, v, tipo, r, g, b)
-        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        color = np.array(colors["emissiveColor"]) * 255
+
+        for i in range(0, len(lineSegments) - 2, 2):
+            p0 = [lineSegments[i], lineSegments[i + 1]]
+            p1 = [lineSegments[i + 2], lineSegments[i + 3]]
+
+            if p0[0] > p1[0]:
+                p0, p1 = p1, p0
+
+            dx = p1[0] - p0[0]
+            dy = p1[1] - p0[1]
+
+            if dx != 0: # evitar divisao por zero
+                slope = dy / dx
+            else:
+                slope = 10**5  #
+
+            if np.abs(slope) <= 1:
+                y = p0[1]
+                for x in range(int(np.round(p0[0])), int(np.round(p1[0]))):
+                    gpu.GPU.draw_pixel([int(x), int(np.round(y))], gpu.GPU.RGB8, color)
+                    y += slope
+            else:
+                if p0[1] > p1[1]:
+                    p0, p1 = p1, p0
+                slope = 1 / slope
+                x = p0[0]
+                for y in range(int(np.round(p0[1])), int(np.round(p1[1]))):
+                    gpu.GPU.draw_pixel([int(np.round(x)), int(y)], gpu.GPU.RGB8, color)
+                    x += slope
+                
 
     @staticmethod
     def circle2D(radius, colors):
@@ -86,28 +110,57 @@ class GL:
         print("Circle2D : radius = {0}".format(radius)) # imprime no terminal
         print("Circle2D : colors = {0}".format(colors)) # imprime no terminal as cores
         
-        # Exemplo:
-        pos_x = GL.width//2
-        pos_y = GL.height//2
-        gpu.GPU.draw_pixel([pos_x, pos_y], gpu.GPU.RGB8, [255, 0, 255])  # altera pixel (u, v, tipo, r, g, b)
-        # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+        # xs = [lineSegments[i] for i in range(0,len(lineSegments),2)]
+        # ys = [lineSegments[i] for i in range(1,len(lineSegments),2)]
+        # box = [int(min(xs)),int(max(xs)),int(min(ys)),int(max(ys))]
+
+        # for x in range(box[0],box[1]+1):
+        #     for y in range(box[2],box[3]+1):
+        #         gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8,[255,0,0])
+
+
 
 
     @staticmethod
     def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
-        # Nessa função você receberá os vertices de um triângulo no parâmetro vertices,
-        # esses pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o
-        # valor da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto.
-        # Já point[2] é a coordenada x do segundo ponto e assim por diante. Assuma que a
-        # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
-        # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
-        print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
-        print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
 
-        # Exemplo:
-        gpu.GPU.draw_pixel([6, 8], gpu.GPU.RGB8, [255, 255, 0])  # altera pixel (u, v, tipo, r, g, b)
+        def insideTri(tri: list[float], x: float, y: float) -> bool:
+            def line_eq(x0, y0, x1, y1, px, py):
+                return (y1 - y0) * px - (x1 - x0) * py + y0 * (x1 - x0) - x0 * (y1 - y0)
+
+            p1 = [tri[0], tri[1]]
+            p2 = [tri[2], tri[3]]
+            p3 = [tri[4], tri[5]]
+
+            L1 = line_eq(p1[0], p1[1], p2[0], p2[1], x, y)
+            L2 = line_eq(p2[0], p2[1], p3[0], p3[1], x, y)
+            L3 = line_eq(p3[0], p3[1], p1[0], p1[1], x, y)
+
+            if (L1 > 0 and L2 > 0 and L3 > 0) or (L1 < 0 and L2 < 0 and L3 < 0):
+                return True
+            return False
+        
+        if len(vertices) < 5:
+            print("ERROR NO TRIANGLES SENT")
+
+        color = np.array(colors["emissiveColor"]) * 255
+
+        for i in range(0,len(vertices),6):
+            tri = vertices[i:i+6]
+            xs = [tri[j] for j in range(0, len(tri), 2)]
+            ys = [tri[j] for j in range(1, len(tri), 2)]
+
+            # Bounding Box
+            box = [int(min(xs)), int(max(xs)), int(min(ys)), int(max(ys))]
+            # Iterando na bounding Box
+            for x in range(box[0], box[1] + 1):
+                for y in range(box[2], box[3] + 1):
+                    if insideTri(tri, x, y):
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
+            
+            
+
 
 
     @staticmethod
