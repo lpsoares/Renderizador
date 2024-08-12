@@ -11,18 +11,19 @@ Disciplina: Computação Gráfica
 Data: <DATA DE INÍCIO DA IMPLEMENTAÇÃO>
 """
 
-import time         # Para operações com tempo
-import gpu          # Simula os recursos de uma GPU
-import math         # Funções matemáticas
+import time  # Para operações com tempo
+import gpu  # Simula os recursos de uma GPU
+import math  # Funções matemáticas
 import numpy as np  # Biblioteca do Numpy
+
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
 
-    width = 800   # largura da tela
+    width = 800  # largura da tela
     height = 600  # altura da tela
-    near = 0.01   # plano de corte próximo
-    far = 1000    # plano de corte distante
+    near = 0.01  # plano de corte próximo
+    far = 1000  # plano de corte distante
 
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
@@ -33,7 +34,7 @@ class GL:
         GL.far = far
 
     @staticmethod
-    def polypoint2D(point: list[float], colors: dict[str,list[float]]) -> None:
+    def polypoint2D(point: list[float], colors: dict[str, list[float]]) -> None:
         """Função usada para renderizar Polypoint2D."""
         # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
         # de pontos x, y sempre na ordem. Assim point[0] é o valor da coordenada x do
@@ -43,29 +44,17 @@ class GL:
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polypoint2D
         # você pode assumir inicialmente o desenho dos pontos com a cor emissiva (emissiveColor).
 
+        color = np.array(colors["emissiveColor"]) * 255
 
-        color = np.array(colors["emissiveColor"])*255
-
-        for i in range(0,len(point),2):
+        for i in range(0, len(point), 2):
             x = int(point[i])
-            y = int(point[i+1])
-            
-            gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8,color)
+            y = int(point[i + 1])
 
+            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
-    
     @staticmethod
-    def polyline2D(lineSegments : list[float], colors : dict[str,list[float]]) -> None:
+    def polyline2D(lineSegments: list[float], colors: dict[str, list[float]]) -> None:
         """Função usada para renderizar Polyline2D."""
-        # Nessa função você receberá os pontos de uma linha no parâmetro lineSegments, esses
-        # pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o valor da
-        # coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto. Já point[2] é
-        # a coordenada x do segundo ponto e assim por diante. Assuma a quantidade de pontos
-        # pelo tamanho da lista. A quantidade mínima de pontos são 2 (4 valores), porém a
-        # função pode receber mais pontos para desenhar vários segmentos. Assuma que sempre
-        # vira uma quantidade par de valores.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
-        # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
 
         color = np.array(colors["emissiveColor"]) * 255
 
@@ -79,10 +68,10 @@ class GL:
             dx = p1[0] - p0[0]
             dy = p1[1] - p0[1]
 
-            if dx != 0: # evitar divisao por zero
+            if dx != 0:  # evitar divisao por zero
                 slope = dy / dx
             else:
-                slope = 10**5  #
+                slope = 10**5  # caso divisao por zero chutar numero grande
 
             if np.abs(slope) <= 1:
                 y = p0[1]
@@ -97,29 +86,24 @@ class GL:
                 for y in range(int(np.round(p0[1])), int(np.round(p1[1]))):
                     gpu.GPU.draw_pixel([int(np.round(x)), int(y)], gpu.GPU.RGB8, color)
                     x += slope
-                
 
     @staticmethod
     def circle2D(radius, colors):
         """Função usada para renderizar Circle2D."""
-        # Nessa função você receberá um valor de raio e deverá desenhar o contorno de
-        # um círculo.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Circle2D
-        # você pode assumir o desenho das linhas com a cor emissiva (emissiveColor).
 
-        print("Circle2D : radius = {0}".format(radius)) # imprime no terminal
-        print("Circle2D : colors = {0}".format(colors)) # imprime no terminal as cores
+        pos_x = GL.width // 2
+        pos_y = GL.height // 2
         
-        # xs = [lineSegments[i] for i in range(0,len(lineSegments),2)]
-        # ys = [lineSegments[i] for i in range(1,len(lineSegments),2)]
-        # box = [int(min(xs)),int(max(xs)),int(min(ys)),int(max(ys))]
+        color = np.array(colors["emissiveColor"]) * 255.0
 
-        # for x in range(box[0],box[1]+1):
-        #     for y in range(box[2],box[3]+1):
-        #         gpu.GPU.draw_pixel([x,y], gpu.GPU.RGB8,[255,0,0])
+        tolerance = 1.0
 
-
-
+        for x in range(0, GL.width):
+            for y in range(0, GL.height):
+                inPerimeter = abs((x - pos_x) ** 2 + (y - pos_y) ** 2  - radius**2) <=  tolerance
+                inScreen = (x >= 0 and x <= GL.width) and (y >= 0 and y <= GL.height)
+                if inPerimeter and inScreen:
+                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
     def triangleSet2D(vertices, colors):
@@ -140,14 +124,14 @@ class GL:
             if (L1 > 0 and L2 > 0 and L3 > 0) or (L1 < 0 and L2 < 0 and L3 < 0):
                 return True
             return False
-        
+
         if len(vertices) < 5:
             print("ERROR NO TRIANGLES SENT")
 
         color = np.array(colors["emissiveColor"]) * 255
 
-        for i in range(0,len(vertices),6):
-            tri = vertices[i:i+6]
+        for i in range(0, len(vertices), 6):
+            tri = vertices[i : i + 6]
             xs = [tri[j] for j in range(0, len(tri), 2)]
             ys = [tri[j] for j in range(1, len(tri), 2)]
 
@@ -158,10 +142,6 @@ class GL:
                 for y in range(box[2], box[3] + 1):
                     if insideTri(tri, x, y):
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
-            
-            
-
-
 
     @staticmethod
     def triangleSet(point, colors):
@@ -180,8 +160,10 @@ class GL:
         # tipos de cores.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
-        print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        print("TriangleSet : pontos = {0}".format(point))  # imprime no terminal pontos
+        print(
+            "TriangleSet : colors = {0}".format(colors)
+        )  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
@@ -194,9 +176,9 @@ class GL:
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Viewpoint : ", end='')
-        print("position = {0} ".format(position), end='')
-        print("orientation = {0} ".format(orientation), end='')
+        print("Viewpoint : ", end="")
+        print("position = {0} ".format(position), end="")
+        print("orientation = {0} ".format(orientation), end="")
         print("fieldOfView = {0} ".format(fieldOfView))
 
     @staticmethod
@@ -211,13 +193,15 @@ class GL:
         # modelos do mundo em alguma estrutura de pilha.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Transform : ", end='')
+        print("Transform : ", end="")
         if translation:
-            print("translation = {0} ".format(translation), end='') # imprime no terminal
+            print(
+                "translation = {0} ".format(translation), end=""
+            )  # imprime no terminal
         if scale:
-            print("scale = {0} ".format(scale), end='') # imprime no terminal
+            print("scale = {0} ".format(scale), end="")  # imprime no terminal
         if rotation:
-            print("rotation = {0} ".format(rotation), end='') # imprime no terminal
+            print("rotation = {0} ".format(rotation), end="")  # imprime no terminal
         print("")
 
     @staticmethod
@@ -246,11 +230,13 @@ class GL:
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleStripSet : pontos = {0} ".format(point), end='')
+        print("TriangleStripSet : pontos = {0} ".format(point), end="")
         for i, strip in enumerate(stripCount):
-            print("strip[{0}] = {1} ".format(i, strip), end='')
+            print("strip[{0}] = {1} ".format(i, strip), end="")
         print("")
-        print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        print(
+            "TriangleStripSet : colors = {0}".format(colors)
+        )  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
@@ -271,8 +257,12 @@ class GL:
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
-        print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
+        print(
+            "IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)
+        )
+        print(
+            "IndexedTriangleStripSet : colors = {0}".format(colors)
+        )  # imprime as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
@@ -288,15 +278,24 @@ class GL:
         # encontre os vértices e defina os triângulos.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Box : size = {0}".format(size)) # imprime no terminal pontos
-        print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
+        print("Box : size = {0}".format(size))  # imprime no terminal pontos
+        print("Box : colors = {0}".format(colors))  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
 
     @staticmethod
-    def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
-                       texCoord, texCoordIndex, colors, current_texture):
+    def indexedFaceSet(
+        coord,
+        coordIndex,
+        colorPerVertex,
+        color,
+        colorIndex,
+        texCoord,
+        texCoordIndex,
+        colors,
+        current_texture,
+    ):
         """Função usada para renderizar IndexedFaceSet."""
         # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
         # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
@@ -325,12 +324,18 @@ class GL:
         if colorPerVertex and color and colorIndex:
             print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
         if texCoord and texCoordIndex:
-            print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
+            print(
+                "\tpontos(u, v) = {0}, texCoordIndex = {1}".format(
+                    texCoord, texCoordIndex
+                )
+            )
         if current_texture:
             image = gpu.GPU.load_texture(current_texture[0])
             print("\t Matriz com image = {0}".format(image))
             print("\t Dimensões da image = {0}".format(image.shape))
-        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+        print(
+            "IndexedFaceSet : colors = {0}".format(colors)
+        )  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
         gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
@@ -345,8 +350,10 @@ class GL:
         # os triângulos.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
-        print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
+        print(
+            "Sphere : radius = {0}".format(radius)
+        )  # imprime no terminal o raio da esfera
+        print("Sphere : colors = {0}".format(colors))  # imprime no terminal as cores
 
     @staticmethod
     def navigationInfo(headlight):
@@ -358,7 +365,9 @@ class GL:
         # ambientIntensity = 0,0 e direção = (0 0 −1).
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("NavigationInfo : headlight = {0}".format(headlight)) # imprime no terminal
+        print(
+            "NavigationInfo : headlight = {0}".format(headlight)
+        )  # imprime no terminal
 
     @staticmethod
     def directionalLight(ambientIntensity, color, intensity, direction):
@@ -371,9 +380,13 @@ class GL:
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("DirectionalLight : ambientIntensity = {0}".format(ambientIntensity))
-        print("DirectionalLight : color = {0}".format(color)) # imprime no terminal
-        print("DirectionalLight : intensity = {0}".format(intensity)) # imprime no terminal
-        print("DirectionalLight : direction = {0}".format(direction)) # imprime no terminal
+        print("DirectionalLight : color = {0}".format(color))  # imprime no terminal
+        print(
+            "DirectionalLight : intensity = {0}".format(intensity)
+        )  # imprime no terminal
+        print(
+            "DirectionalLight : direction = {0}".format(direction)
+        )  # imprime no terminal
 
     @staticmethod
     def pointLight(ambientIntensity, color, intensity, location):
@@ -386,9 +399,9 @@ class GL:
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("PointLight : ambientIntensity = {0}".format(ambientIntensity))
-        print("PointLight : color = {0}".format(color)) # imprime no terminal
-        print("PointLight : intensity = {0}".format(intensity)) # imprime no terminal
-        print("PointLight : location = {0}".format(location)) # imprime no terminal
+        print("PointLight : color = {0}".format(color))  # imprime no terminal
+        print("PointLight : intensity = {0}".format(intensity))  # imprime no terminal
+        print("PointLight : location = {0}".format(location))  # imprime no terminal
 
     @staticmethod
     def fog(visibilityRange, color):
@@ -402,7 +415,7 @@ class GL:
         # são muito pouco misturados com a cor do nevoeiro.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Fog : color = {0}".format(color)) # imprime no terminal
+        print("Fog : color = {0}".format(color))  # imprime no terminal
         print("Fog : visibilityRange = {0}".format(visibilityRange))
 
     @staticmethod
@@ -419,11 +432,15 @@ class GL:
         # Deve retornar a fração de tempo passada em fraction_changed
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TimeSensor : cycleInterval = {0}".format(cycleInterval)) # imprime no terminal
+        print(
+            "TimeSensor : cycleInterval = {0}".format(cycleInterval)
+        )  # imprime no terminal
         print("TimeSensor : loop = {0}".format(loop))
 
         # Esse método já está implementado para os alunos como exemplo
-        epoch = time.time()  # time in seconds since the epoch as a floating point number.
+        epoch = (
+            time.time()
+        )  # time in seconds since the epoch as a floating point number.
         fraction_changed = (epoch % cycleInterval) / cycleInterval
 
         return fraction_changed
@@ -441,13 +458,15 @@ class GL:
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
-        print("SplinePositionInterpolator : key = {0}".format(key)) # imprime no terminal
+        print(
+            "SplinePositionInterpolator : key = {0}".format(key)
+        )  # imprime no terminal
         print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
         print("SplinePositionInterpolator : closed = {0}".format(closed))
 
         # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
         value_changed = [0.0, 0.0, 0.0]
-        
+
         return value_changed
 
     @staticmethod
@@ -466,7 +485,7 @@ class GL:
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("OrientationInterpolator : set_fraction = {0}".format(set_fraction))
-        print("OrientationInterpolator : key = {0}".format(key)) # imprime no terminal
+        print("OrientationInterpolator : key = {0}".format(key))  # imprime no terminal
         print("OrientationInterpolator : keyValue = {0}".format(keyValue))
 
         # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
