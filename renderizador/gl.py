@@ -76,8 +76,8 @@ class GL:
             if np.abs(slope) <= 1:
                 y = p0[1]
 
-                for x in range(int(np.round(p0[0])), int(np.round(p1[0]))):
-                    gpu.GPU.draw_pixel([int(x), int(np.round(y))], gpu.GPU.RGB8, color)
+                for x in range(int((p0[0])), int((p1[0]))):
+                    gpu.GPU.draw_pixel([int(x), int((y))], gpu.GPU.RGB8, color)
                     y += slope
             else:
                 if p0[1] > p1[1]:
@@ -86,8 +86,8 @@ class GL:
 
                 slope = 1 / slope
                 x = p0[0]
-                for y in range(int(np.round(p0[1])), int(np.round(p1[1]))):
-                    gpu.GPU.draw_pixel([int(np.round(x)), int(y)], gpu.GPU.RGB8, color)
+                for y in range(int((p0[1])), int((p1[1]))):
+                    gpu.GPU.draw_pixel([int((x)), int(y)], gpu.GPU.RGB8, color)
                     x += slope
 
     @staticmethod
