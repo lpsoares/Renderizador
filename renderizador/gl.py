@@ -6,9 +6,9 @@
 """
 Biblioteca Gráfica / Graphics Library.
 
-Desenvolvido por: <SEU NOME AQUI>
+Desenvolvido por: André Corrêa Santos
 Disciplina: Computação Gráfica
-Data: <DATA DE INÍCIO DA IMPLEMENTAÇÃO>
+Data: 12/08/2024
 """
 
 import time  # Para operações com tempo
@@ -75,12 +75,15 @@ class GL:
 
             if np.abs(slope) <= 1:
                 y = p0[1]
+
                 for x in range(int(np.round(p0[0])), int(np.round(p1[0]))):
                     gpu.GPU.draw_pixel([int(x), int(np.round(y))], gpu.GPU.RGB8, color)
                     y += slope
             else:
                 if p0[1] > p1[1]:
+
                     p0, p1 = p1, p0
+
                 slope = 1 / slope
                 x = p0[0]
                 for y in range(int(np.round(p0[1])), int(np.round(p1[1]))):
@@ -91,16 +94,13 @@ class GL:
     def circle2D(radius, colors):
         """Função usada para renderizar Circle2D."""
 
-        pos_x = GL.width // 2
-        pos_y = GL.height // 2
-        
         color = np.array(colors["emissiveColor"]) * 255.0
 
-        tolerance = 1.0
+        tolerance = 20.0
 
         for x in range(0, GL.width):
             for y in range(0, GL.height):
-                inPerimeter = abs((x - pos_x) ** 2 + (y - pos_y) ** 2  - radius**2) <=  tolerance
+                inPerimeter = abs((x) ** 2 + (y) ** 2  - radius**2) <=  tolerance
                 inScreen = (x >= 0 and x <= GL.width) and (y >= 0 and y <= GL.height)
                 if inPerimeter and inScreen:
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
@@ -140,7 +140,7 @@ class GL:
             # Iterando na bounding Box
             for x in range(box[0], box[1] + 1):
                 for y in range(box[2], box[3] + 1):
-                    if insideTri(tri, x, y):
+                    if insideTri(tri, x+0.5, y+0.5):
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
