@@ -100,7 +100,7 @@ class GL:
 
         for x in range(0, GL.width):
             for y in range(0, GL.height):
-                inPerimeter = abs((x) ** 2 + (y) ** 2  - radius**2) <=  tolerance
+                inPerimeter = abs((x) ** 2 + (y) ** 2  - radius**2) <= tolerance
                 inScreen = (x >= 0 and x <= GL.width) and (y >= 0 and y <= GL.height)
                 if inPerimeter and inScreen:
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
