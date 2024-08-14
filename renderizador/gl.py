@@ -49,8 +49,8 @@ class GL:
         for i in range(0, len(point), 2):
             x = int(point[i])
             y = int(point[i + 1])
-
-            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
+            if (x <=GL.width and x >= 0) and (y <=GL.width and y >= 0):
+                gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
     def polyline2D(lineSegments: list[float], colors: dict[str, list[float]]) -> None:
@@ -77,7 +77,8 @@ class GL:
                 y = p0[1]
 
                 for x in range(int((p0[0])), int((p1[0]))):
-                    gpu.GPU.draw_pixel([int(x), int((y))], gpu.GPU.RGB8, color)
+                    if (x <GL.width and x >= 0) and (y <GL.height and y >= 0):
+                        gpu.GPU.draw_pixel([int(x), int((y))], gpu.GPU.RGB8, color)
                     y += slope
             else:
                 if p0[1] > p1[1]:
@@ -87,7 +88,8 @@ class GL:
                 slope = 1 / slope
                 x = p0[0]
                 for y in range(int((p0[1])), int((p1[1]))):
-                    gpu.GPU.draw_pixel([int((x)), int(y)], gpu.GPU.RGB8, color)
+                    if (x <GL.width and x >= 0) and (y <GL.height and y >= 0):
+                        gpu.GPU.draw_pixel([int((x)), int(y)], gpu.GPU.RGB8, color)
                     x += slope
 
     @staticmethod
@@ -101,8 +103,9 @@ class GL:
         for x in range(0, GL.width):
             for y in range(0, GL.height):
                 inPerimeter = abs((x) ** 2 + (y) ** 2  - radius**2) <= tolerance
-                inScreen = (x >= 0 and x <= GL.width) and (y >= 0 and y <= GL.height)
+                inScreen = (x >= 0 and x < GL.width) and (y >= 0 and y < GL.height)
                 if inPerimeter and inScreen:
+
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
@@ -141,7 +144,8 @@ class GL:
             for x in range(box[0], box[1] + 1):
                 for y in range(box[2], box[3] + 1):
                     if insideTri(tri, x+0.5, y+0.5):
-                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
+                        if (x <GL.width and x >= 0) and (y <GL.height and y >= 0):
+                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
     def triangleSet(point, colors):
