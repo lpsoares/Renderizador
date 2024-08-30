@@ -24,6 +24,9 @@ class GL:
     height = 600  # altura da tela
     near = 0.01   # plano de corte próximo
     far = 1000    # plano de corte distante
+    projection_matrix = None  # Armazena a matriz de projeção
+    transformation_stack = []  # Pilha para armazenar as matrizes de transformação
+    view_matrix = None  # Armazena a matriz de visualização
 
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
@@ -77,6 +80,7 @@ class GL:
         # vira uma quantidade par de valores.
         # O parâmetro colors é um dicionário com os tipos cores possíveis, para o Polyline2D
         # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
+
 
         for i in range(0, len(lineSegments), 4):
             x1 = lineSegments[i]
@@ -145,8 +149,8 @@ class GL:
         emissive_color = [round(n * 255) for n in colors.get("emissiveColor", [1, 1, 1])]
 
         # Posição do centro do círculo (assumido como centro da tela)
-        pos_x = GL.width // 2
-        pos_y = GL.height // 2
+        pos_x = 0
+        pos_y = 0
 
         # Midpoint Circle Algorithm (Bresenham's Circle Algorithm)
         x = radius
@@ -217,93 +221,221 @@ class GL:
         print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
 
 
-
     @staticmethod
-    def triangleSet(point, colors):
-        """Função usada para renderizar TriangleSet."""
-        # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
-        # de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x do
-        # primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
-        # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e
-        # assim por diante.
-        # No TriangleSet os triângulos são informados individualmente, assim os três
-        # primeiros pontos definem um triângulo, os três próximos pontos definem um novo
-        # triângulo, e assim por diante.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, você pode assumir
-        # inicialmente, para o TriangleSet, o desenho das linhas com a cor emissiva
-        # (emissiveColor), conforme implementar novos materias você deverá suportar outros
-        # tipos de cores.
-
-        for i in range(0, len(point), 9):
-            x1 = point[i]
-            y1 = point[i+1]
-            x2 = point[i+3]
-            y2 = point[i+4]
-            x3 = point[i+6]
-            y3 = point[i+7]
-
+    def draw_filled_triangle(p1, p2, p3, colors):
+        """Função usada para renderizar TriangleSet2D."""
         def L1(x, y):
-            return (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
+            return (p2[1]-p1[1])*x - (p2[0]-p1[0])*y + p1[1]*(p2[0]-p1[0]) - p1[0]*(p2[1]-p1[1])
         
         def L2(x, y):
-            return (y3-y2)*x - (x3-x2)*y + y2*(x3-x2) - x2*(y3-y2)
+            return (p3[1]-p2[1])*x - (p3[0]-p2[0])*y + p2[1]*(p3[0]-p2[0]) - p2[0]*(p3[1]-p2[1])
         
         def L3(x, y):
-            return (y1-y3)*x - (x1-x3)*y + y3*(x1-x3) - x3*(y1-y3)
+            return (p1[1]-p3[1])*x - (p1[0]-p3[0])*y + p3[1]*(p1[0]-p3[0]) - p3[0]*(p1[1]-p3[1])
+        
+        print(f"draw_filled_triangle : pontos = {p1, p2, p3}")
         
         for x in range(0, GL.width):
             for y in range(0, GL.height):
-                if L1(x, y) >= 0 and L2(x, y) >= 0 and L3(x, y) >= 0:
+                if L1(x+0.5, y+0.5) >= 0 and L2(x+0.5, y+0.5) >= 0 and L3(x+0.5, y+0.5) >= 0:
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [round(n * 255) for n in colors["emissiveColor"]])
+    @staticmethod
+    def triangleSet(point, colors):
+        """Função usada para renderizar TriangleSet."""
+        
+        # Iterate over each triangle (each group of 3 points)
+        for i in range(0, len(point), 9):  # 9 values for each triangle (3 points x 3 coordinates)
+            # Extract the three vertices of the triangle
+            p1 = np.array([point[i], point[i+1], point[i+2], 1])  # Homogeneous coordinates
+            p2 = np.array([point[i+3], point[i+4], point[i+5], 1])
+            p3 = np.array([point[i+6], point[i+7], point[i+8], 1])
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
-        print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
+            print(f"TriangleSet : pontos = {p1, p2, p3}")
+
+            # Apply the current transformation matrix from the stack
+            current_transform = GL.transformation_stack[-1]
+            p1_transformed = current_transform @ p1
+            p2_transformed = current_transform @ p2
+            p3_transformed = current_transform @ p3
+
+            print(f"TriangleSet : pontos transformados = {p1_transformed, p2_transformed, p3_transformed}")
+
+            # Apply view
+            p2_view = GL.view_matrix @ p2_transformed
+            p1_view = GL.view_matrix @ p1_transformed
+            p3_view = GL.view_matrix @ p3_transformed
+
+            print(f"TriangleSet : pontos na visão = {p1_view, p2_view, p3_view}")
+
+            # Apply projection
+            p1_projected = GL.projection_matrix @ p1_view
+            p2_projected = GL.projection_matrix @ p2_view
+            p3_projected = GL.projection_matrix @ p3_view
+
+            print(f"TriangleSet : pontos projetados = {p1_projected, p2_projected, p3_projected}")
+
+            # Convert from homogeneous to 2D coordinates
+            p1_screen = p1_projected[:2] / p1_projected[3]
+            p2_screen = p2_projected[:2] / p2_projected[3]
+            p3_screen = p3_projected[:2] / p3_projected[3]
+
+            print(f"TriangleSet : pontos na tela = {p1_screen, p2_screen, p3_screen}")
+
+            
+            # Convert to screen space and map to integer pixel positions with y-axis inversion
+            p1_screen = np.array([(p1_screen[0] + 1) * (GL.width / 2), (1 - p1_screen[1]) * (GL.height / 2)])
+            p2_screen = np.array([(p2_screen[0] + 1) * (GL.width / 2), (1 - p2_screen[1]) * (GL.height / 2)])
+            p3_screen = np.array([(p3_screen[0] + 1) * (GL.width / 2), (1 - p3_screen[1]) * (GL.height / 2)])
+
+
+            print("Screen pixel positions (clamped):", p1_screen, p2_screen, p3_screen)
+
+            print(50*"-")
+            print(colors)
+            print(50*"-")
+            
+            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors)
+        
 
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
         """Função usada para renderizar (na verdade coletar os dados) de Viewpoint."""
-        # Na função de viewpoint você receberá a posição, orientação e campo de visão da
-        # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
-        # perspectiva para poder aplicar nos pontos dos objetos geométricos.
+        # Cálculo da matriz de projeção perspectiva
+        aspect_ratio = GL.width / GL.height
+        z_near = GL.near
+        z_far = GL.far
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Viewpoint : ", end='')
-        print("position = {0} ".format(position), end='')
-        print("orientation = {0} ".format(orientation), end='')
-        print("fieldOfView = {0} ".format(fieldOfView))
+
+        f = 1.0 / np.tan(fieldOfView / 2)
+        perspective_matrix = np.array([
+            [f / aspect_ratio, 0, 0, 0],
+            [0, f, 0, 0],
+            [0, 0, (z_far + z_near) / (z_near - z_far), (2 * z_far * z_near) / (z_near - z_far)],
+            [0, 0, -1, 0]
+        ])
+        
+
+        GL.projection_matrix = perspective_matrix
+
+        # Step 2: Create the view matrix using position and orientation
+        # Conversão de rotação (eixo + ângulo) para quaternion
+        axis = np.array(orientation[:3])
+        angle = orientation[3]
+        axis = axis / np.linalg.norm(axis)  # Normaliza o eixo de rotação
+        sin_half_angle = np.sin(angle / 2)
+        cos_half_angle = np.cos(angle / 2)
+        
+        quaternion = np.array([
+            cos_half_angle,
+            axis[0] * sin_half_angle,
+            axis[1] * sin_half_angle,
+            axis[2] * sin_half_angle
+        ])
+
+        # Convert orientation (quaternion) into a rotation matrix
+        w, x, y, z = quaternion
+        rotation_matrix = np.array([
+            [1 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0],
+            [2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z, 2*y*z - 2*x*w, 0],
+            [2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y, 0],
+            [0, 0, 0, 1]
+        ])
+
+        # Create the translation matrix to move the scene by the negative camera position
+        translation_matrix = np.array([
+            [1, 0, 0, -position[0]],
+            [0, 1, 0, -position[1]],
+            [0, 0, 1, -position[2]],
+            [0, 0, 0, 1]
+        ])
+
+        # Combine rotation and translation to form the view matrix
+        view_matrix = rotation_matrix @ translation_matrix
+        GL.view_matrix = view_matrix
+
+        # Debugging: Print the matrices to verify
+        print("Viewpoint : position = {0}, orientation = {1}, fieldOfView = {2}".format(position, orientation, fieldOfView))
+        print("Projection Matrix:\n", GL.projection_matrix)
+        print("View Matrix:\n", GL.view_matrix)
+
+
 
     @staticmethod
     def transform_in(translation, scale, rotation):
         """Função usada para renderizar (na verdade coletar os dados) de Transform."""
-        # A função transform_in será chamada quando se entrar em um nó X3D do tipo Transform
-        # do grafo de cena. Os valores passados são a escala em um vetor [x, y, z]
-        # indicando a escala em cada direção, a translação [x, y, z] nas respectivas
-        # coordenadas e finalmente a rotação por [x, y, z, t] sendo definida pela rotação
-        # do objeto ao redor do eixo x, y, z por t radianos, seguindo a regra da mão direita.
-        # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
-        # modelos do mundo em alguma estrutura de pilha.
+        
+        # Conversão de rotação (eixo + ângulo) para quaternion
+        axis = np.array(rotation[:3])
+        angle = rotation[3]
+        axis = axis / np.linalg.norm(axis)  # Normaliza o eixo de rotação
+        sin_half_angle = np.sin(angle / 2)
+        cos_half_angle = np.cos(angle / 2)
+        
+        quaternion = np.array([
+            cos_half_angle,
+            axis[0] * sin_half_angle,
+            axis[1] * sin_half_angle,
+            axis[2] * sin_half_angle
+        ])
+        
+        # Matriz de rotação a partir do quaternion
+        w, x, y, z = quaternion
+        rotation_matrix = np.array([
+            [1 - 2*y*y - 2*z*z, 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0],
+            [2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z, 2*y*z - 2*x*w, 0],
+            [2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y, 0],
+            [0, 0, 0, 1]
+        ])
+        
+        # Matriz de escala
+        scale_matrix = np.array([
+            [scale[0], 0, 0, 0],
+            [0, scale[1], 0, 0],
+            [0, 0, scale[2], 0],
+            [0, 0, 0, 1]
+        ])
+        
+        # Matriz de translação
+        translation_matrix = np.array([
+            [1, 0, 0, translation[0]],
+            [0, 1, 0, translation[1]],
+            [0, 0, 1, translation[2]],
+            [0, 0, 0, 1]
+        ])
+        
+        # Combinando as matrizes na ordem: Translação * Rotação * Escala
+        transformation_matrix = translation_matrix @ rotation_matrix @ scale_matrix
+        
+        # Adiciona a matriz de transformação à pilha
+        GL.transformation_stack.append(transformation_matrix)
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        # Remover o print após verificar o funcionamento
         print("Transform : ", end='')
         if translation:
-            print("translation = {0} ".format(translation), end='') # imprime no terminal
+            print("translation = {0} ".format(translation), end='')
         if scale:
-            print("scale = {0} ".format(scale), end='') # imprime no terminal
+            print("scale = {0} ".format(scale), end='')
         if rotation:
-            print("rotation = {0} ".format(rotation), end='') # imprime no terminal
+            print("rotation = {0} ".format(rotation), end='')
         print("")
+
+        # Imprime a matriz de transformação resultante (opcional)
+        print("Transformation Matrix:")
+        print(transformation_matrix)
 
     @staticmethod
     def transform_out():
-        """Função usada para renderizar (na verdade coletar os dados) de Transform."""
-        # A função transform_out será chamada quando se sair em um nó X3D do tipo Transform do
-        # grafo de cena. Não são passados valores, porém quando se sai de um nó transform se
-        # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
-        # pilha implementada.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        """Função usada para finalizar a aplicação de um Transform no grafo de cena."""
+        if GL.transformation_stack:
+            # Remove the top matrix from the stack, returning to the previous transformation context
+            popped_matrix = GL.transformation_stack.pop()
+            print("Transformação removida da pilha:")
+            print(popped_matrix)
+        else:
+            print("A pilha de transformações está vazia. Nenhuma transformação para remover.")
+        
+        # Remover o print após verificar o funcionamento
         print("Saindo de Transform")
 
     @staticmethod
