@@ -24,6 +24,8 @@ class GL:
     height = 600  # altura da tela
     near = 0.01  # plano de corte próximo
     far = 1000  # plano de corte distante
+    perspective_matrix = np.mat([])
+    transform_stack = []
 
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
@@ -162,15 +164,81 @@ class GL:
         # inicialmente, para o TriangleSet, o desenho das linhas com a cor emissiva
         # (emissiveColor), conforme implementar novos materias você deverá suportar outros
         # tipos de cores.
+        def insideTri(tri: list[float], x: float, y: float) -> bool:
+            def line_eq(x0, y0, x1, y1, px, py):
+                return (y1 - y0) * px - (x1 - x0) * py + y0 * (x1 - x0) - x0 * (y1 - y0)
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleSet : pontos = {0}".format(point))  # imprime no terminal pontos
-        print(
-            "TriangleSet : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
+            p1 = [tri[0], tri[1]]
+            p2 = [tri[2], tri[3]]
+            p3 = [tri[4], tri[5]]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+            L1 = line_eq(p1[0], p1[1], p2[0], p2[1], x, y)
+            L2 = line_eq(p2[0], p2[1], p3[0], p3[1], x, y)
+            L3 = line_eq(p3[0], p3[1], p1[0], p1[1], x, y)
+
+            if (L1 > 0 and L2 > 0 and L3 > 0) or (L1 < 0 and L2 < 0 and L3 < 0):
+                return True
+            return False
+        def screenTransform():
+            screenMatrix = np.mat([
+                [GL.width/2,0.0,0.0,GL.width/2],
+                [0.0,-GL.height/2,0.0,GL.height/2],
+                [0.0,0.0,1.0,0.0],
+                [0.0,0.0,0.0,1.0]
+            ])
+
+            return screenMatrix
+        
+        # funcao que recebe lista de pontos
+        def transform_points(points):
+            global transform_stack
+            transformed_points = []
+            for i in range(0,len(points),3):
+                p = points[i:i+3]
+                p.append(1.0) # homogenous coordinate
+
+                p = perspective_matrix@transform_stack[-1]@p
+                # Z DIVIDE
+                p = np.array(p).flatten()
+                p = p/p[-1]
+
+                p = screenTransform() @ p
+
+                p = np.array(p).flatten()
+                p = list(p[0:2])
+
+                transformed_points.append(p[0])
+                transformed_points.append(p[1])
+
+            return transformed_points
+
+                
+
+
+        color = np.array(colors["emissiveColor"]) * 255
+        vertices = transform_points(point)
+
+        for i in range(0,len(vertices),6):
+            tri = vertices[i : i + 6]
+            xs = [tri[j] for j in range(0, len(tri), 2)]
+            ys = [tri[j] for j in range(1, len(tri), 2)]
+
+            # Bounding Box
+            box = [int(min(xs)), int(max(xs)), int(min(ys)), int(max(ys))]
+            # Iterando na bounding Box
+            for x in range(box[0], box[1] + 1):
+                for y in range(box[2], box[3] + 1):
+                    if insideTri(tri, x+0.5, y+0.5):
+                        if (x <GL.width and x >= 0) and (y <GL.height and y >= 0):
+                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
+
+
+
+
+            
+
+
+
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -180,10 +248,56 @@ class GL:
         # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Viewpoint : ", end="")
-        print("position = {0} ".format(position), end="")
-        print("orientation = {0} ".format(orientation), end="")
-        print("fieldOfView = {0} ".format(fieldOfView))
+
+        def quaternion_to_rotation_matrix_4x4(quaternion):
+            q_r, q_i, q_j, q_k = quaternion 
+            
+            R = np.array([
+                [1 - 2*(q_j**2 + q_k**2), 2*(q_i*q_j - q_k*q_r), 2*(q_i*q_k + q_j*q_r), 0],
+                [2*(q_i*q_j + q_k*q_r), 1 - 2*(q_i**2 + q_k**2), 2*(q_j*q_k - q_i*q_r), 0],
+                [2*(q_i*q_k - q_j*q_r), 2*(q_j*q_k + q_i*q_r), 1 - 2*(q_i**2 + q_j**2), 0],
+                [0, 0, 0, 1]
+            ])
+            
+            return R
+
+        #LÓGICA TRANSLAÇÕES E ROTAÇÕES LOOK AT
+        cam_pos = np.matrix([
+            [1.0,0.0,0.0,position[0]],
+            [0.0,1.0,0.0,position[1]],
+            [0.0,0.0,1.0,position[2]],
+            [0.0,0.0,0.0,        1.0],
+        ])
+
+        look_at_trans =  np.linalg.inv(cam_pos)
+
+        look_at_rot = np.linalg.inv(quaternion_to_rotation_matrix_4x4(orientation)) # VERIFICAR SE OS DADOS DE ORIENTACAO DA CAMERA JA ESTAO EM QUATERNION
+
+        # TRANSLADANDO E DEPOIS ROTACIONANDO
+        look_at_mat = look_at_rot@look_at_trans
+
+        # LÓGICA MATRIZ DE PROJEÇÃO
+        aspect_ratio = GL.width/GL.height
+
+        far = 100.0 # CRIEI ESSE FAR
+        near = 1.0 # CRIEI ESSE NEAR
+
+        top = near*np.tan(fieldOfView)
+        right = top*aspect_ratio
+
+        perspective_m = np.matrix([
+            [near/right,0.0,0.0,0.0],
+            [0.0, near/top, 0.0, 0.0],
+            [0.0,0.0,-(far+near)/(far-near), -2.0*(far*near)/(far-near)],
+            [0.0,0.0,-1.0,0.0],
+        ])
+
+        # retornando matriz que aplica LOOK_AT e projeção perspectiva
+        global perspective_matrix
+        perspective_matrix = perspective_m @ look_at_mat
+
+
+
 
     @staticmethod
     def transform_in(translation, scale, rotation):
@@ -197,16 +311,39 @@ class GL:
         # modelos do mundo em alguma estrutura de pilha.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Transform : ", end="")
-        if translation:
-            print(
-                "translation = {0} ".format(translation), end=""
-            )  # imprime no terminal
-        if scale:
-            print("scale = {0} ".format(scale), end="")  # imprime no terminal
-        if rotation:
-            print("rotation = {0} ".format(rotation), end="")  # imprime no terminal
-        print("")
+        scale_m = np.mat([
+            [scale[0],0.0,0.0,0.0],
+            [0.0,scale[1],0.0,0.0],
+            [0.0,0.0,scale[2],0.0],
+            [0.0,0.0,0.0,1.0]
+            ]
+        )
+        translation_m = np.mat([
+            [1.0,0.0,0.0,translation[0]],
+            [0.0,1.0,0.0,translation[1]],
+            [0.0,0.0,1.0,translation[2]],
+            [0.0,0.0,0.0,1.0],
+            ]
+        )
+        x = rotation[0]
+        y = rotation[1]
+        z = rotation[2]
+        t = rotation[3]
+        sin_t = np.sin(t)
+        cos_t = np.cos(t)
+        sin_t = np.sin(t)
+
+        rotation_m = np.mat([
+            [cos_t + x**2 * (1 - cos_t), x * y * (1 - cos_t) - z * sin_t, x * z * (1 - cos_t) + y * sin_t, 0],
+            [y * x * (1 - cos_t) + z * sin_t, cos_t + y**2 * (1 - cos_t), y * z * (1 - cos_t) - x * sin_t, 0],
+            [z * x * (1 - cos_t) - y * sin_t, z * y * (1 - cos_t) + x * sin_t, cos_t + z**2 * (1 - cos_t), 0],
+            [0, 0, 0, 1]
+        ])
+        object_to_world_m = translation_m  @ rotation_m @ scale_m
+        global transform_stack
+        transform_stack = []
+        transform_stack.append(object_to_world_m)
+
 
     @staticmethod
     def transform_out():
@@ -217,7 +354,9 @@ class GL:
         # pilha implementada.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Saindo de Transform")
+        global transform_stack  # Referência à variável global
+        if transform_stack:
+            transform_stack.pop()  # Modificação da lista global
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
