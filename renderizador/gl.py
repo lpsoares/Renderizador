@@ -201,7 +201,6 @@ class GL:
                 # Z DIVIDE
                 p = np.array(p).flatten()
                 p = p/p[-1]
-
                 p = screenMatrix @ p
 
                 p = np.array(p).flatten()
@@ -211,8 +210,6 @@ class GL:
                 transformed_points.append(p[1])
 
             return transformed_points
-
-                
 
 
         color = np.array(colors["emissiveColor"]) * 255
@@ -285,18 +282,16 @@ class GL:
 
         # LÓGICA MATRIZ DE PROJEÇÃO
         aspect_ratio = GL.width/GL.height
-
-        far = 100.0 # CRIEI ESSE FAR
-        near = 1.0 # CRIEI ESSE NEAR
-
-        top = near*np.tan(fieldOfView)
-        right = top*aspect_ratio
+        near = GL.near
+        far = GL.far
+        top = near * np.tan(fieldOfView / 2)
+        right = top * aspect_ratio
 
         perspective_m = np.matrix([
-            [near/right,0.0,0.0,0.0],
-            [0.0, near/top, 0.0, 0.0],
-            [0.0,0.0,-(far+near)/(far-near), -2.0*(far*near)/(far-near)],
-            [0.0,0.0,-1.0,0.0],
+            [near / right, 0.0, 0.0, 0.0],
+            [0.0, near / top, 0.0, 0.0],
+            [0.0, 0.0, -(far + near) / (far - near), -2.0 * (far * near) / (far - near)],
+            [0.0, 0.0, -1.0, 0.0],
         ])
 
         # retornando matriz que aplica LOOK_AT e projeção perspectiva
@@ -363,6 +358,7 @@ class GL:
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO. # Referência à variável global
         if len(GL.transform_stack)>0:
             GL.transform_stack.pop()  # Modificação da lista global
+
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
