@@ -20,12 +20,12 @@ import numpy as np  # Biblioteca do Numpy
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
 
+    perspective_matrix = np.mat([])
+    transform_stack = []
     width = 800  # largura da tela
     height = 600  # altura da tela
     near = 0.01  # plano de corte próximo
     far = 1000  # plano de corte distante
-    perspective_matrix = np.mat([])
-    transform_stack = []
 
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
@@ -179,30 +179,30 @@ class GL:
             if (L1 > 0 and L2 > 0 and L3 > 0) or (L1 < 0 and L2 < 0 and L3 < 0):
                 return True
             return False
-        def screenTransform():
-            screenMatrix = np.mat([
-                [GL.width/2,0.0,0.0,GL.width/2],
-                [0.0,-GL.height/2,0.0,GL.height/2],
-                [0.0,0.0,1.0,0.0],
-                [0.0,0.0,0.0,1.0]
-            ])
-
-            return screenMatrix
         
         # funcao que recebe lista de pontos
-        def transform_points(points):
-            global transform_stack
+        def transform_points(points,min_x,min_y,min_z,max_z):
+            w = GL.width
+            h = GL.height
+            delta_z = max_z-min_z
+
+            screenMatrix = np.mat([
+                [w/2,0.0,0.0,min_x+w/2],
+                [0.0,h/2,0.0,min_y+h/2],
+                [0.0,0.0,delta_z,min_z],
+                [0.0,0.0,0.0,1.0]
+            ])
             transformed_points = []
             for i in range(0,len(points),3):
                 p = points[i:i+3]
                 p.append(1.0) # homogenous coordinate
 
-                p = perspective_matrix@transform_stack[-1]@p
+                p = GL.perspective_matrix@GL.transform_stack[-1]@p
                 # Z DIVIDE
                 p = np.array(p).flatten()
                 p = p/p[-1]
 
-                p = screenTransform() @ p
+                p = screenMatrix @ p
 
                 p = np.array(p).flatten()
                 p = list(p[0:2])
@@ -216,15 +216,22 @@ class GL:
 
 
         color = np.array(colors["emissiveColor"]) * 255
-        vertices = transform_points(point)
+
+        xs = [point[i] for i in range(0, len(point), 3)]
+        ys = [point[i] for i in range(1, len(point), 3)]
+        zs = [point[i] for i in range(2,len(point),3)]
+
+        # Bounding Box
+        
+        
+        vertices = transform_points(point,min(xs),min(ys),min(zs),max(zs))
+        # 
 
         for i in range(0,len(vertices),6):
             tri = vertices[i : i + 6]
-            xs = [tri[j] for j in range(0, len(tri), 2)]
-            ys = [tri[j] for j in range(1, len(tri), 2)]
-
-            # Bounding Box
-            box = [int(min(xs)), int(max(xs)), int(min(ys)), int(max(ys))]
+            xs = [tri[i] for i in range(0,len(tri),2)]
+            ys = [tri[i] for i in range(1,len(tri),2)]
+            box = [int(min(xs)),int(max(xs)),int(min(ys)),int(max(ys))]
             # Iterando na bounding Box
             for x in range(box[0], box[1] + 1):
                 for y in range(box[2], box[3] + 1):
@@ -293,8 +300,8 @@ class GL:
         ])
 
         # retornando matriz que aplica LOOK_AT e projeção perspectiva
-        global perspective_matrix
-        perspective_matrix = perspective_m @ look_at_mat
+
+        GL.perspective_matrix = perspective_m @ look_at_mat
 
 
 
@@ -311,6 +318,7 @@ class GL:
         # modelos do mundo em alguma estrutura de pilha.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
+        
         scale_m = np.mat([
             [scale[0],0.0,0.0,0.0],
             [0.0,scale[1],0.0,0.0],
@@ -340,9 +348,8 @@ class GL:
             [0, 0, 0, 1]
         ])
         object_to_world_m = translation_m  @ rotation_m @ scale_m
-        global transform_stack
-        transform_stack = []
-        transform_stack.append(object_to_world_m)
+
+        GL.transform_stack.append(object_to_world_m)
 
 
     @staticmethod
@@ -353,10 +360,9 @@ class GL:
         # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
         # pilha implementada.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        global transform_stack  # Referência à variável global
-        if transform_stack:
-            transform_stack.pop()  # Modificação da lista global
+        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO. # Referência à variável global
+        if len(GL.transform_stack)>0:
+            GL.transform_stack.pop()  # Modificação da lista global
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
