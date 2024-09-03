@@ -188,7 +188,7 @@ class GL:
 
             screenMatrix = np.mat([
                 [w/2,0.0,0.0,min_x+w/2],
-                [0.0,h/2,0.0,min_y+h/2],
+                [0.0,-h/2,0.0,min_y+h/2],
                 [0.0,0.0,delta_z,min_z],
                 [0.0,0.0,0.0,1.0]
             ])
@@ -253,18 +253,6 @@ class GL:
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
 
-        def quaternion_to_rotation_matrix_4x4(quaternion):
-            q_r, q_i, q_j, q_k = quaternion 
-            
-            R = np.array([
-                [1 - 2*(q_j**2 + q_k**2), 2*(q_i*q_j - q_k*q_r), 2*(q_i*q_k + q_j*q_r), 0],
-                [2*(q_i*q_j + q_k*q_r), 1 - 2*(q_i**2 + q_k**2), 2*(q_j*q_k - q_i*q_r), 0],
-                [2*(q_i*q_k - q_j*q_r), 2*(q_j*q_k + q_i*q_r), 1 - 2*(q_i**2 + q_j**2), 0],
-                [0, 0, 0, 1]
-            ])
-            
-            return R
-
         #LÓGICA TRANSLAÇÕES E ROTAÇÕES LOOK AT
         cam_pos = np.matrix([
             [1.0,0.0,0.0,position[0]],
@@ -272,14 +260,29 @@ class GL:
             [0.0,0.0,1.0,position[2]],
             [0.0,0.0,0.0,        1.0],
         ])
+        
+        x = orientation[0]
+        y = orientation[1]
+        z = orientation[2]
+        t = orientation[3]
+        sin_t = np.sin(t)
+        cos_t = np.cos(t)
+        sin_t = np.sin(t)
+
+        rotation_m = np.mat([
+            [cos_t + x**2 * (1 - cos_t), x * y * (1 - cos_t) - z * sin_t, x * z * (1 - cos_t) + y * sin_t, 0],
+            [y * x * (1 - cos_t) + z * sin_t, cos_t + y**2 * (1 - cos_t), y * z * (1 - cos_t) - x * sin_t, 0],
+            [z * x * (1 - cos_t) - y * sin_t, z * y * (1 - cos_t) + x * sin_t, cos_t + z**2 * (1 - cos_t), 0],
+            [0, 0, 0, 1]
+        ])
 
         look_at_trans =  np.linalg.inv(cam_pos)
-
-        look_at_rot = np.linalg.inv(quaternion_to_rotation_matrix_4x4(orientation)) # VERIFICAR SE OS DADOS DE ORIENTACAO DA CAMERA JA ESTAO EM QUATERNION
+        look_at_rot = np.linalg.inv(rotation_m)
 
         # TRANSLADANDO E DEPOIS ROTACIONANDO
         look_at_mat = look_at_rot@look_at_trans
-
+        print("look_at")
+        print(look_at_mat)
         # LÓGICA MATRIZ DE PROJEÇÃO
         aspect_ratio = GL.width/GL.height
         near = GL.near
@@ -295,6 +298,8 @@ class GL:
         ])
 
         # retornando matriz que aplica LOOK_AT e projeção perspectiva
+        print("perspective")
+        print(perspective_m)
 
         GL.perspective_matrix = perspective_m @ look_at_mat
 
@@ -343,7 +348,8 @@ class GL:
             [0, 0, 0, 1]
         ])
         object_to_world_m = translation_m  @ rotation_m @ scale_m
-
+        print("model")
+        print(object_to_world_m)
         GL.transform_stack.append(object_to_world_m)
 
 
