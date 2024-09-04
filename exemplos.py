@@ -103,8 +103,7 @@ for escolha in escolhas:
     if ".." in escolha:
         try:
             faixa = escolha.split("..")
-            
-            for i in range(int(faixa[0]), int(faixa[1])):
+            for i in range(int(faixa[0]), int(faixa[1])+1):
                 opcoes.append(TESTE[i])
         except:
             sys.exit("Opção inválida!")
