@@ -181,6 +181,14 @@ class GL:
             return False
         
         # funcao que recebe lista de pontos
+        def multiply_mats(mat_list):
+            acumulator = np.identity(mat_list[0].shape[0])
+            for mat in mat_list:
+                acumulator = acumulator @ mat
+            
+            return acumulator
+
+            
         def transform_points(points,min_x,min_y,min_z,max_z):
             w = GL.width
             h = GL.height
@@ -197,7 +205,10 @@ class GL:
                 p = points[i:i+3]
                 p.append(1.0) # homogenous coordinate
 
-                p = GL.perspective_matrix@GL.transform_stack[-1]@p
+                #multiplying all transform matrices
+                transform_mat_res = multiply_mats(GL.transform_stack)
+
+                p = GL.perspective_matrix@transform_mat_res@p
                 # Z DIVIDE
                 p = np.array(p).flatten()
                 p = p/p[-1]
@@ -211,7 +222,8 @@ class GL:
 
             return transformed_points
 
-
+        print("colors")
+        print(colors)
         color = np.array(colors["emissiveColor"]) * 255
 
         xs = [point[i] for i in range(0, len(point), 3)]
