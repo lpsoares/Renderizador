@@ -11,8 +11,22 @@ Data: 17 de Agosto de 2021
 
 import sys
 import subprocess
+import signal
+import time
 
 DIR = "docs/exemplos/"
+
+# List para controlar subprocesses
+subprocesses = []
+
+def signal_handler(sig, frame):
+    print("Terminating subprocesses...")
+    for proc in subprocesses:
+        proc.terminate()
+    sys.exit(0)
+
+# Registrando sinal para SIGINT
+signal.signal(signal.SIGINT, signal_handler)
 
 TESTE = []
 
@@ -79,29 +93,50 @@ for i in range(t):
 # Se um parâmetro fornecido, usar ele como escolha do exemplo
 outra_opcoes = []  # caso usuario passe opções que deverão ser repassadas, por exemplo: --quiet
 if len(sys.argv) > 1:
-    escolha = sys.argv[1]
-    if len(sys.argv) > 1:
-        outra_opcoes = sys.argv[2:]
+    escolhas = sys.argv[1:]
 else:
-    escolha = input("Escolha o exemplo: ")
+    escolhas = [input("Escolha o exemplo: ")]
 
-# Verifica se a escolha do exemplo foi pelo índice ou primeiro argumento da lista
-if escolha.isnumeric():
-    numero = int(escolha)
-    if 0 <= numero < len(TESTE):
-        opcoes = TESTE[int(escolha)]
+# Verifica se a escolha do exemplo foi por faixa, índice ou argumento da lista
+opcoes = []
+for escolha in escolhas:
+    if ".." in escolha:
+        try:
+            faixa = escolha.split("..")
+            
+            for i in range(int(faixa[0]), int(faixa[1])):
+                opcoes.append(TESTE[i])
+        except:
+            sys.exit("Opção inválida!")
+    elif escolha.isnumeric():
+        numero = int(escolha)
+        if 0 <= numero < len(TESTE):
+            opcoes.append(TESTE[int(escolha)])
+        else:
+            sys.exit("Opção inválida!")
     else:
-        sys.exit("Opção inválida!")
-else:
-    opcoes = [element for element in TESTE if element[0] == escolha]
-    if len(opcoes) > 0:    
-        opcoes = opcoes[0]
-    else:
-        sys.exit("Opção inválida!")
+        texto = [element for element in TESTE if element[0] == escolha]
+        if len(texto) > 0:
+            opcoes.append(texto[0])
+        else:
+            sys.exit("Opção inválida!")
 
 # Roda renderizador com os parâmetros necessário para o exemplo escolhido
 interpreter = sys.executable
-print('Abrindo arquivo: "{0}"'.format(opcoes[2]))
-print("> ", interpreter, "renderizador/renderizador.py", " ".join(opcoes[1:]), "\n")
+for opcao in opcoes:
+    print('Abrindo arquivo: "{0}"'.format(opcao[2]))
+    print("> ", interpreter, "renderizador/renderizador.py", " ".join(opcao[1:]), "\n")
 
-subprocess.call([interpreter, "renderizador/renderizador.py"] + opcoes[1:])
+    proc = subprocess.Popen([interpreter, "renderizador/renderizador.py"] + opcao[1:])
+    subprocesses.append(proc)
+
+# Mantem código rodando até que o usuário pressione Ctrl+C
+try:
+    while True:
+        # Verifica se algum subprocesso ainda rodando
+        running = any(proc.poll() is None for proc in subprocesses)
+        if not running:
+            break
+        time.sleep(1)
+except KeyboardInterrupt:
+    signal_handler(signal.SIGINT, None)
