@@ -38,7 +38,7 @@ TESTE.append(["octogono", "-i", DIR+"2D/linhas/octogono.x3d", "-w", "30", "-h", 
 TESTE.append(["linhas_fora", "-i", DIR+"2D/linhas/linhas_fora.x3d", "-w", "30", "-h", "20", "-p"])
 TESTE.append(["var_lin", "-i", DIR+"2D/linhas/varias_linhas.x3d", "-w", "600", "-h", "400", "-p"])
 TESTE.append(["circulo", "-i", DIR+"2D/linhas/circulo.x3d", "-w", "30", "-h", "20", "-p"])
-TESTE.append(["tri_2D", "-i", DIR+"2D/triangulos/triangulos.x3d", "-w", "30", "-h", "20", "-p"])
+TESTE.append(["tris_2D", "-i", DIR+"2D/triangulos/triangulos.x3d", "-w", "30", "-h", "20", "-p"])
 TESTE.append(["helice", "-i", DIR+"2D/triangulos/helice.x3d", "-w", "30", "-h", "20", "-p"])
 TESTE.append(["tri_alta", "-i", DIR+"2D/triangulos/triangulos_alta.x3d", "-w", "600", "-h", "400", "-p"])
 
@@ -52,6 +52,7 @@ TESTE.append(["zoom", "-i", DIR+"3D/triangulos/zoom.x3d", "-w", "300", "-h", "20
 TESTE.append(["tira_tri", "-i", DIR+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["letras", "-i", DIR+"3D/cores/letras.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["avatar", "-i", DIR+"3D/avatar/avatar.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["leques", "-i", DIR+"3D/cores/leques.x3d", "-w", "480", "-h", "320", "-p"])
 
 # Z-buffer e Transparência
 TESTE.append(["retang", "-i", DIR+"3D/retangulos/retangulos.x3d", "-w", "300", "-h", "200", "-p"])
@@ -59,6 +60,7 @@ TESTE.append(["transp", "-i", DIR+"3D/transparencia/transparencia.x3d", "-w", "3
 
 # Interpolações de Cores
 TESTE.append(["cores", "-i", DIR+"3D/cores/cores.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["flechas", "-i", DIR+"3D/cores/flechas.x3d", "-w", "480", "-h", "320", "-p"])
 
 # Texturas
 TESTE.append(["textura", "-i", DIR+"3D/texturas/textura.x3d", "-w", "300", "-h", "200", "-p"])
@@ -75,10 +77,6 @@ TESTE.append(["esferas", "-i", DIR+"3D/iluminacao/esferas.x3d", "-w", "180", "-h
 # Animações
 TESTE.append(["onda", "-i", DIR+"3D/animacoes/onda.x3d", "-w", "300", "-h", "200"])
 TESTE.append(["piramide", "-i", DIR+"3D/animacoes/piramide.x3d", "-w", "300", "-h", "200"])
-
-# Novos
-TESTE.append(["leques", "-i", DIR+"3D/cores/leques.x3d", "-w", "480", "-h", "320", "-p"])
-TESTE.append(["flechas", "-i", DIR+"3D/cores/flechas.x3d", "-w", "480", "-h", "320", "-p"])
 
 # Lista os exemplos registrados (em 3 colunas)
 colunas = 4

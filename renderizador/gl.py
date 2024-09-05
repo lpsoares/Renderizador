@@ -155,7 +155,9 @@ class GL:
         # coordenadas e finalmente a rotação por [x, y, z, t] sendo definida pela rotação
         # do objeto ao redor do eixo x, y, z por t radianos, seguindo a regra da mão direita.
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
-        # modelos do mundo em alguma estrutura de pilha.
+        # modelos do mundo para depois potencialmente usar em outras chamadas. 
+        # Quando começar a usar Transforms dentre de outros Transforms, mais a frente no curso
+        # Você precisará usar alguma estrutura de dados pilha para organizar as matrizes.
 
         # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
         print("Transform : ", end='')

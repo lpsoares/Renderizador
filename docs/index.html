@@ -1,97 +1,243 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exemplos X3D</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet">
+  
   <style>
-    h2 {
+    body {
+      padding-top: 56px;
+    }
+    .tree ul {
+      list-style-type: none;
+      padding-left: 20px;
+    }
+    .tree li {
+      margin: 5px 0;
+      cursor: pointer;
+    }
+    .tree li ul {
+      display: none;
+    }
+    .tree li.open > ul {
+      display: block;
+    }
+    .tree li > span {
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .tree li > span::before {
+      content: "▶";
+      display: inline-block;
+      margin-right: 5px;
+      transition: transform 0.3s ease;
+    }
+    .tree li.open > span::before {
+      transform: rotate(90deg);
+    }
+    .tree a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .content-frame {
+      width: 100%;
+      border: none;
+    }
+    code {
+      background-color: #f8f9fa;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-family: "Courier New", Courier, monospace;
+    }
+    .source-code-container {
       margin-top: 20px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      height: 80vh;
+      overflow-y: auto;
+      display: none;
     }
-    h3 {
-      margin-left: 10px;
-      margin-bottom: 0px;
-    }
-    ul {
-      margin-top: 2px;
+    pre {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
     }
   </style>
-  <body>
+</head>
+<body>
 
-    <h1>Exemplos X3D</h1>
-    Exemplos para a disciplina de Computação Gráfica do Insper
-    
-    <h2>2D</h2>
-    <h3>Rasterização</h3>
-    <ul>
-      <li><a href="exemplos/2D/pontos/Pontos.html">Pontos</a></li>
-      <li><a href="exemplos/2D/linhas/Linhas.html">Linhas</a></li>
-      <li><a href="exemplos/2D/linhas/Linhas_Fora.html">Linhas Fora</a></li>
-      <li><a href="exemplos/2D/linhas/Octogono.html">Octógono</a></li>
-      <li><a href="exemplos/2D/linhas/Varias_Linhas.html">Várias Linhas</a></li>
-      <li><a href="exemplos/2D/linhas/Circulo.html">Círculo</a></li>
-      <li><a href="exemplos/2D/triangulos/Triangulos.html">Triângulos</a></li>
-      <li><a href="exemplos/2D/triangulos/Helice.html">Hélice</a></li>
-      <li><a href="exemplos/2D/triangulos/Triangulos_Alta.html">Triângulos Alta</a></li>
-    </ul>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">Exemplos X3D</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#2d">2D</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#3d">3D</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 
-    <br>
+  <!-- Main Content -->
+  <div class="container-fluid">
+    <div class="row">
+      <nav class="col-lg-3">
+        <div class="tree">
+          <h2 id="2d" class="mt-4">2D</h2>
+          <ul>
+            <li>
+              <span>Rasterização</span>
+              <ul>
+                <li><a href="exemplos/2D/pontos/Pontos.html" target="content-frame" x3d="exemplos/2D/pontos/pontos.x3d">Pontos <code>pontos</code></a></li>
+                <li><a href="exemplos/2D/linhas/Linhas.html" target="content-frame" x3d="exemplos/2D/linhas/linhas.x3d">Linhas <code>linhas</code></a></li>
+                <li><a href="exemplos/2D/linhas/Octogono.html" target="content-frame" x3d="exemplos/2D/linhas/octogono.x3d">Octógono <code>octogono</code></a></li>
+                <li><a href="exemplos/2D/linhas/Linhas_Fora.html" target="content-frame" x3d="exemplos/2D/linhas/linhas_fora.x3d">Linhas Fora <code>linhas_fora</code></a></li>
+                <li><a href="exemplos/2D/linhas/Varias_Linhas.html" target="content-frame" x3d="exemplos/2D/linhas/varias_linhas.x3d">Várias Linhas <code>var_lin</code></a></li>
+                <li><a href="exemplos/2D/linhas/Circulo.html" target="content-frame" x3d="exemplos/2D/linhas/circulo.x3d">Círculo <code>circulo</code></a></li>
+                <li><a href="exemplos/2D/triangulos/Triangulos.html" target="content-frame" x3d="exemplos/2D/triangulos/triangulos.x3d">Triângulos <code>tris_2D</code></a></li>
+                <li><a href="exemplos/2D/triangulos/Helice.html" target="content-frame" x3d="exemplos/2D/triangulos/helice.x3d">Hélice <code>helice</code></a></li>
+                <li><a href="exemplos/2D/triangulos/Triangulos_Alta.html" target="content-frame" x3d="exemplos/2D/triangulos/triangulos_alta.x3d">Triângulos Alta <code>tri_alta</code></a></li>
+              </ul>
+            </li>
+          </ul>
 
-    <h2>3D</h2>
+          <h2 id="3d" class="mt-4">3D</h2>
+          <ul>
+            <li>
+              <span>Triângulos em 3D</span>
+              <ul>
+                <li><a href="exemplos/3D/triangulos/UmTriangulo.html" target="content-frame" x3d="exemplos/3D/triangulos/um_triangulo.x3d">Um Triângulo <code>um_tri</code></a></li>
+                <li><a href="exemplos/3D/triangulos/Triangulos.html" target="content-frame" x3d="exemplos/3D/triangulos/varios_triangulos.x3d">Vários Triângulos <code>var_tri</code></a></li>
+                <li><a href="exemplos/3D/triangulos/Zoom.html" target="content-frame" x3d="exemplos/3D/triangulos/zoom.x3d">Zoom <code>zoom</code></a></li>
+              
+              </ul>
+            </li>       
+            <li>
+              <span>Malhas 3D</span>
+              <ul>
+                <li><a href="exemplos/3D/triangulos/TiraDeTriangulos.html" target="content-frame" x3d="exemplos/3D/triangulos/tiratrig.x3d">Tira de Triângulos <code>tira_tri</code></a></li>
+                <li><a href="exemplos/3D/cores/Letras.html" target="content-frame" x3d="exemplos/3D/cores/letras.x3d">Letras <code>letras</code></a></li>
+                <li><a href="exemplos/3D/avatar/Avatar.html" target="content-frame" x3d="exemplos/3D/avatar/avatar.x3d">Avatar <code>avatar</code></a></li>
+                <li><a href="exemplos/3D/cores/Leques.html" target="content-frame" x3d="exemplos/3D/cores/leques.x3d">Leques <code>leques</code></a></li>
+              </ul>
+            </li>
+            <li>
+              <span>Primitivas Geométricas 3D</span>
+              <ul>
+                <li><a href="exemplos/3D/box/Primitivas.html" target="content-frame" x3d="exemplos/3D/box/primitivas.x3d">Primitivas <code>primitivas</code></a></li>
+              </ul>
+            </li>
+            <li>
+              <span>Z-buffer e Transparência</span>
+              <ul>
+                <li><a href="exemplos/3D/retangulos/Retangulos.html" target="content-frame" x3d="exemplos/3D/retangulos/retangulos.x3d">Retangulos <code>retang</code></a></li>
+                <li><a href="exemplos/3D/transparencia/Transparencia.html" target="content-frame" x3d="exemplos/3D/transparencia/transparencia.x3d">Transparência <code>transp</code></a></li>
+              </ul>
+            </li>
+            <li>
+              <span>Cores</span>
+              <ul>
+                <li><a href="exemplos/3D/cores/Cores.html" target="content-frame" x3d="exemplos/3D/cores/cores.x3d">Quadrado com Cores <code>cores</code></a></li>
+                <li><a href="exemplos/3D/cores/Flechas.html" target="content-frame" x3d="exemplos/3D/cores/flechas.x3d">Flechas <code>flechas</code></a></li>
+              </ul>
+            </li>
+            <li>
+              <span>Texturas</span>
+              <ul>
+                <li><a href="exemplos/3D/texturas/Textura.html" target="content-frame" x3d="exemplos/3D/texturas/textura.x3d">Textura <code>textura</code></a></li>  
+                <li><a href="exemplos/3D/texturas/Texturas.html" target="content-frame" x3d="exemplos/3D/texturas/texturas.x3d">Texturas <code>texturas</code></a></li>
+              </ul>
+            </li>
+            <li>
+              <span>Iluminação</span>
+              <ul>
+                <li><a href="exemplos/3D/triangulos/Triangulos.html" target="content-frame" x3d="exemplos/3D/triangulos/triang3d.x3d">Triângulos <code>tri_3D</code></a></li>
+                <li><a href="exemplos/3D/box/Box.html" target="content-frame" x3d="exemplos/3D/box/box.x3d">Caixas <code>caixas</code></a></li>
+                <li><a href="exemplos/3D/iluminacao/Esferas.html" target="content-frame" x3d="exemplos/3D/iluminacao/esferas.x3d">Esferas <code>esferas</code></a></li>
+              </ul>
+            </li>
+            <li>
+              <span>Animações</span>
+              <ul>
+                <li><a href="exemplos/3D/animacoes/Onda.html" target="content-frame" x3d="exemplos/3D/animacoes/onda.x3d">Onda <code>onda</code></a></li>
+                <li><a href="exemplos/3D/animacoes/Piramide.html" target="content-frame" x3d="exemplos/3D/animacoes/piramide.x3d">Pirâmide <code>piramide</code></a></li>
+              </ul>
+            </li>
+            <li>
+              <span>Novos</span>
+              <ul>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </nav>
+      <div class="col-lg-9">
+        <iframe name="content-frame" class="content-frame"></iframe>
+        <div id="source-code-container" class="source-code-container">
+          <h2>X3D Code</h2>
+          <pre id="source-code"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <h3>Visualização 3D sem shading</h3>
-    <ul>
-      <li><a href="exemplos/3D/triangulos/UmTriangulo.html">Um Triângulo</a></li>
-      <li><a href="exemplos/3D/triangulos/VariosTriangulos.html">Vários Triângulos</a></li>
-      <li><a href="exemplos/3D/triangulos/Zoom.html">Zoom</a></li>
-    </ul>
+  <!-- Footer -->
+  <footer class="py-4 bg-dark text-white-50">
+    <div class="container text-center">
+      <small>&copy; 2024 Computação Gráfica do Insper</small>
+    </div>
+  </footer>
 
-    <h3>Malhas 3D</h3>
-    <ul>
-      <li><a href="exemplos/3D/triangulos/TiraDeTriangulos.html">Tira de Triângulos</a></li>
-      <li><a href="exemplos/3D/cores/Letras.html">Letras</a></li>
-      <li><a href="exemplos/3D/avatar/Avatar.html">Avatar</a></li>
-    </ul>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
 
-    <h3>Primitivas 3D</h3>
-    <ul>
-      <li><a href="exemplos/3D/box/Primitivas.html">Primitivas</a></li>
-    </ul>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var treeItems = document.querySelectorAll('.tree li > span');
+      treeItems.forEach(function(item) {
+        item.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var parentLi = this.parentElement;
+          parentLi.classList.toggle('open');
+        });
+      });
 
-    <h3>Z-buffer e Transparência</h3>
-    <ul>
-      <li><a href="exemplos/3D/retangulos/Retangulos.html">Retangulos</a></li>
-      <li><a href="exemplos/3D/transparencia/Transparencia.html">Transparência</a></li>
-    </ul>
-
-    <h3>Cores</h3>
-    <ul>
-      <li><a href="exemplos/3D/cores/Cores.html">Quadrado</a></li>
-    </ul>
-
-    <h3>Texturas</h3>
-    <ul>
-      <li><a href="exemplos/3D/texturas/Textura.html">Textura</a></li>  
-      <li><a href="exemplos/3D/texturas/Texturas.html">Texturas</a></li>
-    </ul>
-
-    <h3>Iluminação</h3>
-    <ul>
-      <li><a href="exemplos/3D/triangulos/Triangulos.html">Triângulos</a></li>
-      <li><a href="exemplos/3D/box/Box.html">Caixas</a></li>
-      <li><a href="exemplos/3D/iluminacao/Esferas.html">Esferas</a></li>
-    </ul>
-
-    <h3>Animações</h3>
-    <ul>
-      <li><a href="exemplos/3D/animacoes/Onda.html">Onda</a></li>
-      <li><a href="exemplos/3D/animacoes/Piramide.html">Pirâmide</a></li>
-    </ul>
-
-    <h3>Novos</h3>
-    <ul>
-      <li><a href="exemplos/3D/cores/Leques.html">Leques</a></li>
-      <li><a href="exemplos/3D/cores/Flechas.html">Flechas</a></li>
-    </ul>
-
-
-    <br>
-    Repositório do código do curso: <a href="https://github.com/lpsoares/Renderizador">https://github.com/lpsoares/Renderizador</a>
-
-  </body>
+      var links = document.querySelectorAll('.tree a');
+      links.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          var fileParameter = this.getAttribute('href');
+          var iframe = document.querySelector('iframe[name="content-frame"]');
+          iframe.src = fileParameter;
+          iframe.onload = function() {
+            iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px';
+          };
+          var x3dParameter = this.getAttribute('x3d');
+          fetch(x3dParameter)
+            .then(response => response.text())
+            .then(data => {
+              document.getElementById('source-code').innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
+              document.getElementById('source-code-container').style.display = 'block';
+            })
+            .catch(error => console.error('Error fetching the file:', error));
+        });
+      });
+    });
+  </script>
+</body>
 </html>
