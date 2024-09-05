@@ -11,8 +11,22 @@ Data: 17 de Agosto de 2021
 
 import sys
 import subprocess
+import signal
+import time
 
 DIR = "docs/exemplos/"
+
+# List para controlar subprocesses
+subprocesses = []
+
+def signal_handler(sig, frame):
+    print("Terminating subprocesses...")
+    for proc in subprocesses:
+        proc.terminate()
+    sys.exit(0)
+
+# Registrando sinal para SIGINT
+signal.signal(signal.SIGINT, signal_handler)
 
 TESTE = []
 
@@ -38,6 +52,7 @@ TESTE.append(["zoom", "-i", DIR+"3D/triangulos/zoom.x3d", "-w", "300", "-h", "20
 TESTE.append(["tira_tri", "-i", DIR+"3D/triangulos/tiratrig.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["letras", "-i", DIR+"3D/cores/letras.x3d", "-w", "300", "-h", "200", "-p"])
 TESTE.append(["avatar", "-i", DIR+"3D/avatar/avatar.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["leques", "-i", DIR+"3D/cores/leques.x3d", "-w", "480", "-h", "320", "-p"])
 
 # Z-buffer e Transparência
 TESTE.append(["retang", "-i", DIR+"3D/retangulos/retangulos.x3d", "-w", "300", "-h", "200", "-p"])
@@ -45,6 +60,7 @@ TESTE.append(["transp", "-i", DIR+"3D/transparencia/transparencia.x3d", "-w", "3
 
 # Interpolações de Cores
 TESTE.append(["cores", "-i", DIR+"3D/cores/cores.x3d", "-w", "300", "-h", "200", "-p"])
+TESTE.append(["flechas", "-i", DIR+"3D/cores/flechas.x3d", "-w", "480", "-h", "320", "-p"])
 
 # Texturas
 TESTE.append(["textura", "-i", DIR+"3D/texturas/textura.x3d", "-w", "300", "-h", "200", "-p"])
@@ -62,10 +78,6 @@ TESTE.append(["esferas", "-i", DIR+"3D/iluminacao/esferas.x3d", "-w", "180", "-h
 TESTE.append(["onda", "-i", DIR+"3D/animacoes/onda.x3d", "-w", "300", "-h", "200"])
 TESTE.append(["piramide", "-i", DIR+"3D/animacoes/piramide.x3d", "-w", "300", "-h", "200"])
 
-# Novos
-TESTE.append(["leques", "-i", DIR+"3D/cores/leques.x3d", "-w", "480", "-h", "320", "-p"])
-TESTE.append(["flechas", "-i", DIR+"3D/cores/flechas.x3d", "-w", "480", "-h", "320", "-p"])
-
 # Lista os exemplos registrados (em 3 colunas)
 colunas = 4
 t = -(len(TESTE)//-colunas)
@@ -79,29 +91,49 @@ for i in range(t):
 # Se um parâmetro fornecido, usar ele como escolha do exemplo
 outra_opcoes = []  # caso usuario passe opções que deverão ser repassadas, por exemplo: --quiet
 if len(sys.argv) > 1:
-    escolha = sys.argv[1]
-    if len(sys.argv) > 1:
-        outra_opcoes = sys.argv[2:]
+    escolhas = sys.argv[1:]
 else:
-    escolha = input("Escolha o exemplo: ")
+    escolhas = [input("Escolha o exemplo: ")]
 
-# Verifica se a escolha do exemplo foi pelo índice ou primeiro argumento da lista
-if escolha.isnumeric():
-    numero = int(escolha)
-    if 0 <= numero < len(TESTE):
-        opcoes = TESTE[int(escolha)]
+# Verifica se a escolha do exemplo foi por faixa, índice ou argumento da lista
+opcoes = []
+for escolha in escolhas:
+    if ".." in escolha:
+        try:
+            faixa = escolha.split("..")
+            for i in range(int(faixa[0]), int(faixa[1])+1):
+                opcoes.append(TESTE[i])
+        except:
+            sys.exit("Opção inválida!")
+    elif escolha.isnumeric():
+        numero = int(escolha)
+        if 0 <= numero < len(TESTE):
+            opcoes.append(TESTE[int(escolha)])
+        else:
+            sys.exit("Opção inválida!")
     else:
-        sys.exit("Opção inválida!")
-else:
-    opcoes = [element for element in TESTE if element[0] == escolha]
-    if len(opcoes) > 0:    
-        opcoes = opcoes[0]
-    else:
-        sys.exit("Opção inválida!")
+        texto = [element for element in TESTE if element[0] == escolha]
+        if len(texto) > 0:
+            opcoes.append(texto[0])
+        else:
+            sys.exit("Opção inválida!")
 
 # Roda renderizador com os parâmetros necessário para o exemplo escolhido
 interpreter = sys.executable
-print('Abrindo arquivo: "{0}"'.format(opcoes[2]))
-print("> ", interpreter, "renderizador/renderizador.py", " ".join(opcoes[1:]), "\n")
+for opcao in opcoes:
+    print('Abrindo arquivo: "{0}"'.format(opcao[2]))
+    print("> ", interpreter, "renderizador/renderizador.py", " ".join(opcao[1:]), "\n")
 
-subprocess.call([interpreter, "renderizador/renderizador.py"] + opcoes[1:])
+    proc = subprocess.Popen([interpreter, "renderizador/renderizador.py"] + opcao[1:])
+    subprocesses.append(proc)
+
+# Mantem código rodando até que o usuário pressione Ctrl+C
+try:
+    while True:
+        # Verifica se algum subprocesso ainda rodando
+        running = any(proc.poll() is None for proc in subprocesses)
+        if not running:
+            break
+        time.sleep(1)
+except KeyboardInterrupt:
+    signal_handler(signal.SIGINT, None)
