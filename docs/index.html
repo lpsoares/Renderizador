@@ -56,7 +56,12 @@
       var examples_root = 'exemplos/';
       
       function generateListItems(data, containerId) {
-        var container = document.getElementById(containerId);
+        const container = document.getElementById(containerId);
+        if (!container) {
+          console.error(`Container with id ${containerId} not found.`);
+          return;
+        }
+
         data.forEach(function(type) {
           var group = document.createElement('li');
           var span = document.createElement('span');
@@ -66,8 +71,9 @@
           type.examples.forEach(function(item) {
             var li = document.createElement('li');
             var a = document.createElement('a');
-            a.href = examples_root + item.path + item.x3d + '/' + item.x3d + '.html';
-            a.setAttribute('x3d', examples_root + item.path + item.x3d + '/' + item.x3d + '.x3d');
+            const basePath = `${examples_root}${item.path}${item.x3d}/${item.x3d}`;
+            a.href = `${basePath}.html`;
+            a.setAttribute('x3d', `${basePath}.x3d`);
             a.textContent = item.x3d + '.x3d';
             li.appendChild(a);
             ul.appendChild(li);
