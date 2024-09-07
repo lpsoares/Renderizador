@@ -7,11 +7,11 @@
           { "path": "2D/linhas/", "x3d": "linhas_cores", "width": 30, "height": 20, "pause": true },
           { "path": "2D/linhas/", "x3d": "octogono", "width": 30, "height": 20, "pause": true },
           { "path": "2D/linhas/", "x3d": "linhas_cruzes", "width": 30, "height": 20, "pause": true },
-          { "path": "2D/linhas/", "x3d": "varias_linhas", "width": 300, "height": 200, "pause": true },
+          { "path": "2D/linhas/", "x3d": "varias_linhas", "width": 600, "height": 400, "pause": true },
           { "path": "2D/linhas/", "x3d": "circulo", "width": 30, "height": 20, "pause": true },
           { "path": "2D/triangulos/", "x3d": "triangulos", "width": 30, "height": 20, "pause": true },
           { "path": "2D/triangulos/", "x3d": "helice", "width": 30, "height": 20, "pause": true },
-          { "path": "2D/triangulos/", "x3d": "pontas", "width": 300, "height": 200, "pause": true }
+          { "path": "2D/triangulos/", "x3d": "pontas", "width": 600, "height": 400, "pause": true }
         ]
       },
       {
