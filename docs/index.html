@@ -8,9 +8,6 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link href="exemplos.css" rel="stylesheet">
-
-  <style>
-  </style>
 </head>
 <body>
 
@@ -28,10 +25,13 @@
           <ul id="exemplos-list"></ul>
         </div>
       </nav>
-      <div class="col-lg-9">
+      <div id="content" class="col-lg-9">
+        <h3 style="margin-top: 10px;">X3D
+          <small><a id="playground" target="_blank"><i class="fas fa-external-link-alt"></i></a></small>
+        </h3>
         <iframe name="content-frame" class="content-frame"></iframe>
         <div id="source-code-container" class="source-code-container">
-          <h2>X3D Code <small><a id="download-link" download><i class="fas fa-download"></i></a></small></h2>
+          <h3>X3D Code <small><a id="download-link" download><i class="fas fa-download"></i></a></small></h3>
           <pre id="source-code"></pre>
         </div>
       </div>
@@ -52,77 +52,9 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-
-      var examples = [
-        { title: 'Rasterização 2D',
-          examples: [
-            { path: '2D/pontos/', x3d: 'aleatorios' },
-            { path: '2D/linhas/', x3d: 'linhas_cores' },
-            { path: '2D/linhas/', x3d: 'octogono' },
-            { path: '2D/linhas/', x3d: 'linhas_cruzes' },
-            { path: '2D/linhas/', x3d: 'varias_linhas' },
-            { path: '2D/linhas/', x3d: 'circulo' },
-            { path: '2D/triangulos/', x3d: 'triangulos' },
-            { path: '2D/triangulos/', x3d: 'helice' },
-            { path: '2D/triangulos/', x3d: 'pontas' }
-          ] 
-        },
-        { title: 'Triângulos em 3D',
-          examples: [
-            { path: '3D/malhas/', x3d: 'um_triangulo' },
-            { path: '3D/malhas/', x3d: 'varios_triangs' },
-            { path: '3D/malhas/', x3d: 'zoom' }
-          ]
-        },
-        { title: 'Malhas 3D',
-          examples: [
-            { path: '3D/malhas/', x3d: 'tiras' },
-            { path: '3D/malhas/', x3d: 'letras' },
-            { path: '3D/grafo_de_cena/', x3d: 'avatar' },
-            { path: '3D/malhas/', x3d: 'leques' }
-          ]
-        },
-        { title: 'Primitivas Geométricas',
-          examples: [
-            { path: '3D/primitivas/', x3d: 'duas' }
-          ]
-        },
-        { title: 'Z-buffer e Transparência',
-          examples: [
-            { path: '3D/malhas/', x3d: 'retangulos' },
-            { path: '3D/transparencia/', x3d: 'transparente' }
-          ]
-        },
-        { title: 'Cores',
-          examples: [
-            { path: '3D/cores/', x3d: 'quadrado' },
-            { path: '3D/cores/', x3d: 'flechas' }
-          ]
-        },
-        { title: 'Texturas',
-          examples: [
-            { path: '3D/texturas/', x3d: 'textura' },
-            { path: '3D/texturas/', x3d: 'texturas' }
-          ]
-        },
-        { title: 'Iluminação',
-          examples: [
-            { path: '3D/malhas/', x3d: 'difusos' },
-            { path: '3D/primitivas/', x3d: 'caixas' },
-            { path: '3D/iluminacao/', x3d: 'esferas' }
-          ]
-        },
-        { title: 'Animações',
-          examples: [
-            { path: '3D/animacoes/', x3d: 'onda' },
-            { path: '3D/animacoes/', x3d: 'piramide' }
-          ]
-        }
-
-      ];
-
             
       var examples_root = 'exemplos/';
+      
       // Function to generate list items
       function generateListItems(data, containerId) {
         var container = document.getElementById(containerId);
@@ -148,40 +80,49 @@
         });
       }
 
-      // Generate the list items for 2D examples
-      generateListItems(examples, 'exemplos-list');
+      // Fetch the JSON file and generate the list items
+      fetch('examples.json')
+        .then(response => response.json())
+        .then(data => {
+          generateListItems(data.examples, 'exemplos-list');
 
-      var treeItems = document.querySelectorAll('.tree li > span');
-      treeItems.forEach(function(item) {
-        item.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var parentLi = this.parentElement;
-          parentLi.classList.toggle('open');
-        });
-      });
+          var treeItems = document.querySelectorAll('.tree li > span');
+          treeItems.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+              e.stopPropagation();
+              var parentLi = this.parentElement;
+              parentLi.classList.toggle('open');
+            });
+          });
 
-      var links = document.querySelectorAll('.tree a');
-      links.forEach(function(link) {
-        
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          var fileParameter = this.getAttribute('href');
-          var iframe = document.querySelector('iframe[name="content-frame"]');
-          iframe.src = fileParameter;
-          iframe.onload = function() {
-            iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px';
-          };
-          var x3dParameter = this.getAttribute('x3d');
-          fetch(x3dParameter)
-            .then(response => response.text())
-            .then(data => {
-              document.getElementById('source-code').innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
-              document.getElementById('source-code-container').style.display = 'block';
-              document.getElementById('download-link').href = x3dParameter;
-            })
-            .catch(error => console.error('Error fetching the file:', error));
-        });
-      });
+          var links = document.querySelectorAll('.tree a');
+          links.forEach(function(link) {
+            
+            link.addEventListener('click', function(e) {
+              e.preventDefault();
+              var fileParameter = this.getAttribute('href');
+              var iframe = document.querySelector('iframe[name="content-frame"]');
+              iframe.src = fileParameter;
+              iframe.onload = function() {
+                iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px';
+              };
+              var x3dParameter = this.getAttribute('x3d');
+              fetch(x3dParameter)
+                .then(response => response.text())
+                .then(data => {
+                  document.getElementById('source-code').innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
+                  document.getElementById('content').style.display = 'block';
+                  document.getElementById('download-link').href = x3dParameter;
+                  document.getElementById('playground').href = "https://create3000.github.io/x_ite/playground/?url=" +
+                   "https://lpsoares.github.io/Renderizador/" + x3dParameter;
+                  
+                })
+                .catch(error => console.error('Error fetching the file:', error));
+            });
+          });
+
+        })
+        .catch(error => console.error('Error fetching the JSON file:', error));
 
     });
   </script>

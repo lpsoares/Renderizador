@@ -43,7 +43,13 @@ body {
 
 .content-frame {
   width: 100%;
+  max-width: 100%;
   border: none;
+  overflow: visible !important;
+}
+
+#content {
+  display: none;
 }
 
 .source-code-container {
@@ -53,7 +59,6 @@ body {
   border-radius: 4px;
   height: 80vh;
   overflow-y: auto;
-  display: none;
 }
 
 pre {
