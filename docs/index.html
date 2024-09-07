@@ -96,28 +96,33 @@
           });
 
           var links = document.querySelectorAll('.tree a');
-          links.forEach(function(link) {
-            
-            link.addEventListener('click', function(e) {
+          const iframe = document.querySelector('iframe[name="content-frame"]');
+          const sourceCodeElement = document.getElementById('source-code');
+          const contentElement = document.getElementById('content');
+          const downloadLinkElement = document.getElementById('download-link');
+          const playgroundElement = document.getElementById('playground');
+
+          links.forEach(link => {
+            link.addEventListener('click', async (e) => {
               e.preventDefault();
-              var fileParameter = this.getAttribute('href');
-              var iframe = document.querySelector('iframe[name="content-frame"]');
+              const fileParameter = link.getAttribute('href');
+              const x3dParameter = link.getAttribute('x3d');
+
               iframe.src = fileParameter;
-              iframe.onload = function() {
-                iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px';
+              iframe.onload = () => {
+                iframe.style.height = `${iframe.contentWindow.document.body.scrollHeight}px`;
               };
-              var x3dParameter = this.getAttribute('x3d');
-              fetch(x3dParameter)
-                .then(response => response.text())
-                .then(data => {
-                  document.getElementById('source-code').innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
-                  document.getElementById('content').style.display = 'block';
-                  document.getElementById('download-link').href = x3dParameter;
-                  document.getElementById('playground').href = "https://create3000.github.io/x_ite/playground/?url=" +
-                   "https://lpsoares.github.io/Renderizador/" + x3dParameter;
-                  
-                })
-                .catch(error => console.error('Error fetching the file:', error));
+
+              try {
+                const response = await fetch(x3dParameter);
+                const data = await response.text();
+                sourceCodeElement.innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
+                contentElement.style.display = 'block';
+                downloadLinkElement.href = x3dParameter;
+                playgroundElement.href = `https://create3000.github.io/x_ite/playground/?url=https://lpsoares.github.io/Renderizador/${x3dParameter}`;
+              } catch (error) {
+                console.error('Error fetching the file:', error);
+              }
             });
           });
 
