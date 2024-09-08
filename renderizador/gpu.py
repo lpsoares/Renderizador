@@ -149,7 +149,7 @@ class GPU:
                     else:
                         raise Exception(f"Valores do Frame buffer devem estar em um vetor de dimensão [{mode+2}] ser inteiros e estar entre 0 e 255")
                 else:
-                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de cor")
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado com o canal de cor")
 
             elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
 
@@ -171,7 +171,7 @@ class GPU:
                         raise Exception(f"Valores do Frame buffer devem ser um vetor com um único valor numérico: {data}")
                     
                 else:
-                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de profundidade")
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado com o canal de profundidade")
 
             else:
                 raise Exception(f"Modo inválido de leitura do Frame buffer ({mode})")
@@ -196,7 +196,7 @@ class GPU:
                     data = GPU.frame_buffer[GPU.read_framebuffer].color[coord[1]][coord[0]]
 
                 else:
-                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de cor")
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado com o canal de cor")
 
             elif mode in (GPU.DEPTH_COMPONENT16, GPU.DEPTH_COMPONENT32F):  # profundidade
 
@@ -213,7 +213,7 @@ class GPU:
                     data = GPU.frame_buffer[GPU.read_framebuffer].depth[coord[1]][coord[0]]
 
                 else:
-                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado para o canal de profundidade")
+                    raise Exception(f"Frame buffer {GPU.draw_framebuffer} não alocado com o canal de profundidade")
 
             else:
                 raise Exception(f"Modo inválido de leitura do Frame buffer ({mode})")

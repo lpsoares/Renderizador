@@ -30,6 +30,14 @@
           { "path": "3D/malhas/", "x3d": "leques", "width": 300, "height": 200, "pause": true }
         ]
       },
+      { "title": "Cores e Texturas",
+        "examples": [
+          { "path": "3D/cores/", "x3d": "quadrado", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/cores/", "x3d": "flechas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/texturas/", "x3d": "textura", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/texturas/", "x3d": "texturas", "width": 300, "height": 200, "pause": true }
+        ]
+      },
       { "title": "Primitivas Geométricas",
         "examples": [
           { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true }
@@ -39,18 +47,6 @@
         "examples": [
           { "path": "3D/malhas/", "x3d": "retangulos", "width": 300, "height": 200, "pause": true },
           { "path": "3D/transparencia/", "x3d": "transparente", "width": 300, "height": 200, "pause": true }
-        ]
-      },
-      { "title": "Cores",
-        "examples": [
-          { "path": "3D/cores/", "x3d": "quadrado", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/cores/", "x3d": "flechas", "width": 300, "height": 200, "pause": true }
-        ]
-      },
-      { "title": "Texturas",
-        "examples": [
-          { "path": "3D/texturas/", "x3d": "textura", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/texturas/", "x3d": "texturas", "width": 300, "height": 200, "pause": true }
         ]
       },
       { "title": "Iluminação",
