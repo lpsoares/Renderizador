@@ -29,7 +29,8 @@
           { "path": "3D/malhas/", "x3d": "leques", "width": 300, "height": 200, "pause": true },
           { "path": "3D/malhas/", "x3d": "vertices10", "width": 300, "height": 200, "pause": true },
           { "path": "3D/grafo_de_cena/", "x3d": "bound500", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/grafo_de_cena/", "x3d": "avatar", "width": 300, "height": 200, "pause": true }
+          { "path": "3D/grafo_de_cena/", "x3d": "avatar", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/grafo_de_cena/", "x3d": "girando", "width": 300, "height": 200, "pause": true }
           
         ]
       },
