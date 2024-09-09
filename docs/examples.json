@@ -26,8 +26,10 @@
         "examples": [
           { "path": "3D/malhas/", "x3d": "tiras", "width": 300, "height": 200, "pause": true },
           { "path": "3D/malhas/", "x3d": "letras", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/grafo_de_cena/", "x3d": "avatar", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/malhas/", "x3d": "leques", "width": 300, "height": 200, "pause": true }
+          { "path": "3D/malhas/", "x3d": "leques", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "vertices10", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/grafo_de_cena/", "x3d": "avatar", "width": 300, "height": 200, "pause": true }
+          
         ]
       },
       { "title": "Cores e Texturas",
