@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D profile="Interchange" version="3.3" xmlns:xsd="http://www.w3.org/2001/XMLSchema-instance" xsd:noNamespaceSchemaLocation="http://www.web3d.org/specifications/x3d-3.3.xsd">
+  <Scene>
+  <NavigationInfo headlight="false"/> <!-- You can ignore this node for the moment -->
+  <Viewpoint position="0 12 32"/>
+    <!-- Base Transform -->
+    <Transform translation="0 0 0">
+      <!-- First Triangle -->
+      <Transform translation="0 0 0">
+        <Shape>
+          <IndexedTriangleStripSet index="0 1 2 -1">
+            <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+          </IndexedTriangleStripSet>
+          <Appearance>
+            <Material emissiveColor="0.8 0.2 0.2"/>
+          </Appearance>
+        </Shape>
+        
+        <!-- Second Triangle -->
+        <Transform translation="2 0 0" rotation="0 0 1 0.2">
+          <Shape>
+            <IndexedTriangleStripSet index="0 1 2 -1">
+              <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+            </IndexedTriangleStripSet>
+            <Appearance>
+              <Material emissiveColor="0.2 0.8 0.2"/>
+            </Appearance>
+          </Shape>
+
+          <!-- Third Triangle -->
+          <Transform translation="4 0 0" rotation="0 0 1 0.4">
+            <Shape>
+              <IndexedTriangleStripSet index="0 1 2 -1">
+                <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+              </IndexedTriangleStripSet>
+              <Appearance>
+                <Material emissiveColor="0.2 0.2 0.8"/>
+              </Appearance>
+            </Shape>
+
+            <!-- Fourth Triangle -->
+            <Transform translation="6 0 0" rotation="0 0 1 0.6">
+              <Shape>
+                <IndexedTriangleStripSet index="0 1 2 -1">
+                  <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+                </IndexedTriangleStripSet>
+                <Appearance>
+                  <Material emissiveColor="0.8 0.8 0.2"/>
+                </Appearance>
+              </Shape>
+
+              <!-- Fifth Triangle -->
+              <Transform translation="8 0 0" rotation="0 0 1 0.8">
+                <Shape>
+                  <IndexedTriangleStripSet index="0 1 2 -1">
+                    <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+                  </IndexedTriangleStripSet>
+                  <Appearance>
+                    <Material emissiveColor="0.8 0.2 0.8"/>
+                  </Appearance>
+                </Shape>
+
+                <!-- Sixth Triangle -->
+                <Transform translation="10 0 0" rotation="0 0 1 1.0">
+                  <Shape>
+                    <IndexedTriangleStripSet index="0 1 2 -1">
+                      <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+                    </IndexedTriangleStripSet>
+                    <Appearance>
+                      <Material emissiveColor="0.2 0.8 0.8"/>
+                    </Appearance>
+                  </Shape>
+                
+                  <!-- Seventh Triangle -->
+                  <Transform translation="12 0 0" rotation="0 0 1 1.2">
+                    <Shape>
+                      <IndexedTriangleStripSet index="0 1 2 -1">
+                        <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+                      </IndexedTriangleStripSet>
+                      <Appearance>
+                        <Material emissiveColor="0.8 0.4 0.4"/>
+                      </Appearance>
+                    </Shape>
+
+                    <!-- Eighth Triangle -->
+                    <Transform translation="14 0 0" rotation="0 0 1 1.4">
+                      <Shape>
+                        <IndexedTriangleStripSet index="0 1 2 -1">
+                          <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+                        </IndexedTriangleStripSet>
+                        <Appearance>
+                          <Material emissiveColor="0.4 0.8 0.4"/>
+                        </Appearance>
+                      </Shape>
+
+                      <!-- Ninth Triangle -->
+                      <Transform translation="16 0 0" rotation="0 0 1 1.6">
+                        <Shape>
+                          <IndexedTriangleStripSet index="0 1 2 -1">
+                            <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+                          </IndexedTriangleStripSet>
+                          <Appearance>
+                            <Material emissiveColor="0.4 0.4 0.8"/>
+                          </Appearance>
+                        </Shape>
+
+                        <!-- Tenth Triangle -->
+                        <Transform translation="18 0 0" rotation="0 0 1 1.8">
+                          <Shape>
+                            <IndexedTriangleStripSet index="0 1 2 -1">
+                              <Coordinate point="0 1 0 -1 -1 0 1 -1 0"/>
+                            </IndexedTriangleStripSet>
+                            <Appearance>
+                              <Material emissiveColor="0.8 0.8 0.4"/>
+                            </Appearance>
+                          </Shape>
+                        </Transform>
+                      </Transform>
+                    </Transform>
+                  </Transform>
+                </Transform>
+              </Transform>
+            </Transform>
+          </Transform>
+        </Transform>
+      </Transform>
+    </Transform>
+  </Scene>
+</X3D>

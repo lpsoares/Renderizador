@@ -6,89 +6,14 @@
   <title>Exemplos X3D</title>
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet">
-  
-  <style>
-    body {
-      padding-top: 56px;
-    }
-    .tree ul {
-      list-style-type: none;
-      padding-left: 20px;
-    }
-    .tree li {
-      margin: 5px 0;
-      cursor: pointer;
-    }
-    .tree li ul {
-      display: none;
-    }
-    .tree li.open > ul {
-      display: block;
-    }
-    .tree li > span {
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .tree li > span::before {
-      content: "▶";
-      display: inline-block;
-      margin-right: 5px;
-      transition: transform 0.3s ease;
-    }
-    .tree li.open > span::before {
-      transform: rotate(90deg);
-    }
-    .tree a {
-      text-decoration: none;
-      color: inherit;
-    }
-    .content-frame {
-      width: 100%;
-      border: none;
-    }
-    code {
-      background-color: #f8f9fa;
-      padding: 2px 4px;
-      border-radius: 4px;
-      font-family: "Courier New", Courier, monospace;
-    }
-    .source-code-container {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #f8f9fa;
-      border-radius: 4px;
-      height: 80vh;
-      overflow-y: auto;
-      display: none;
-    }
-    pre {
-      background-color: #f8f9fa;
-      padding: 10px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-  </style>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link href="exemplos.css" rel="stylesheet">
 </head>
 <body>
 
   <!-- Navigation Bar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container">
-      <a class="navbar-brand" href="#">Exemplos X3D</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="#2d">2D</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#3d">3D</a>
-          </li>
-        </ul>
-      </div>
-    </div>
+    <div class="container"><a class="navbar-brand" href="#">Exemplos X3D</a></div>
   </nav>
 
   <!-- Main Content -->
@@ -96,98 +21,17 @@
     <div class="row">
       <nav class="col-lg-3">
         <div class="tree">
-          <h2 id="2d" class="mt-4">2D</h2>
-          <ul>
-            <li>
-              <span>Rasterização</span>
-              <ul>
-                <li><a href="exemplos/2D/pontos/Pontos.html" target="content-frame" x3d="exemplos/2D/pontos/pontos.x3d">Pontos <code>pontos</code></a></li>
-                <li><a href="exemplos/2D/linhas/Linhas.html" target="content-frame" x3d="exemplos/2D/linhas/linhas.x3d">Linhas <code>linhas</code></a></li>
-                <li><a href="exemplos/2D/linhas/Octogono.html" target="content-frame" x3d="exemplos/2D/linhas/octogono.x3d">Octógono <code>octogono</code></a></li>
-                <li><a href="exemplos/2D/linhas/Linhas_Fora.html" target="content-frame" x3d="exemplos/2D/linhas/linhas_fora.x3d">Linhas Fora <code>linhas_fora</code></a></li>
-                <li><a href="exemplos/2D/linhas/Varias_Linhas.html" target="content-frame" x3d="exemplos/2D/linhas/varias_linhas.x3d">Várias Linhas <code>var_lin</code></a></li>
-                <li><a href="exemplos/2D/linhas/Circulo.html" target="content-frame" x3d="exemplos/2D/linhas/circulo.x3d">Círculo <code>circulo</code></a></li>
-                <li><a href="exemplos/2D/triangulos/Triangulos.html" target="content-frame" x3d="exemplos/2D/triangulos/triangulos.x3d">Triângulos <code>tris_2D</code></a></li>
-                <li><a href="exemplos/2D/triangulos/Helice.html" target="content-frame" x3d="exemplos/2D/triangulos/helice.x3d">Hélice <code>helice</code></a></li>
-                <li><a href="exemplos/2D/triangulos/Triangulos_Alta.html" target="content-frame" x3d="exemplos/2D/triangulos/triangulos_alta.x3d">Triângulos Alta <code>tri_alta</code></a></li>
-              </ul>
-            </li>
-          </ul>
-
-          <h2 id="3d" class="mt-4">3D</h2>
-          <ul>
-            <li>
-              <span>Triângulos em 3D</span>
-              <ul>
-                <li><a href="exemplos/3D/triangulos/UmTriangulo.html" target="content-frame" x3d="exemplos/3D/triangulos/um_triangulo.x3d">Um Triângulo <code>um_tri</code></a></li>
-                <li><a href="exemplos/3D/triangulos/Triangulos.html" target="content-frame" x3d="exemplos/3D/triangulos/varios_triangulos.x3d">Vários Triângulos <code>var_tri</code></a></li>
-                <li><a href="exemplos/3D/triangulos/Zoom.html" target="content-frame" x3d="exemplos/3D/triangulos/zoom.x3d">Zoom <code>zoom</code></a></li>
-              
-              </ul>
-            </li>       
-            <li>
-              <span>Malhas 3D</span>
-              <ul>
-                <li><a href="exemplos/3D/triangulos/TiraDeTriangulos.html" target="content-frame" x3d="exemplos/3D/triangulos/tiratrig.x3d">Tira de Triângulos <code>tira_tri</code></a></li>
-                <li><a href="exemplos/3D/cores/Letras.html" target="content-frame" x3d="exemplos/3D/cores/letras.x3d">Letras <code>letras</code></a></li>
-                <li><a href="exemplos/3D/avatar/Avatar.html" target="content-frame" x3d="exemplos/3D/avatar/avatar.x3d">Avatar <code>avatar</code></a></li>
-                <li><a href="exemplos/3D/cores/Leques.html" target="content-frame" x3d="exemplos/3D/cores/leques.x3d">Leques <code>leques</code></a></li>
-              </ul>
-            </li>
-            <li>
-              <span>Primitivas Geométricas 3D</span>
-              <ul>
-                <li><a href="exemplos/3D/box/Primitivas.html" target="content-frame" x3d="exemplos/3D/box/primitivas.x3d">Primitivas <code>primitivas</code></a></li>
-              </ul>
-            </li>
-            <li>
-              <span>Z-buffer e Transparência</span>
-              <ul>
-                <li><a href="exemplos/3D/retangulos/Retangulos.html" target="content-frame" x3d="exemplos/3D/retangulos/retangulos.x3d">Retangulos <code>retang</code></a></li>
-                <li><a href="exemplos/3D/transparencia/Transparencia.html" target="content-frame" x3d="exemplos/3D/transparencia/transparencia.x3d">Transparência <code>transp</code></a></li>
-              </ul>
-            </li>
-            <li>
-              <span>Cores</span>
-              <ul>
-                <li><a href="exemplos/3D/cores/Cores.html" target="content-frame" x3d="exemplos/3D/cores/cores.x3d">Quadrado com Cores <code>cores</code></a></li>
-                <li><a href="exemplos/3D/cores/Flechas.html" target="content-frame" x3d="exemplos/3D/cores/flechas.x3d">Flechas <code>flechas</code></a></li>
-              </ul>
-            </li>
-            <li>
-              <span>Texturas</span>
-              <ul>
-                <li><a href="exemplos/3D/texturas/Textura.html" target="content-frame" x3d="exemplos/3D/texturas/textura.x3d">Textura <code>textura</code></a></li>  
-                <li><a href="exemplos/3D/texturas/Texturas.html" target="content-frame" x3d="exemplos/3D/texturas/texturas.x3d">Texturas <code>texturas</code></a></li>
-              </ul>
-            </li>
-            <li>
-              <span>Iluminação</span>
-              <ul>
-                <li><a href="exemplos/3D/triangulos/Triangulos.html" target="content-frame" x3d="exemplos/3D/triangulos/triang3d.x3d">Triângulos <code>tri_3D</code></a></li>
-                <li><a href="exemplos/3D/box/Box.html" target="content-frame" x3d="exemplos/3D/box/box.x3d">Caixas <code>caixas</code></a></li>
-                <li><a href="exemplos/3D/iluminacao/Esferas.html" target="content-frame" x3d="exemplos/3D/iluminacao/esferas.x3d">Esferas <code>esferas</code></a></li>
-              </ul>
-            </li>
-            <li>
-              <span>Animações</span>
-              <ul>
-                <li><a href="exemplos/3D/animacoes/Onda.html" target="content-frame" x3d="exemplos/3D/animacoes/onda.x3d">Onda <code>onda</code></a></li>
-                <li><a href="exemplos/3D/animacoes/Piramide.html" target="content-frame" x3d="exemplos/3D/animacoes/piramide.x3d">Pirâmide <code>piramide</code></a></li>
-              </ul>
-            </li>
-            <li>
-              <span>Novos</span>
-              <ul>
-              </ul>
-            </li>
-          </ul>
+          <h2 id="2d" class="mt-4">Exemplos</h2>
+          <ul id="exemplos-list"></ul>
         </div>
       </nav>
-      <div class="col-lg-9">
+      <div id="content" class="col-lg-9">
+        <h3 style="margin-top: 10px;">X3D
+          <small><a id="playground" target="_blank"><i class="fas fa-external-link-alt"></i></a></small>
+        </h3>
         <iframe name="content-frame" class="content-frame"></iframe>
         <div id="source-code-container" class="source-code-container">
-          <h2>X3D Code</h2>
+          <h3>X3D Code <small><a id="download-link" download><i class="fas fa-download"></i></a></small></h3>
           <pre id="source-code"></pre>
         </div>
       </div>
@@ -208,35 +52,88 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      var treeItems = document.querySelectorAll('.tree li > span');
-      treeItems.forEach(function(item) {
-        item.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var parentLi = this.parentElement;
-          parentLi.classList.toggle('open');
-        });
-      });
+            
+      var examples_root = 'exemplos/';
+      
+      function generateListItems(data, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) {
+          console.error(`Container with id ${containerId} not found.`);
+          return;
+        }
 
-      var links = document.querySelectorAll('.tree a');
-      links.forEach(function(link) {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          var fileParameter = this.getAttribute('href');
-          var iframe = document.querySelector('iframe[name="content-frame"]');
-          iframe.src = fileParameter;
-          iframe.onload = function() {
-            iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px';
-          };
-          var x3dParameter = this.getAttribute('x3d');
-          fetch(x3dParameter)
-            .then(response => response.text())
-            .then(data => {
-              document.getElementById('source-code').innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
-              document.getElementById('source-code-container').style.display = 'block';
-            })
-            .catch(error => console.error('Error fetching the file:', error));
+        data.forEach(function(type) {
+          var group = document.createElement('li');
+          var span = document.createElement('span');
+          span.textContent = type.title;
+          var ul = document.createElement('ul');
+
+          type.examples.forEach(function(item) {
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            const basePath = `${examples_root}${item.path}${item.x3d}/${item.x3d}`;
+            a.href = `${basePath}.html`;
+            a.setAttribute('x3d', `${basePath}.x3d`);
+            a.textContent = item.x3d + '.x3d';
+            li.appendChild(a);
+            ul.appendChild(li);
+          });
+
+          group.appendChild(span);
+          group.appendChild(ul);
+          container.appendChild(group);
         });
-      });
+      }
+
+      // Fetch the JSON file and generate the list items
+      fetch('examples.json')
+        .then(response => response.json())
+        .then(data => {
+          generateListItems(data.examples, 'exemplos-list');
+
+          var treeItems = document.querySelectorAll('.tree li > span');
+          treeItems.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+              e.stopPropagation();
+              var parentLi = this.parentElement;
+              parentLi.classList.toggle('open');
+            });
+          });
+
+          var links = document.querySelectorAll('.tree a');
+          const iframe = document.querySelector('iframe[name="content-frame"]');
+          const sourceCodeElement = document.getElementById('source-code');
+          const contentElement = document.getElementById('content');
+          const downloadLinkElement = document.getElementById('download-link');
+          const playgroundElement = document.getElementById('playground');
+
+          links.forEach(link => {
+            link.addEventListener('click', async (e) => {
+              e.preventDefault();
+              const fileParameter = link.getAttribute('href');
+              const x3dParameter = link.getAttribute('x3d');
+
+              iframe.src = fileParameter;
+              iframe.onload = () => {
+                iframe.style.height = `${iframe.contentWindow.document.body.scrollHeight}px`;
+              };
+
+              try {
+                const response = await fetch(x3dParameter);
+                const data = await response.text();
+                sourceCodeElement.innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
+                contentElement.style.display = 'block';
+                downloadLinkElement.href = x3dParameter;
+                playgroundElement.href = `https://create3000.github.io/x_ite/playground/?url=https://lpsoares.github.io/Renderizador/${x3dParameter}`;
+              } catch (error) {
+                console.error('Error fetching the file:', error);
+              }
+            });
+          });
+
+        })
+        .catch(error => console.error('Error fetching the JSON file:', error));
+
     });
   </script>
 </body>

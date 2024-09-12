@@ -1,0 +1,69 @@
+body {
+  padding-top: 56px;
+}
+
+.tree ul {
+  list-style-type: none;
+  padding-left: 20px;
+}
+
+.tree li {
+  margin: 5px 0;
+  cursor: pointer;
+}
+
+.tree li ul {
+  display: none;
+}
+
+.tree li.open > ul {
+  display: block;
+}
+
+.tree li > span {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.tree li > span::before {
+  content: "▶";
+  display: inline-block;
+  margin-right: 5px;
+  transition: transform 0.3s ease;
+}
+
+.tree li.open > span::before {
+  transform: rotate(90deg);
+}
+
+.tree a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.content-frame {
+  width: 100%;
+  max-width: 100%;
+  border: none;
+  overflow: visible !important;
+}
+
+#content {
+  display: none;
+}
+
+.source-code-container {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  height: 80vh;
+  overflow-y: auto;
+}
+
+pre {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+
+    <NavigationInfo headlight="false"/> <!-- You can ignore this node for the moment -->
+
+    <Viewpoint position="0 0 10"/> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/navigation.html -->
+
+    <Transform> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <Appearance><Material emissiveColor='0 1 0'/></Appearance>
+        <IndexedFaceSet coordIndex='0 1 2 3 4 5 6 7 8 9 -1'>
+            <Coordinate point='-1 0 0 0 0 0 1 0 0 1 0.5 0 1 1 0 1 2 0 0 2 0 -1 2 0 -1 1 0 -1 0.5 0'/>
+        </IndexedFaceSet>
+      </Shape>
+    </Transform>
+  </Scene>
+
+</X3D>
