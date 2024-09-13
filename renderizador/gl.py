@@ -152,108 +152,55 @@ class GL:
     @staticmethod
     def triangleSet(point, colors):
         """Função usada para renderizar TriangleSet."""
-        # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
-        # de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x do
-        # primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
-        # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e
-        # assim por diante.
-        # No TriangleSet os triângulos são informados individualmente, assim os três
-        # primeiros pontos definem um triângulo, os três próximos pontos definem um novo
-        # triângulo, e assim por diante.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, você pode assumir
-        # inicialmente, para o TriangleSet, o desenho das linhas com a cor emissiva
-        # (emissiveColor), conforme implementar novos materias você deverá suportar outros
-        # tipos de cores.
-        def insideTri(tri: list[float], x: float, y: float) -> bool:
-            def line_eq(x0, y0, x1, y1, px, py):
-                return (y1 - y0) * px - (x1 - x0) * py + y0 * (x1 - x0) - x0 * (y1 - y0)
-
-            p1 = [tri[0], tri[1]]
-            p2 = [tri[2], tri[3]]
-            p3 = [tri[4], tri[5]]
-
-            L1 = line_eq(p1[0], p1[1], p2[0], p2[1], x, y)
-            L2 = line_eq(p2[0], p2[1], p3[0], p3[1], x, y)
-            L3 = line_eq(p3[0], p3[1], p1[0], p1[1], x, y)
-
-            if (L1 > 0 and L2 > 0 and L3 > 0) or (L1 < 0 and L2 < 0 and L3 < 0):
-                return True
-            return False
         
-        # funcao que recebe lista de pontos
+        # Helper function to multiply matrices
         def multiply_mats(mat_list):
-            acumulator = np.identity(mat_list[0].shape[0])
+            accumulator = np.identity(mat_list[0].shape[0])
             for mat in mat_list:
-                acumulator = acumulator @ mat
-            
-            return acumulator
+                accumulator = accumulator @ mat
+            return accumulator
 
-            
-        def transform_points(points,min_x,min_y,min_z,max_z):
+        # Helper function to transform 3D points to 2D
+        def transform_points(points, min_x, min_y, min_z, max_z):
             w = GL.width
             h = GL.height
-            delta_z = max_z-min_z
+            delta_z = max_z - min_z
 
             screenMatrix = np.mat([
-                [w/2,0.0,0.0,min_x+w/2],
-                [0.0,-h/2,0.0,min_y+h/2],
-                [0.0,0.0,delta_z,min_z],
-                [0.0,0.0,0.0,1.0]
+                [w / 2, 0.0, 0.0, min_x + w / 2],
+                [0.0, -h / 2, 0.0, min_y + h / 2],
+                [0.0, 0.0, delta_z, min_z],
+                [0.0, 0.0, 0.0, 1.0]
             ])
             transformed_points = []
-            for i in range(0,len(points),3):
-                p = points[i:i+3]
-                p.append(1.0) # homogenous coordinate
+            for i in range(0, len(points), 3):
+                p = points[i:i + 3]
+                p.append(1.0)  # homogeneous coordinate
 
-                #multiplying all transform matrices
+                # Apply all transformation matrices
                 transform_mat_res = multiply_mats(GL.transform_stack)
+                p = GL.perspective_matrix @ transform_mat_res @ p
 
-                p = GL.perspective_matrix@transform_mat_res@p
-                # Z DIVIDE
+                # Z-Divide
                 p = np.array(p).flatten()
-                p = p/p[-1]
+                p = p / p[-1]
                 p = screenMatrix @ p
 
                 p = np.array(p).flatten()
-                p = list(p[0:2])
-
                 transformed_points.append(p[0])
                 transformed_points.append(p[1])
 
             return transformed_points
 
-        print("colors")
-        print(colors)
-        color = np.array(colors["emissiveColor"]) * 255
-
+        # Transform the 3D points to 2D
         xs = [point[i] for i in range(0, len(point), 3)]
         ys = [point[i] for i in range(1, len(point), 3)]
-        zs = [point[i] for i in range(2,len(point),3)]
+        zs = [point[i] for i in range(2, len(point), 3)]
 
-        # Bounding Box
-        
-        
-        vertices = transform_points(point,min(xs),min(ys),min(zs),max(zs))
-        # 
+        vertices = transform_points(point, min(xs), min(ys), min(zs), max(zs))
 
-        for i in range(0,len(vertices),6):
-            tri = vertices[i : i + 6]
-            xs = [tri[i] for i in range(0,len(tri),2)]
-            ys = [tri[i] for i in range(1,len(tri),2)]
-            box = [int(min(xs)),int(max(xs)),int(min(ys)),int(max(ys))]
-            # Iterando na bounding Box
-            for x in range(box[0], box[1] + 1):
-                for y in range(box[2], box[3] + 1):
-                    if insideTri(tri, x+0.5, y+0.5):
-                        if (x <GL.width and x >= 0) and (y <GL.height and y >= 0):
-                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
-
-
-
-
-            
-
-
+        # Call triangleSet2D with the transformed 2D vertices
+        GL.triangleSet2D(vertices, colors)
 
 
     @staticmethod
