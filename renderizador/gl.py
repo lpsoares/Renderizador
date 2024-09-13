@@ -240,8 +240,8 @@ class GL:
 
         # TRANSLADANDO E DEPOIS ROTACIONANDO
         look_at_mat = look_at_rot@look_at_trans
-        print("look_at")
-        print(look_at_mat)
+        # print("look_at")
+        # print(look_at_mat)
         # LÓGICA MATRIZ DE PROJEÇÃO
         aspect_ratio = GL.width/GL.height
         near = GL.near
@@ -257,8 +257,8 @@ class GL:
         ])
 
         # retornando matriz que aplica LOOK_AT e projeção perspectiva
-        print("perspective")
-        print(perspective_m)
+        # print("perspective")
+        # print(perspective_m)
 
         GL.perspective_matrix = perspective_m @ look_at_mat
 
@@ -307,8 +307,8 @@ class GL:
             [0, 0, 0, 1]
         ])
         object_to_world_m = translation_m  @ rotation_m @ scale_m
-        print("model")
-        print(object_to_world_m)
+        # print("model")
+        # print(object_to_world_m)
         GL.transform_stack.append(object_to_world_m)
 
 
@@ -349,7 +349,25 @@ class GL:
         )  # imprime no terminal as cores
 
         # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        vertices = []
+        for i in range(0,len(point)-6,3): # loop to iterate over each vertex, next loop iteration i will be vertex2[0]
+
+            # triangle = []
+            # appending vertex 1
+            vertices.append(point[i])
+            vertices.append(point[i+1])
+            vertices.append(point[i+2])
+            # appending vertex 2
+            vertices.append(point[i+3])
+            vertices.append(point[i+4])
+            vertices.append(point[i+5])
+            #appending vertex 3
+            vertices.append(point[i+6])
+            vertices.append(point[i+7])
+            vertices.append(point[i+8])
+            # GL.triangleSet(triangle,colors)
+
+        GL.triangleSet(vertices,colors)
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
