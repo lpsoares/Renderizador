@@ -111,7 +111,8 @@ class GL:
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
-    def triangleSet2D(vertices, colors):
+    #GL.triangleSet2D(vertices, colors, vertex_colors, vertex_tex_coords, texture)
+    def triangleSet2D(vertices, colors, vertex_colors, vertex_tex_coords, texture):
         """Função usada para renderizar TriangleSet2D."""
 
         def insideTri(tri: list[float], x: float, y: float) -> bool:
@@ -150,7 +151,7 @@ class GL:
                             gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
-    def triangleSet(point, colors):
+    def triangleSet(point, colors,vertex_colors, vertex_tex_coords, texture):
         """Função usada para renderizar TriangleSet."""
         
         # Helper function to multiply matrices
@@ -200,7 +201,7 @@ class GL:
         vertices = transform_points(point, min(xs), min(ys), min(zs), max(zs))
 
         # Call triangleSet2D with the transformed 2D vertices
-        GL.triangleSet2D(vertices, colors)
+        GL.triangleSet2D(vertices, colors, vertex_colors, vertex_tex_coords, texture)
 
 
     @staticmethod
@@ -328,72 +329,28 @@ class GL:
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
         """Função usada para renderizar TriangleStripSet."""
-        # A função triangleStripSet é usada para desenhar tiras de triângulos interconectados,
-        # você receberá as coordenadas dos pontos no parâmetro point, esses pontos são uma
-        # lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x
-        # do primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
-        # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e assim
-        # por diante. No TriangleStripSet a quantidade de vértices a serem usados é informado
-        # em uma lista chamada stripCount (perceba que é uma lista). Ligue os vértices na ordem,
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
-        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleStripSet : pontos = {0} ".format(point), end="")
-        for i, strip in enumerate(stripCount):
-            print("strip[{0}] = {1} ".format(i, strip), end="")
-        print("")
-        print(
-            "TriangleStripSet : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
-
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        vertices = []
-        for i in range(0,len(point)-6,3): # loop to iterate over each vertex, next loop iteration i will be vertex2[0]
-
-            # triangle = []
-            # appending vertex 1
-            vertices.append(point[i])
-            vertices.append(point[i+1])
-            vertices.append(point[i+2])
-            # appending vertex 2
-            vertices.append(point[i+3])
-            vertices.append(point[i+4])
-            vertices.append(point[i+5])
-            #appending vertex 3
-            vertices.append(point[i+6])
-            vertices.append(point[i+7])
-            vertices.append(point[i+8])
-            # GL.triangleSet(triangle,colors)
+        vertices = []                      
+        for i in range(0,len(point)-6,3): #
+            for u in range(0,9): # appending each vertex, 3 vertices
+                vertices.append(point[i+u])
 
         GL.triangleSet(vertices,colors)
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
         """Função usada para renderizar IndexedTriangleStripSet."""
-        # A função indexedTriangleStripSet é usada para desenhar tiras de triângulos
-        # interconectados, você receberá as coordenadas dos pontos no parâmetro point, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
-        # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
-        # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedTriangleStripSet uma lista informando
-        # como conectar os vértices é informada em index, o valor -1 indica que a lista
-        # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
-        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print(
-            "IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)
-        )
-        print(
-            "IndexedTriangleStripSet : colors = {0}".format(colors)
-        )  # imprime as cores
+        def appendVertices(points,vertices,index):
+            coord = index*3
+            for u in range(0,3):
+                vertices.append(points[coord+u])
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        vertices = []
+        for i in range(0,len(index)-3):
+            for u in range(0,3):
+                appendVertices(point,vertices,index[i]+u)
+
+        GL.triangleSet(vertices,colors)
 
     @staticmethod
     def box(size, colors):
@@ -424,8 +381,7 @@ class GL:
         colors,
         current_texture,
     ):
-        """Função usada para renderizar IndexedFaceSet."""
-        # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
+            # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
         # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
         # Você receberá as coordenadas dos pontos no parâmetro cord, esses
         # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim coord[0] é o valor
@@ -444,29 +400,45 @@ class GL:
         # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
         # implementadado um método para a leitura de imagens.
 
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedFaceSet : ")
-        if coord:
-            print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        print("colorPerVertex = {0}".format(colorPerVertex))
-        if colorPerVertex and color and colorIndex:
-            print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        if texCoord and texCoordIndex:
-            print(
-                "\tpontos(u, v) = {0}, texCoordIndex = {1}".format(
-                    texCoord, texCoordIndex
-                )
-            )
-        if current_texture:
-            image = gpu.GPU.load_texture(current_texture[0])
-            print("\t Matriz com image = {0}".format(image))
-            print("\t Dimensões da image = {0}".format(image.shape))
-        print(
-            "IndexedFaceSet : colors = {0}".format(colors)
-        )  # imprime no terminal as cores
+        def appendVertices(points, vertices, index):
+            coord_idx = index * 3
+            for u in range(3):
+                vertices.append(points[coord_idx + u])
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        vertices = []
+        vertex_colors = []
+        vertex_tex_coords = []
+
+
+        texture = []
+        if current_texture:
+            texture = gpu.GPU.load_texture(current_texture[0])
+
+        for i in range(len(coordIndex)):
+            if coordIndex[i] == -1:
+                if len(vertices) >= 9:
+                    GL.triangleSet(vertices, colors, vertex_colors, vertex_tex_coords, texture)
+                vertices = []
+                vertex_colors = []
+                vertex_tex_coords = []
+            else:
+                appendVertices(coord, vertices, coordIndex[i])
+
+                if colorPerVertex and color and colorIndex:
+                    vertex_color_idx = colorIndex[i] * 3
+                    vertex_color = color[vertex_color_idx : vertex_color_idx + 3]
+                    vertex_colors.append(vertex_color)
+
+                if texCoord and texCoordIndex:
+                    tex_coord_idx = texCoordIndex[i] * 2
+                    tex_u, tex_v = texCoord[tex_coord_idx], texCoord[tex_coord_idx + 1]
+                    vertex_tex_coords.append([tex_u, tex_v])
+
+        if len(vertices) >= 9:
+            GL.triangleSet(vertices, colors, vertex_colors, vertex_tex_coords, texture)
+
+
+
 
     @staticmethod
     def sphere(radius, colors):
