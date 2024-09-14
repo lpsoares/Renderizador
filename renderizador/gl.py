@@ -22,6 +22,10 @@ class GL:
 
     perspective_matrix = np.mat([])
     transform_stack = []
+    vertex_colors = []
+    vertex_tex_coord = []
+    texture = []
+
     width = 800  # largura da tela
     height = 600  # altura da tela
     near = 0.01  # plano de corte próximo
@@ -111,8 +115,7 @@ class GL:
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
-    #GL.triangleSet2D(vertices, colors, vertex_colors, vertex_tex_coords, texture)
-    def triangleSet2D(vertices, colors, vertex_colors, vertex_tex_coords, texture):
+    def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
 
         def insideTri(tri: list[float], x: float, y: float) -> bool:
@@ -148,10 +151,16 @@ class GL:
                 for y in range(box[2], box[3] + 1):
                     if insideTri(tri, x+0.5, y+0.5):
                         if (x <GL.width and x >= 0) and (y <GL.height and y >= 0):
+                            # if(vertex_colors):
+                            #     # interpolate position with vertex_colors to get the color
+                            #     color = 
+                            # if(vertex_tex_coords):
+                            #     # interpolate position with the texture at each vertex to get the color
+                            #     color = 
                             gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
 
     @staticmethod
-    def triangleSet(point, colors,vertex_colors, vertex_tex_coords, texture):
+    def triangleSet(point, colors):
         """Função usada para renderizar TriangleSet."""
         
         # Helper function to multiply matrices
@@ -201,7 +210,7 @@ class GL:
         vertices = transform_points(point, min(xs), min(ys), min(zs), max(zs))
 
         # Call triangleSet2D with the transformed 2D vertices
-        GL.triangleSet2D(vertices, colors, vertex_colors, vertex_tex_coords, texture)
+        GL.triangleSet2D(vertices, colors)
 
 
     @staticmethod
@@ -411,13 +420,18 @@ class GL:
 
 
         texture = []
+        print("current texture: ")
+        print(current_texture)
         if current_texture:
             texture = gpu.GPU.load_texture(current_texture[0])
+            GL.texture = texture
 
         for i in range(len(coordIndex)):
             if coordIndex[i] == -1:
                 if len(vertices) >= 9:
-                    GL.triangleSet(vertices, colors, vertex_colors, vertex_tex_coords, texture)
+                    GL.vertex_colors = vertex_colors
+                    GL.vertex_tex_coord = vertex_tex_coords
+                    GL.triangleSet(vertices, colors)
                 vertices = []
                 vertex_colors = []
                 vertex_tex_coords = []
