@@ -32,6 +32,10 @@ signal.signal(signal.SIGINT, signal_handler)
 
 TESTE = []
 
+# Carrega o arquivo JSON com os exemplos
+with open("docs/examples.json") as f:
+    data = json.load(f)
+
 
 # Populate the TESTE list based on the JSON data
 for section in data['examples']:

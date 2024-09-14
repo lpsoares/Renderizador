@@ -258,15 +258,15 @@ class GL:
             return (p1[1] - p3[1]) * x - (p1[0] - p3[0]) * y + p3[1] * (p1[0] - p3[0]) - p3[0] * (p1[1] - p3[1])
 
         # Encontra a bounding box da triangle
-        min_x = max(0, int(min(p1[0], p2[0], p3[0])))
-        max_x = min(GL.width, int(max(p1[0], p2[0], p3[0])))
-        min_y = max(0, int(min(p1[1], p2[1], p3[1])))
-        max_y = min(GL.height, int(max(p1[1], p2[1], p3[1])))
+        min_x = int(max(0.0, min(p1[0], p2[0], p3[0])))
+        max_x = int(min(GL.width - 1, max(p1[0], p2[0], p3[0])))
+        min_y = int(max(0.0, min(p1[1], p2[1], p3[1])))
+        max_y = int(min(GL.height - 1, max(p1[1], p2[1], p3[1])))
 
         # print(f"Drawing triangle with vertices {p1}, {p2}, {p3}")
-        
-        for x in range(min_x, max_x):
-            for y in range(min_y, max_y):
+
+        for x in range(min_x, max_x + 1):  # Include the max_x by adding 1 to the range
+            for y in range(min_y, max_y + 1):  # Include the max_y by adding 1 to the range
                 if L1(x + 0.5, y + 0.5) >= 0 and L2(x + 0.5, y + 0.5) >= 0 and L3(x + 0.5, y + 0.5) >= 0:
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [round(n * 255) for n in colors["emissiveColor"]])
 
