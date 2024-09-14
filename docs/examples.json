@@ -1,0 +1,70 @@
+{
+    "examples": [
+      {
+        "title": "Rasterização 2D",
+        "examples": [
+          { "path": "2D/pontos/", "x3d": "aleatorios", "width": 30, "height": 20, "pause": true },
+          { "path": "2D/linhas/", "x3d": "linhas_cores", "width": 30, "height": 20, "pause": true },
+          { "path": "2D/linhas/", "x3d": "octogono", "width": 30, "height": 20, "pause": true },
+          { "path": "2D/linhas/", "x3d": "linhas_cruzes", "width": 30, "height": 20, "pause": true },
+          { "path": "2D/linhas/", "x3d": "varias_linhas", "width": 600, "height": 400, "pause": true },
+          { "path": "2D/linhas/", "x3d": "circulo", "width": 30, "height": 20, "pause": true },
+          { "path": "2D/triangulos/", "x3d": "triangulos", "width": 30, "height": 20, "pause": true },
+          { "path": "2D/triangulos/", "x3d": "helice", "width": 30, "height": 20, "pause": true },
+          { "path": "2D/triangulos/", "x3d": "pontas", "width": 600, "height": 400, "pause": true }
+        ]
+      },
+      {
+        "title": "Triângulos em 3D",
+        "examples": [
+          { "path": "3D/malhas/", "x3d": "um_triangulo", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "varios_triangs", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "zoom", "width": 300, "height": 200, "pause": true }
+        ]
+      },
+      { "title": "Malhas 3D",
+        "examples": [
+          { "path": "3D/malhas/", "x3d": "tiras", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "letras", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "leques", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "vertices10", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/grafo_de_cena/", "x3d": "bound500", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/grafo_de_cena/", "x3d": "avatar", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/grafo_de_cena/", "x3d": "girando", "width": 300, "height": 200, "pause": true }
+          
+        ]
+      },
+      { "title": "Cores e Texturas",
+        "examples": [
+          { "path": "3D/cores/", "x3d": "quadrado", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/cores/", "x3d": "flechas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/texturas/", "x3d": "textura", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/texturas/", "x3d": "texturas", "width": 300, "height": 200, "pause": true }
+        ]
+      },
+      { "title": "Primitivas Geométricas",
+        "examples": [
+          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true }
+        ]
+      },
+      { "title": "Z-buffer e Transparência",
+        "examples": [
+          { "path": "3D/malhas/", "x3d": "retangulos", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/transparencia/", "x3d": "transparente", "width": 300, "height": 200, "pause": true }
+        ]
+      },
+      { "title": "Iluminação",
+        "examples": [
+          { "path": "3D/malhas/", "x3d": "difusos", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/primitivas/", "x3d": "caixas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/iluminacao/", "x3d": "esferas", "width": 150, "height": 100, "pause": true }
+        ]
+      },
+      { "title": "Animações",
+        "examples": [
+          { "path": "3D/animacoes/", "x3d": "onda", "width": 300, "height": 200, "pause": false },
+          { "path": "3D/animacoes/", "x3d": "piramide", "width": 300, "height": 200, "pause": false }
+        ]
+      }
+    ]
+  }

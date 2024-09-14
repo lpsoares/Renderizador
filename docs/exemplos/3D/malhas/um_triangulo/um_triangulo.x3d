@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+
+    <NavigationInfo headlight="false"/> <!-- You can ignore this node for the moment -->
+
+    <Viewpoint position="0 0 -5" orientation="0 -1 0 3.1415"/> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/navigation.html -->
+
+    <Transform translation="0 0 5" rotation="-1 0 0 3.1415"> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/group.html -->
+      <Shape>
+        <TriangleSet> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/rendering.html -->
+          <Coordinate point='0 -4 0 5 4 0 -5 4 0'/>
+        </TriangleSet>
+        <Appearance>
+          <Material emissiveColor='1 0 1'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+  </Scene>
+
+</X3D>
+
+<!-- 
+  
+  camera
+  [[-9.99999996e-01  0.00000000e+00  9.26535897e-05  4.63267948e-04]
+   [ 0.00000000e+00  1.00000000e+00  0.00000000e+00  0.00000000e+00]
+   [-9.26535897e-05  0.00000000e+00 -9.99999996e-01 -4.99999998e+00]
+   [ 0.00000000e+00  0.00000000e+00  0.00000000e+00  1.00000000e+00]]
+
+  persp
+  [[ 1.37417368  0.          0.          0.        ]
+   [ 0.          2.06126053  0.          0.        ]
+   [ 0.          0.         -1.00002    -0.0200002 ]
+   [ 0.          0.         -1.          0.        ]]
+
+  screen
+  [[ 150.    0.    0.  150.]
+   [   0. -100.    0.  100.]
+   [   0.    0.    1.    0.]
+   [   0.    0.    0.    1.]]
+
+  view
+  [[-2.06112154e+02  0.00000000e+00  1.50019098e+02  7.50095488e+02]
+   [ 9.26535897e-03 -2.06126053e+02  9.99999996e+01  4.99999998e+02]
+   [ 9.26554428e-05  0.00000000e+00  1.00002000e+00  4.98009978e+00]
+   [ 9.26535897e-05  0.00000000e+00  9.99999996e-01  4.99999998e+00]]
+ 
+  model (transform)
+  [[ 1.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00]
+   [ 0.00000000e+00 -9.99999996e-01  9.26535897e-05  0.00000000e+00]
+   [ 0.00000000e+00 -9.26535897e-05 -9.99999996e-01  5.00000000e+00]
+   [ 0.00000000e+00  0.00000000e+00  0.00000000e+00  1.00000000e+00]]
+
+ -->

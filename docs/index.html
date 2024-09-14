@@ -1,97 +1,140 @@
-<html>
-  <style>
-    h2 {
-      margin-top: 20px;
-    }
-    h3 {
-      margin-left: 10px;
-      margin-bottom: 0px;
-    }
-    ul {
-      margin-top: 2px;
-    }
-  </style>
-  <body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exemplos X3D</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link href="exemplos.css" rel="stylesheet">
+</head>
+<body>
 
-    <h1>Exemplos X3D</h1>
-    Exemplos para a disciplina de Computação Gráfica do Insper
-    
-    <h2>2D</h2>
-    <h3>Rasterização</h3>
-    <ul>
-      <li><a href="exemplos/2D/pontos/Pontos.html">Pontos</a></li>
-      <li><a href="exemplos/2D/linhas/Linhas.html">Linhas</a></li>
-      <li><a href="exemplos/2D/linhas/Linhas_Fora.html">Linhas Fora</a></li>
-      <li><a href="exemplos/2D/linhas/Octogono.html">Octógono</a></li>
-      <li><a href="exemplos/2D/linhas/Varias_Linhas.html">Várias Linhas</a></li>
-      <li><a href="exemplos/2D/linhas/Circulo.html">Círculo</a></li>
-      <li><a href="exemplos/2D/triangulos/Triangulos.html">Triângulos</a></li>
-      <li><a href="exemplos/2D/triangulos/Helice.html">Hélice</a></li>
-      <li><a href="exemplos/2D/triangulos/Triangulos_Alta.html">Triângulos Alta</a></li>
-    </ul>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container"><a class="navbar-brand" href="#">Exemplos X3D</a></div>
+  </nav>
 
-    <br>
+  <!-- Main Content -->
+  <div class="container-fluid">
+    <div class="row">
+      <nav class="col-lg-3">
+        <div class="tree">
+          <h2 id="2d" class="mt-4">Exemplos</h2>
+          <ul id="exemplos-list"></ul>
+        </div>
+      </nav>
+      <div id="content" class="col-lg-9">
+        <h3 style="margin-top: 10px;">X3D
+          <small><a id="playground" target="_blank"><i class="fas fa-external-link-alt"></i></a></small>
+        </h3>
+        <iframe name="content-frame" class="content-frame"></iframe>
+        <div id="source-code-container" class="source-code-container">
+          <h3>X3D Code <small><a id="download-link" download><i class="fas fa-download"></i></a></small></h3>
+          <pre id="source-code"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <h2>3D</h2>
+  <!-- Footer -->
+  <footer class="py-4 bg-dark text-white-50">
+    <div class="container text-center">
+      <small>&copy; 2024 Computação Gráfica do Insper</small>
+    </div>
+  </footer>
 
-    <h3>Visualização 3D sem shading</h3>
-    <ul>
-      <li><a href="exemplos/3D/triangulos/UmTriangulo.html">Um Triângulo</a></li>
-      <li><a href="exemplos/3D/triangulos/VariosTriangulos.html">Vários Triângulos</a></li>
-      <li><a href="exemplos/3D/triangulos/Zoom.html">Zoom</a></li>
-    </ul>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
 
-    <h3>Malhas 3D</h3>
-    <ul>
-      <li><a href="exemplos/3D/triangulos/TiraDeTriangulos.html">Tira de Triângulos</a></li>
-      <li><a href="exemplos/3D/cores/Letras.html">Letras</a></li>
-      <li><a href="exemplos/3D/avatar/Avatar.html">Avatar</a></li>
-    </ul>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+            
+      var examples_root = 'exemplos/';
+      
+      function generateListItems(data, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) {
+          console.error(`Container with id ${containerId} not found.`);
+          return;
+        }
 
-    <h3>Primitivas 3D</h3>
-    <ul>
-      <li><a href="exemplos/3D/box/Primitivas.html">Primitivas</a></li>
-    </ul>
+        data.forEach(function(type) {
+          var group = document.createElement('li');
+          var span = document.createElement('span');
+          span.textContent = type.title;
+          var ul = document.createElement('ul');
 
-    <h3>Z-buffer e Transparência</h3>
-    <ul>
-      <li><a href="exemplos/3D/retangulos/Retangulos.html">Retangulos</a></li>
-      <li><a href="exemplos/3D/transparencia/Transparencia.html">Transparência</a></li>
-    </ul>
+          type.examples.forEach(function(item) {
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            const basePath = `${examples_root}${item.path}${item.x3d}/${item.x3d}`;
+            a.href = `${basePath}.html`;
+            a.setAttribute('x3d', `${basePath}.x3d`);
+            a.textContent = item.x3d + '.x3d';
+            li.appendChild(a);
+            ul.appendChild(li);
+          });
 
-    <h3>Cores</h3>
-    <ul>
-      <li><a href="exemplos/3D/cores/Cores.html">Quadrado</a></li>
-    </ul>
+          group.appendChild(span);
+          group.appendChild(ul);
+          container.appendChild(group);
+        });
+      }
 
-    <h3>Texturas</h3>
-    <ul>
-      <li><a href="exemplos/3D/texturas/Textura.html">Textura</a></li>  
-      <li><a href="exemplos/3D/texturas/Texturas.html">Texturas</a></li>
-    </ul>
+      // Fetch the JSON file and generate the list items
+      fetch('examples.json')
+        .then(response => response.json())
+        .then(data => {
+          generateListItems(data.examples, 'exemplos-list');
 
-    <h3>Iluminação</h3>
-    <ul>
-      <li><a href="exemplos/3D/triangulos/Triangulos.html">Triângulos</a></li>
-      <li><a href="exemplos/3D/box/Box.html">Caixas</a></li>
-      <li><a href="exemplos/3D/iluminacao/Esferas.html">Esferas</a></li>
-    </ul>
+          var treeItems = document.querySelectorAll('.tree li > span');
+          treeItems.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+              e.stopPropagation();
+              var parentLi = this.parentElement;
+              parentLi.classList.toggle('open');
+            });
+          });
 
-    <h3>Animações</h3>
-    <ul>
-      <li><a href="exemplos/3D/animacoes/Onda.html">Onda</a></li>
-      <li><a href="exemplos/3D/animacoes/Piramide.html">Pirâmide</a></li>
-    </ul>
+          var links = document.querySelectorAll('.tree a');
+          const iframe = document.querySelector('iframe[name="content-frame"]');
+          const sourceCodeElement = document.getElementById('source-code');
+          const contentElement = document.getElementById('content');
+          const downloadLinkElement = document.getElementById('download-link');
+          const playgroundElement = document.getElementById('playground');
 
-    <h3>Novos</h3>
-    <ul>
-      <li><a href="exemplos/3D/cores/Leques.html">Leques</a></li>
-      <li><a href="exemplos/3D/cores/Flechas.html">Flechas</a></li>
-    </ul>
+          links.forEach(link => {
+            link.addEventListener('click', async (e) => {
+              e.preventDefault();
+              const fileParameter = link.getAttribute('href');
+              const x3dParameter = link.getAttribute('x3d');
 
+              iframe.src = fileParameter;
+              iframe.onload = () => {
+                iframe.style.height = `${iframe.contentWindow.document.body.scrollHeight}px`;
+              };
 
-    <br>
-    Repositório do código do curso: <a href="https://github.com/lpsoares/Renderizador">https://github.com/lpsoares/Renderizador</a>
+              try {
+                const response = await fetch(x3dParameter);
+                const data = await response.text();
+                sourceCodeElement.innerHTML = Prism.highlight(data, Prism.languages.html, 'html');
+                contentElement.style.display = 'block';
+                downloadLinkElement.href = x3dParameter;
+                playgroundElement.href = `https://create3000.github.io/x_ite/playground/?url=https://lpsoares.github.io/Renderizador/${x3dParameter}`;
+              } catch (error) {
+                console.error('Error fetching the file:', error);
+              }
+            });
+          });
 
-  </body>
+        })
+        .catch(error => console.error('Error fetching the JSON file:', error));
+
+    });
+  </script>
+</body>
 </html>
