@@ -137,6 +137,11 @@ class GL:
         if len(vertices) < 5:
             print("ERROR NO TRIANGLES SENT")
 
+        print("vertices")
+        print(len(vertices))
+        
+
+
         color = np.array(colors["emissiveColor"]) * 255
 
         for i in range(0, len(vertices), 6):
@@ -144,6 +149,9 @@ class GL:
             xs = [tri[j] for j in range(0, len(tri), 2)]
             ys = [tri[j] for j in range(1, len(tri), 2)]
 
+            if(len(tri) != 6):
+                return
+            
             # Bounding Box
             box = [int(min(xs)), int(max(xs)), int(min(ys)), int(max(ys))]
             # Iterando na bounding Box
@@ -349,17 +357,28 @@ class GL:
     def indexedTriangleStripSet(point, index, colors):
         """Função usada para renderizar IndexedTriangleStripSet."""
 
-        def appendVertices(points,vertices,index):
-            coord = index*3
-            for u in range(0,3):
-                vertices.append(points[coord+u])
+        def appendVertices(points, vertices, idx):
+            coord = idx * 3
+            for u in range(3): 
+                vertices.append(points[coord + u])
 
         vertices = []
-        for i in range(0,len(index)-3):
-            for u in range(0,3):
-                appendVertices(point,vertices,index[i]+u)
+        i = 0
 
-        GL.triangleSet(vertices,colors)
+        while i < len(index) - 2:
+            if index[i] == -1 or index[i + 1] == -1 or index[i + 2] == -1:
+                i += 1 # pulando indices -1
+                continue
+
+            
+            appendVertices(point, vertices, index[i])     # Vertex 1
+            appendVertices(point, vertices, index[i + 1]) # Vertex 2
+            appendVertices(point, vertices, index[i + 2]) # Vertex 3
+
+            i += 1 
+
+        GL.triangleSet(vertices, colors)
+
 
     @staticmethod
     def box(size, colors):
@@ -420,8 +439,7 @@ class GL:
 
 
         texture = []
-        print("current texture: ")
-        print(current_texture)
+        print("PASSOU")
         if current_texture:
             texture = gpu.GPU.load_texture(current_texture[0])
             GL.texture = texture
