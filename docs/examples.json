@@ -34,7 +34,7 @@
           
         ]
       },
-      { "title": "interpolação 3D",
+      { "title": "Interpolação 3D",
         "examples": [
           { "path": "3D/cores/", "x3d": "quadrado", "width": 300, "height": 200, "pause": true },
           { "path": "3D/cores/", "x3d": "flechas", "width": 300, "height": 200, "pause": true },
