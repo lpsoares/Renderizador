@@ -200,13 +200,23 @@ class GL:
     @staticmethod
     def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
+
+            # Assume we want to scale the coordinates based on a reference resolution
+        reference_width = 30  # Set your base/reference width (adjust as needed)
+        reference_height = 20  # Set your base/reference height (adjust as needed)
+        
+        # Scaling factors based on current resolution compared to reference
+        scale_x = GL.width / reference_width
+        scale_y = GL.height / reference_height
+
+
         for i in range(0, len(vertices), 6):
-            x1 = vertices[i]
-            y1 = vertices[i+1]
-            x2 = vertices[i+2]
-            y2 = vertices[i+3]
-            x3 = vertices[i+4]
-            y3 = vertices[i+5]
+            x1 = vertices[i] * scale_x
+            y1 = vertices[i+1] * scale_y
+            x2 = vertices[i+2] * scale_x
+            y2 = vertices[i+3] * scale_y
+            x3 = vertices[i+4] * scale_x
+            y3 = vertices[i+5] * scale_y
 
         def L1(x, y):
             return (y2-y1)*x - (x2-x1)*y + y1*(x2-x1) - x1*(y2-y1)
@@ -225,24 +235,6 @@ class GL:
         print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
 
-
-    # @staticmethod
-    # def draw_filled_triangle(p1, p2, p3, colors):
-    #     """Função usada para renderizar TriangleSet2D."""
-    #     def L1(x, y):
-    #         return (p2[1]-p1[1])*x - (p2[0]-p1[0])*y + p1[1]*(p2[0]-p1[0]) - p1[0]*(p2[1]-p1[1])
-        
-    #     def L2(x, y):
-    #         return (p3[1]-p2[1])*x - (p3[0]-p2[0])*y + p2[1]*(p3[0]-p2[0]) - p2[0]*(p3[1]-p2[1])
-        
-    #     def L3(x, y):
-    #         return (p1[1]-p3[1])*x - (p1[0]-p3[0])*y + p3[1]*(p1[0]-p3[0]) - p3[0]*(p1[1]-p3[1])
-        
-    #     print(f"Drawing triangle with vertices {p1}, {p2}, {p3}")
-    #     for x in range(0, GL.width):
-    #         for y in range(0, GL.height):
-    #             if L1(x+0.5, y+0.5) >= 0 and L2(x+0.5, y+0.5) >= 0 and L3(x+0.5, y+0.5) >= 0:
-    #                 gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [round(n * 255) for n in colors["emissiveColor"]])
 
     @staticmethod
     def draw_filled_triangle(p1, p2, p3, colors):

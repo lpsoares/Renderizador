@@ -20,6 +20,8 @@ import gpu          # Simula os recursos de uma GPU
 import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
 import scenegraph   # Imprime o grafo de cena no console
 
+import numpy as np  # Biblioteca numérica
+
 LARGURA = 60  # Valor padrão para largura da tela
 ALTURA = 40   # Valor padrão para altura da tela
 
@@ -35,6 +37,7 @@ class Renderizador:
         self.image_file = "tela.png"
         self.scene = None
         self.framebuffers = {}
+        self.ssaa_factor = 2
 
     def setup(self):
         """Configura o sistema para a renderização."""
@@ -42,9 +45,11 @@ class Renderizador:
 
         # Cria uma (1) posição de FrameBuffer na GPU
         fbo = gpu.GPU.gen_framebuffers(1)
+        ssbo = gpu.GPU.gen_framebuffers(1)
 
         # Define o atributo FRONT como o FrameBuffe principal
         self.framebuffers["FRONT"] = fbo[0]
+        self.framebuffers["SUPER_SAMPLING"] = ssbo[0]
 
         # Define que a posição criada será usada para desenho e leitura
         gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
@@ -64,14 +69,23 @@ class Renderizador:
             self.height
         )
 
+        #Supersampling buffer
+        gpu.GPU.framebuffer_storage(
+            self.framebuffers["SUPER_SAMPLING"],
+            gpu.GPU.COLOR_ATTACHMENT,
+            gpu.GPU.RGB8,
+            self.width*self.ssaa_factor,
+            self.height*self.ssaa_factor,
+        )
+
         # Descomente as seguintes linhas se for usar um Framebuffer para profundidade
-        # gpu.GPU.framebuffer_storage(
-        #     self.framebuffers["FRONT"],
-        #     gpu.GPU.DEPTH_ATTACHMENT,
-        #     gpu.GPU.DEPTH_COMPONENT32F,
-        #     self.width,
-        #     self.height
-        # )
+        gpu.GPU.framebuffer_storage(
+            self.framebuffers["SUPER_SAMPLING"],
+            gpu.GPU.DEPTH_ATTACHMENT,
+            gpu.GPU.DEPTH_COMPONENT32F,
+            self.width ,	
+            self.height 
+        )
     
         # Opções:
         # - COLOR_ATTACHMENT: alocações para as cores da imagem renderizada
@@ -94,9 +108,48 @@ class Renderizador:
         # Definindo tamanho do Viewport para renderização
         self.scene.viewport(width=self.width, height=self.height)
 
+    def downsample(self):
+
+        gpu.GPU.bind_framebuffer(gpu.GPU.READ_FRAMEBUFFER, self.framebuffers["SUPER_SAMPLING"])
+        gpu.GPU.bind_framebuffer(gpu.GPU.DRAW_FRAMEBUFFER, self.framebuffers["FRONT"])
+        
+        
+        # Loop through each pixel in the FRONT buffer
+        for y in range(self.height):
+            for x in range(self.width):
+                # Compute the average of a 2x2 block from the supersampling buffer
+                color_sum = np.array([0, 0, 0], dtype=np.float32)  # Initialize sum for RGB
+                
+                # Loop through the 2x2 block
+                for j in range(self.ssaa_factor):
+                    for i in range(self.ssaa_factor):
+                        # Read pixel color from the supersampling buffer
+                        super_x = x * self.ssaa_factor + i
+                        super_y = y * self.ssaa_factor + j
+                        
+                        color = gpu.GPU.read_pixel((super_x, super_y), gpu.GPU.RGB8)
+
+                        color_sum += color  # Sum the colors in the block
+                
+                # Compute the average color and round it
+                avg_color = np.round(color_sum / (self.ssaa_factor**2)).astype(np.uint8)
+                
+                # Write the average color to the FRONT buffer
+                
+                gpu.GPU.draw_pixel((x, y), gpu.GPU.RGB8, avg_color)
+
+        gpu.GPU.bind_framebuffer(gpu.GPU.READ_FRAMEBUFFER, self.framebuffers["FRONT"])
+
+
     def pre(self):
         """Rotinas pré renderização."""
         # Função invocada antes do processo de renderização iniciar.
+        # Bind the front buffer for writing
+
+        if self.ssaa_factor > 1:
+            gpu.GPU.bind_framebuffer(gpu.GPU.DRAW_FRAMEBUFFER, self.framebuffers["SUPER_SAMPLING"])
+
+
 
         # Limpa o frame buffers atual
         gpu.GPU.clear_buffer()
@@ -108,7 +161,10 @@ class Renderizador:
     def pos(self):
         """Rotinas pós renderização."""
         # Função invocada após o processo de renderização terminar.
-
+        # Bind the front buffer for writing
+        if self.ssaa_factor > 1:
+            self.downsample()
+        
         # Método para a troca dos buffers (NÃO IMPLEMENTADO)
         gpu.GPU.swap_buffers()
 
@@ -164,6 +220,8 @@ class Renderizador:
         if args.height:
             self.height = args.height
 
+        
+
         path = os.path.dirname(os.path.abspath(self.x3d_file))
 
         # Iniciando simulação de GPU
@@ -174,8 +232,8 @@ class Renderizador:
 
         # Iniciando Biblioteca Gráfica
         gl.GL.setup(
-            self.width,
-            self.height,
+            self.width*self.ssaa_factor,
+            self.height*self.ssaa_factor,
             near=0.01,
             far=1000
         )
