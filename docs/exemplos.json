@@ -41,7 +41,8 @@
           { "path": "3D/texturas/", "x3d": "textura", "width": 300, "height": 200, "pause": true },
           { "path": "3D/texturas/", "x3d": "texturas", "width": 300, "height": 200, "pause": true },
           { "path": "3D/malhas/", "x3d": "retangulos", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/transparencia/", "x3d": "transparente", "width": 300, "height": 200, "pause": true }
+          { "path": "3D/transparencia/", "x3d": "transparente", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/grafo_de_cena/", "x3d": "dois_tri", "width": 21, "height": 10, "pause": true }
         ]
       },
       { "title": "Primitivas Geométricas",
