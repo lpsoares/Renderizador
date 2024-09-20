@@ -33,7 +33,7 @@ signal.signal(signal.SIGINT, signal_handler)
 TESTE = []
 
 # Load the JSON data
-with open('docs/examples.json', 'r') as f:
+with open('docs/exemplos.json', 'r') as f:
     data = json.load(f)
 
 # Populate the TESTE list based on the JSON data

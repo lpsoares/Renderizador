@@ -86,7 +86,7 @@
       }
 
       // Fetch the JSON file and generate the list items
-      fetch('examples.json')
+      fetch('exemplos.json')
         .then(response => response.json())
         .then(data => {
           generateListItems(data.examples, 'exemplos-list');
