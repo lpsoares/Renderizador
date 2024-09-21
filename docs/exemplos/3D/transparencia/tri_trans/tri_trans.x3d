@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+   <NavigationInfo headlight="false"/> <!-- You can ignore this node for the moment -->
+   <Viewpoint position="0 0 8"/>
+   <Transform translation="1 0 0">
+    <Shape>
+      <TriangleSet>
+        <Coordinate point='-2 -2 -1 2 -2 -1 0 2 -1'/>
+      </TriangleSet>
+      <Appearance>
+        <Material emissiveColor ='0 0 1'/>
+      </Appearance>
+    </Shape>
+  </Transform>
+  <Transform translation="-1 0 0">
+    <Shape>
+      <TriangleSet>
+        <Coordinate point='-2 -2 0 2 -2 0 0 2 0'/>
+      </TriangleSet>
+      <Appearance>
+        <Material emissiveColor="0 1 0"
+                  transparency="0.4"/>
+      </Appearance>
+    </Shape>
+  </Transform>
+  </Scene>
+</X3D>
