@@ -264,7 +264,7 @@ class GL:
                     gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [round(n * 255) for n in colors["emissiveColor"]])
 
     @staticmethod
-    def draw_filled_triangle_color_vertex(p1, p2, p3, colors):
+    def draw_filled_triangle_color_vertex(p1, p2, p3, colors, zs):
         """Função usada para renderizar TriangleSet2D com bounding box para melhorar a performance."""
         
         def L1(x, y):
@@ -286,14 +286,25 @@ class GL:
             A3 = area(p1, p2, p)
             return A1 / A, A2 / A, A3 / A
         
-        def color(p1, p2, p3, p, colors):
-            alpha, beta, gamma = barycentric(p1, p2, p3, [x, y])
+        def color(p1, p2, p3, p, colors, zs):
+
+            alpha, beta, gamma = barycentric(p1, p2, p3, p)
+
+            z0 = abs(zs[0])
+            z1 = abs(zs[1])
+            z2 = abs(zs[2])
+
+            Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
+
+
             R0, G0, B0 = colors[:3]
             R1, G1, B1 = colors[3:6]
             R2, G2, B2 = colors[6:]
-            R = round((R0 * alpha + R1 * beta + R2 * gamma)*255)
-            G = round((G0 * alpha + G1 * beta + G2 * gamma)*255)
-            B = round((B0 * alpha + B1 * beta + B2 * gamma)*255)
+
+            R = round(Z*(R0 * alpha / z0 + R1 * beta / z1 + R2 * gamma / z2)*255)
+            G = round(Z*(G0 * alpha / z0 + G1 * beta / z1 + G2 * gamma / z2)*255)
+            B = round(Z*(B0 * alpha / z0 + B1 * beta / z1 + B2 * gamma / z2)*255)
+
             return [R, G, B]
         
         # Encontra a bounding box da triangle
@@ -307,7 +318,7 @@ class GL:
         for x in range(min_x, max_x + 1):  # Include the max_x by adding 1 to the range
             for y in range(min_y, max_y + 1):  # Include the max_y by adding 1 to the range
                 if L1(x + 0.5, y + 0.5) >= 0 and L2(x + 0.5, y + 0.5) >= 0 and L3(x + 0.5, y + 0.5) >= 0:
-                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color(p1, p2, p3, [x, y], colors))
+                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color(p1, p2, p3, [x, y], colors, zs))
     @staticmethod
     def triangleSet(point, colors, colorPerVertex=False):
         """Função usada para renderizar TriangleSet."""
@@ -341,15 +352,21 @@ class GL:
             p2_screen = p2_projected[:2] / p2_projected[3]
             p3_screen = p3_projected[:2] / p3_projected[3]
 
-            
             # Convert to screen space and map to integer pixel positions with y-axis inversion
             p1_screen = np.array([(p1_screen[0] + 1) * (GL.width / 2), (1 - p1_screen[1]) * (GL.height / 2)])
             p2_screen = np.array([(p2_screen[0] + 1) * (GL.width / 2), (1 - p2_screen[1]) * (GL.height / 2)])
             p3_screen = np.array([(p3_screen[0] + 1) * (GL.width / 2), (1 - p3_screen[1]) * (GL.height / 2)])
-
             
             if colorPerVertex:
-                GL.draw_filled_triangle_color_vertex(p1_screen, p2_screen, p3_screen, colors)
+
+                z1_camera = p1_view[2]
+                z2_camera = p2_view[2]
+                z3_camera = p3_view[2]
+                zs = [z1_camera, z2_camera, z3_camera]
+                print(f"Zs: {zs}")
+
+                GL.draw_filled_triangle_color_vertex(p1_screen, p2_screen, p3_screen, colors, zs)
+
             else:
                 GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors)
         
