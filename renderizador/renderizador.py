@@ -166,6 +166,7 @@ class Renderizador:
             self.downsample()
         
         # Método para a troca dos buffers (NÃO IMPLEMENTADO)
+        # Esse método será utilizado na fase de implementação de animações
         gpu.GPU.swap_buffers()
 
     def mapping(self):
@@ -184,6 +185,8 @@ class Renderizador:
         x3d.X3D.renderer["IndexedFaceSet"] = gl.GL.indexedFaceSet
         x3d.X3D.renderer["Box"] = gl.GL.box
         x3d.X3D.renderer["Sphere"] = gl.GL.sphere
+        x3d.X3D.renderer["Cone"] = gl.GL.cone
+        x3d.X3D.renderer["Cylinder"] = gl.GL.cylinder
         x3d.X3D.renderer["NavigationInfo"] = gl.GL.navigationInfo
         x3d.X3D.renderer["DirectionalLight"] = gl.GL.directionalLight
         x3d.X3D.renderer["PointLight"] = gl.GL.pointLight

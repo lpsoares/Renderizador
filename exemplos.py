@@ -32,8 +32,8 @@ signal.signal(signal.SIGINT, signal_handler)
 
 TESTE = []
 
-# Carrega o arquivo JSON com os exemplos
-with open("docs/examples.json") as f:
+# Load the JSON data
+with open('docs/exemplos.json', 'r') as f:
     data = json.load(f)
 
 
