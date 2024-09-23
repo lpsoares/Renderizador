@@ -247,6 +247,7 @@ class Renderizador:
         gl.GL.setup(
             self.width*self.ssaa_factor,
             self.height*self.ssaa_factor,
+            self.ssaa_factor,
             near=0.01,
             far=1000
         )

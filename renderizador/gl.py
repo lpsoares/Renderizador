@@ -29,12 +29,13 @@ class GL:
     view_matrix = None  # Armazena a matriz de visualização
 
     @staticmethod
-    def setup(width, height, near=0.01, far=1000):
+    def setup(width, height, ssaa_factor, near=0.01, far=1000):
         """Definr parametros para câmera de razão de aspecto, plano próximo e distante."""
         GL.width = width
         GL.height = height
         GL.near = near
         GL.far = far
+        GL.ssaa_factor = ssaa_factor
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -202,12 +203,14 @@ class GL:
         """Função usada para renderizar TriangleSet2D."""
 
             # Assume we want to scale the coordinates based on a reference resolution
-        reference_width = 30  # Set your base/reference width (adjust as needed)
-        reference_height = 20  # Set your base/reference height (adjust as needed)
+        reference_width = GL.width / GL.ssaa_factor  # Set your base/reference width (adjust as needed)
+        reference_height = GL.height / GL.ssaa_factor   # Set your base/reference height (adjust as needed)
         
         # Scaling factors based on current resolution compared to reference
         scale_x = GL.width / reference_width
         scale_y = GL.height / reference_height
+
+        print(f'GL.width: {GL.width}, GL.height: {GL.height}')
 
 
         for i in range(0, len(vertices), 6):
@@ -263,6 +266,8 @@ class GL:
         z1 = abs(zs[1])
         z2 = abs(zs[2])
 
+        transparency = colors['transparency']
+
         # Encontra a bounding box da triangle
         min_x = int(max(0.0, min(p1[0], p2[0], p3[0])))
         max_x = int(min(GL.width - 1, max(p1[0], p2[0], p3[0])))
@@ -283,7 +288,10 @@ class GL:
 
                     if Z < Z_stored:
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [Z])
-                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [round(n * 255) for n in colors["emissiveColor"]])
+                        prev_color = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8) * transparency
+                        new_color = np.array([round(n * 255) for n in colors["emissiveColor"]]) * (1 - transparency)
+                        final_color = (prev_color + new_color).astype(np.uint8)
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, final_color)
 
     @staticmethod
     def draw_filled_triangle_color_vertex(p1, p2, p3, colors, zs):
@@ -345,6 +353,7 @@ class GL:
     def triangleSet(point, colors, colorPerVertex=False):
         """Função usada para renderizar TriangleSet."""
         
+        print(f'colors: {colors}')
         # Iterate over each triangle (each group of 3 points)
         for i in range(0, len(point), 9):  # 9 values for each triangle (3 points x 3 coordinates)
             # Extract the three vertices of the triangle
@@ -625,7 +634,7 @@ class GL:
         print(f'colorIndex: {colorIndex}')
         print(f'texCoord: {texCoord}')
         print(f'texCoordIndex: {texCoordIndex}')
-        print(f'colors: {texCoordIndex}')
+        print(f'colors: {colors}')
         print(f'current_texture: {current_texture}')
 
         # Add check if colorIndex list is empty
