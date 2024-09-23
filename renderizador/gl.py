@@ -596,9 +596,23 @@ class GL:
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
                        texCoord, texCoordIndex, colors, current_texture):
         """Função usada para renderizar IndexedFaceSet."""
+        colorPerVertex = colorPerVertex and colorIndex
 
+        print(f'coord: {coord}')
+        print(f'coordIndex: {coordIndex}')
+        print(f'colorPerVertex: {colorPerVertex}')
+        print(f'color: {color}')
+        print(f'colorIndex: {colorIndex}')
+        print(f'texCoord: {texCoord}')
+        print(f'texCoordIndex: {texCoordIndex}')
+        print(f'colors: {texCoordIndex}')
+        print(f'current_texture: {current_texture}')
+
+        # Add check if colorIndex list is empty
+        
         i = 0
         pivot_point = coord[coordIndex[i]*3:coordIndex[i]*3+3]
+        print(f"colorPerVertex: {colorPerVertex}")
         if colorPerVertex:
             pivot_color = color[colorIndex[i]*3:colorIndex[i]*3+3]
         while i < len(coordIndex)-2:
