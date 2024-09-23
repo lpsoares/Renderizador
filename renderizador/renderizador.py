@@ -52,7 +52,7 @@ class Renderizador:
         self.framebuffers["SUPER_SAMPLING"] = ssbo[0]
 
         # Define que a posição criada será usada para desenho e leitura
-        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
+        
         # Opções:
         # - DRAW_FRAMEBUFFER: Faz o bind só para escrever no framebuffer
         # - READ_FRAMEBUFFER: Faz o bind só para leitura no framebuffer
@@ -65,6 +65,14 @@ class Renderizador:
             self.framebuffers["FRONT"],
             gpu.GPU.COLOR_ATTACHMENT,
             gpu.GPU.RGB8,
+            self.width,
+            self.height
+        )
+
+        gpu.GPU.framebuffer_storage(
+            self.framebuffers["FRONT"],
+            gpu.GPU.DEPTH_ATTACHMENT,
+            gpu.GPU.DEPTH_COMPONENT32F,
             self.width,
             self.height
         )
@@ -83,8 +91,8 @@ class Renderizador:
             self.framebuffers["SUPER_SAMPLING"],
             gpu.GPU.DEPTH_ATTACHMENT,
             gpu.GPU.DEPTH_COMPONENT32F,
-            self.width ,	
-            self.height 
+            self.width*self.ssaa_factor,	
+            self.height*self.ssaa_factor 
         )
     
         # Opções:
@@ -103,7 +111,7 @@ class Renderizador:
 
         # Define a profundidade que ira apagar o FrameBuffer quando clear_buffer() invocado
         # Assuma 1.0 o mais afastado e -1.0 o mais próximo da camera
-        gpu.GPU.clear_depth(1.0)
+        gpu.GPU.clear_depth(np.inf)
 
         # Definindo tamanho do Viewport para renderização
         self.scene.viewport(width=self.width, height=self.height)
@@ -147,7 +155,9 @@ class Renderizador:
         # Bind the front buffer for writing
 
         if self.ssaa_factor > 1:
-            gpu.GPU.bind_framebuffer(gpu.GPU.DRAW_FRAMEBUFFER, self.framebuffers["SUPER_SAMPLING"])
+            gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["SUPER_SAMPLING"])
+        else:
+            gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
 
 
 

@@ -237,7 +237,7 @@ class GL:
 
 
     @staticmethod
-    def draw_filled_triangle(p1, p2, p3, colors):
+    def draw_filled_triangle(p1, p2, p3, colors, zs):
         """Função usada para renderizar TriangleSet2D com bounding box para melhorar a performance."""
         
         def L1(x, y):
@@ -249,6 +249,19 @@ class GL:
         def L3(x, y):
             return (p1[1] - p3[1]) * x - (p1[0] - p3[0]) * y + p3[1] * (p1[0] - p3[0]) - p3[0] * (p1[1] - p3[1])
         
+        def area(p1, p2, p3):
+            return 0.5 * np.abs((p2[0] - p1[0]) * (p3[1] - p1[1]) - (p3[0] - p1[0]) * (p2[1] - p1[1]))
+        
+        def barycentric(p1, p2, p3, p):
+            A = area(p1, p2, p3)
+            A1 = area(p, p2, p3)
+            A2 = area(p1, p, p3)
+            A3 = area(p1, p2, p)
+            return A1 / A, A2 / A, A3 / A
+        
+        z0 = abs(zs[0])
+        z1 = abs(zs[1])
+        z2 = abs(zs[2])
 
         # Encontra a bounding box da triangle
         min_x = int(max(0.0, min(p1[0], p2[0], p3[0])))
@@ -261,7 +274,16 @@ class GL:
         for x in range(min_x, max_x + 1):  # Include the max_x by adding 1 to the range
             for y in range(min_y, max_y + 1):  # Include the max_y by adding 1 to the range
                 if L1(x + 0.5, y + 0.5) >= 0 and L2(x + 0.5, y + 0.5) >= 0 and L3(x + 0.5, y + 0.5) >= 0:
-                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [round(n * 255) for n in colors["emissiveColor"]])
+
+                    alpha, beta, gamma = barycentric(p1, p2, p3, [x, y])
+
+                    Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
+
+                    Z_stored = gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)
+
+                    if Z < Z_stored:
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [Z])
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, [round(n * 255) for n in colors["emissiveColor"]])
 
     @staticmethod
     def draw_filled_triangle_color_vertex(p1, p2, p3, colors, zs):
@@ -356,19 +378,17 @@ class GL:
             p1_screen = np.array([(p1_screen[0] + 1) * (GL.width / 2), (1 - p1_screen[1]) * (GL.height / 2)])
             p2_screen = np.array([(p2_screen[0] + 1) * (GL.width / 2), (1 - p2_screen[1]) * (GL.height / 2)])
             p3_screen = np.array([(p3_screen[0] + 1) * (GL.width / 2), (1 - p3_screen[1]) * (GL.height / 2)])
+
+            z1_camera = p1_view[2]
+            z2_camera = p2_view[2]
+            z3_camera = p3_view[2]
+            zs = [z1_camera, z2_camera, z3_camera]
             
             if colorPerVertex:
-
-                z1_camera = p1_view[2]
-                z2_camera = p2_view[2]
-                z3_camera = p3_view[2]
-                zs = [z1_camera, z2_camera, z3_camera]
-                print(f"Zs: {zs}")
-
                 GL.draw_filled_triangle_color_vertex(p1_screen, p2_screen, p3_screen, colors, zs)
 
             else:
-                GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors)
+                GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs)
         
 
 
@@ -636,22 +656,6 @@ class GL:
             GL.triangleSet(triangle, colors, colorPerVertex)
             i += 1
 
-            
-
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        # print("IndexedFaceSet : ")
-        # if coord:
-        #     print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        # print("colorPerVertex = {0}".format(colorPerVertex))
-        # if colorPerVertex and color and colorIndex:
-        #     print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        # if texCoord and texCoordIndex:
-        #     print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
-        # if current_texture:
-        #     image = gpu.GPU.load_texture(current_texture[0])
-        #     print("\t Matriz com image = {0}".format(image))
-        #     print("\t Dimensões da image = {0}".format(image.shape))
-        # print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
 
 
     @staticmethod
