@@ -240,7 +240,7 @@ class GL:
 
 
     @staticmethod
-    def draw_filled_triangle(p1, p2, p3, colors, zs):
+    def draw_filled_triangle(p1, p2, p3, colors, zs, colorPerVertex):
         """Função usada para renderizar TriangleSet2D com bounding box para melhorar a performance."""
         
         def L1(x, y):
@@ -261,6 +261,27 @@ class GL:
             A2 = area(p1, p, p3)
             A3 = area(p1, p2, p)
             return A1 / A, A2 / A, A3 / A
+        
+        def perspective_color(p1, p2, p3, p, colors, zs):
+
+            alpha, beta, gamma = barycentric(p1, p2, p3, p)
+
+            z0 = abs(zs[0])
+            z1 = abs(zs[1])
+            z2 = abs(zs[2])
+
+            Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
+
+
+            R0, G0, B0 = colors[:3]
+            R1, G1, B1 = colors[3:6]
+            R2, G2, B2 = colors[6:]
+
+            R = round(Z*(R0 * alpha / z0 + R1 * beta / z1 + R2 * gamma / z2)*255)
+            G = round(Z*(G0 * alpha / z0 + G1 * beta / z1 + G2 * gamma / z2)*255)
+            B = round(Z*(B0 * alpha / z0 + B1 * beta / z1 + B2 * gamma / z2)*255)
+
+            return [R, G, B]
         
         z0 = abs(zs[0])
         z1 = abs(zs[1])
@@ -286,74 +307,27 @@ class GL:
 
                     Z_stored = gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)
 
-                    if Z < Z_stored:
+                    # if x == 5 and y == 6:
+                    #     print(f'Z_stored: {Z_stored}')
+                    #     print(f'Z: {Z}')
+
+                    if Z < Z_stored[0]:
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [Z])
                         prev_color = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8) * transparency
-                        new_color = np.array([round(n * 255) for n in colors["emissiveColor"]]) * (1 - transparency)
+                        if colorPerVertex:
+                            new_color = np.array(perspective_color(p1, p2, p3, [x, y], colors["polarColor"], zs)) * (1 - transparency)
+                        else:
+                            new_color = np.array([round(n * 255) for n in colors["emissiveColor"]]) * (1 - transparency)
+                        # if x == 5 and y == 6:
+                        #     print(f'prev_color: {prev_color}')
+                        #     print(f'new_color: {new_color}')
                         final_color = (prev_color + new_color).astype(np.uint8)
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, final_color)
 
     @staticmethod
-    def draw_filled_triangle_color_vertex(p1, p2, p3, colors, zs):
-        """Função usada para renderizar TriangleSet2D com bounding box para melhorar a performance."""
-        
-        def L1(x, y):
-            return (p2[1] - p1[1]) * x - (p2[0] - p1[0]) * y + p1[1] * (p2[0] - p1[0]) - p1[0] * (p2[1] - p1[1])
-        
-        def L2(x, y):
-            return (p3[1] - p2[1]) * x - (p3[0] - p2[0]) * y + p2[1] * (p3[0] - p2[0]) - p2[0] * (p3[1] - p2[1])
-        
-        def L3(x, y):
-            return (p1[1] - p3[1]) * x - (p1[0] - p3[0]) * y + p3[1] * (p1[0] - p3[0]) - p3[0] * (p1[1] - p3[1])
-        
-        def area(p1, p2, p3):
-            return 0.5 * np.abs((p2[0] - p1[0]) * (p3[1] - p1[1]) - (p3[0] - p1[0]) * (p2[1] - p1[1]))
-        
-        def barycentric(p1, p2, p3, p):
-            A = area(p1, p2, p3)
-            A1 = area(p, p2, p3)
-            A2 = area(p1, p, p3)
-            A3 = area(p1, p2, p)
-            return A1 / A, A2 / A, A3 / A
-        
-        def color(p1, p2, p3, p, colors, zs):
-
-            alpha, beta, gamma = barycentric(p1, p2, p3, p)
-
-            z0 = abs(zs[0])
-            z1 = abs(zs[1])
-            z2 = abs(zs[2])
-
-            Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
-
-
-            R0, G0, B0 = colors[:3]
-            R1, G1, B1 = colors[3:6]
-            R2, G2, B2 = colors[6:]
-
-            R = round(Z*(R0 * alpha / z0 + R1 * beta / z1 + R2 * gamma / z2)*255)
-            G = round(Z*(G0 * alpha / z0 + G1 * beta / z1 + G2 * gamma / z2)*255)
-            B = round(Z*(B0 * alpha / z0 + B1 * beta / z1 + B2 * gamma / z2)*255)
-
-            return [R, G, B]
-        
-        # Encontra a bounding box da triangle
-        min_x = int(max(0.0, min(p1[0], p2[0], p3[0])))
-        max_x = int(min(GL.width - 1, max(p1[0], p2[0], p3[0])))
-        min_y = int(max(0.0, min(p1[1], p2[1], p3[1])))
-        max_y = int(min(GL.height - 1, max(p1[1], p2[1], p3[1])))
-
-        # print(f"Drawing triangle with vertices {p1}, {p2}, {p3}")
-
-        for x in range(min_x, max_x + 1):  # Include the max_x by adding 1 to the range
-            for y in range(min_y, max_y + 1):  # Include the max_y by adding 1 to the range
-                if L1(x + 0.5, y + 0.5) >= 0 and L2(x + 0.5, y + 0.5) >= 0 and L3(x + 0.5, y + 0.5) >= 0:
-                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color(p1, p2, p3, [x, y], colors, zs))
-    @staticmethod
     def triangleSet(point, colors, colorPerVertex=False):
         """Função usada para renderizar TriangleSet."""
         
-        print(f'colors: {colors}')
         # Iterate over each triangle (each group of 3 points)
         for i in range(0, len(point), 9):  # 9 values for each triangle (3 points x 3 coordinates)
             # Extract the three vertices of the triangle
@@ -393,11 +367,8 @@ class GL:
             z3_camera = p3_view[2]
             zs = [z1_camera, z2_camera, z3_camera]
             
-            if colorPerVertex:
-                GL.draw_filled_triangle_color_vertex(p1_screen, p2_screen, p3_screen, colors, zs)
-
-            else:
-                GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs)
+            
+            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs, colorPerVertex)
         
 
 
@@ -627,23 +598,27 @@ class GL:
         """Função usada para renderizar IndexedFaceSet."""
         colorPerVertex = colorPerVertex and colorIndex
 
-        print(f'coord: {coord}')
+        # print(f'coord: {coord}')
         print(f'coordIndex: {coordIndex}')
-        print(f'colorPerVertex: {colorPerVertex}')
-        print(f'color: {color}')
-        print(f'colorIndex: {colorIndex}')
-        print(f'texCoord: {texCoord}')
-        print(f'texCoordIndex: {texCoordIndex}')
-        print(f'colors: {colors}')
-        print(f'current_texture: {current_texture}')
+        # print(f'colorPerVertex: {colorPerVertex}')
+        # print(f'color: {color}')
+        # print(f'colorIndex: {colorIndex}')
+        # print(f'texCoord: {texCoord}')
+        # print(f'texCoordIndex: {texCoordIndex}')
+        # print(f'colors: {colors}')
+        # print(f'current_texture: {current_texture}')
 
         # Add check if colorIndex list is empty
         
         i = 0
+        call_count = 0
         pivot_point = coord[coordIndex[i]*3:coordIndex[i]*3+3]
-        print(f"colorPerVertex: {colorPerVertex}")
+        pivot_index = coordIndex[i]
+        # print(f"colorPerVertex: {colorPerVertex}")
         if colorPerVertex:
             pivot_color = color[colorIndex[i]*3:colorIndex[i]*3+3]
+
+        i +=1 
         while i < len(coordIndex)-2:
             # Connect last vertex with the first one to close the triangle strip
             
@@ -652,16 +627,20 @@ class GL:
                     break
                 i += 2
                 pivot_point = coord[coordIndex[i]*3:coordIndex[i]*3+3]
+                pivot_index = coordIndex[i]
                 if colorPerVertex:
                     pivot_color = color[colorIndex[i]*3:colorIndex[i]*3+3]
+                i += 1
                 continue
 
             
 
             triangle = pivot_point + coord[coordIndex[i]*3:coordIndex[i]*3+3] + coord[coordIndex[i+1]*3:coordIndex[i+1]*3+3]
+
             if colorPerVertex:
-                colors = pivot_color + color[colorIndex[i]*3:colorIndex[i]*3+3] + color[colorIndex[i+1]*3:colorIndex[i+1]*3+3]
-            
+                colors['polarColor'] = pivot_color + color[colorIndex[i]*3:colorIndex[i]*3+3] + color[colorIndex[i+1]*3:colorIndex[i+1]*3+3]
+            call_count += 1
+            print(f"calling triangleSet {call_count} with {[pivot_index, coordIndex[i], coordIndex[i+1]]}")
             GL.triangleSet(triangle, colors, colorPerVertex)
             i += 1
 
