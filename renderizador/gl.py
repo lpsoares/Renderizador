@@ -16,6 +16,7 @@ import gpu          # Simula os recursos de uma GPU
 import math         # Funções matemáticas
 import numpy as np  # Biblioteca do Numpy
 import math
+import cv2
 
 class GL:
     """Classe que representa a biblioteca gráfica (Graphics Library)."""
@@ -237,12 +238,54 @@ class GL:
 
         print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
         print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
+    
+    @staticmethod
+    def generate_mipmaps(image_texture, max_levels=5, target_channels=4):
+        """Função para gerar mipmaps a partir de uma imagem original.
+        
+        Args:
+            image_texture: A imagem original.
+            max_levels: O número máximo de níveis de mipmap a serem gerados.
+            target_channels: O número desejado de canais (3 para RGB, 4 para RGBA).
+            
+        Returns:
+            mipmaps: Lista de mipmaps gerados.
+        """
+        
+        # Verificar o número de canais da imagem e converter se necessário
+        if len(image_texture.shape) == 2:  # Imagem em escala de cinza
+            print("Converting grayscale image to RGB")
+            image_texture = cv2.cvtColor(image_texture, cv2.COLOR_GRAY2RGB)
+        elif image_texture.shape[2] == 3 and target_channels == 4:
+            print("Converting RGB image to RGBA")
+            image_texture = cv2.cvtColor(image_texture, cv2.COLOR_RGB2RGBA)
+        elif image_texture.shape[2] == 4 and target_channels == 3:
+            print("Converting RGBA image to RGB")
+            image_texture = cv2.cvtColor(image_texture, cv2.COLOR_RGBA2RGB)
 
+        # Inicializar lista de mipmaps com a textura original
+        mipmaps = [image_texture]
+        current_texture = image_texture
+
+        for level in range(1, max_levels):
+            # Reduz o tamanho da textura pela metade para criar o próximo nível do mipmap
+            next_texture = cv2.resize(current_texture, 
+                                    (max(1, current_texture.shape[1] // 2), 
+                                    max(1, current_texture.shape[0] // 2)), 
+                                    interpolation=cv2.INTER_LINEAR)
+            mipmaps.append(next_texture)
+            current_texture = next_texture
+
+        return mipmaps
 
     @staticmethod
-    def draw_filled_triangle(p1, p2, p3, colors, zs, colorPerVertex):
+    def draw_filled_triangle(p1, p2, p3, colors, zs, colorPerVertex, textureFlag, tex_coords, image_texture):
         """Função usada para renderizar TriangleSet2D com bounding box para melhorar a performance."""
-        
+
+        if textureFlag:
+            texture_mipmaps = GL.generate_mipmaps(image_texture)
+
+
         def L1(x, y):
             return (p2[1] - p1[1]) * x - (p2[0] - p1[0]) * y + p1[1] * (p2[0] - p1[0]) - p1[0] * (p2[1] - p1[1])
         
@@ -263,7 +306,6 @@ class GL:
             return A1 / A, A2 / A, A3 / A
         
         def perspective_color(p1, p2, p3, p, colors, zs):
-
             alpha, beta, gamma = barycentric(p1, p2, p3, p)
 
             z0 = abs(zs[0])
@@ -283,6 +325,24 @@ class GL:
 
             return [R, G, B]
         
+        def texture_perspective_coords(p1, p2, p3, p, tex_coords, zs):
+            alpha, beta, gamma = barycentric(p1, p2, p3, p)
+
+            u0, v0 = tex_coords[0], tex_coords[1]
+            u1, v1 = tex_coords[2], tex_coords[3]
+            u2, v2 = tex_coords[4], tex_coords[5]
+
+            z0 = abs(zs[0])
+            z1 = abs(zs[1])
+            z2 = abs(zs[2])
+
+            Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
+
+            u = Z*(u0 * alpha / z0 + u1 * beta / z1 + u2 * gamma / z2)
+            v = Z*(v0 * alpha / z0 + v1 * beta / z1 + v2 * gamma / z2)
+
+            return [u, v]
+        
         z0 = abs(zs[0])
         z1 = abs(zs[1])
         z2 = abs(zs[2])
@@ -297,14 +357,56 @@ class GL:
 
         # print(f"Drawing triangle with vertices {p1}, {p2}, {p3}")
 
+        mip_level_print = 0
         for x in range(min_x, max_x + 1):  # Include the max_x by adding 1 to the range
             for y in range(min_y, max_y + 1):  # Include the max_y by adding 1 to the range
                 if L1(x + 0.5, y + 0.5) >= 0 and L2(x + 0.5, y + 0.5) >= 0 and L3(x + 0.5, y + 0.5) >= 0:
 
                     alpha, beta, gamma = barycentric(p1, p2, p3, [x, y])
 
-                    Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
+                    if textureFlag:
+                        [u, v] = texture_perspective_coords(p1, p2, p3, [x, y], tex_coords, zs)
 
+                        # Clamp u and v to the [0, 1] range
+                        # u = np.clip(u, 0, 1)
+                        # v = np.clip(v, 0, 1)
+                        x_00 = x
+                        y_00 = y
+                        x_10 = x + 1
+                        y_10 = y
+                        x_01 = x
+                        y_01 = y + 1
+
+                        [u_00, v_00] = texture_perspective_coords(p1, p2, p3, [x_00, y_00], tex_coords, zs)
+                        [u_10, v_10] = texture_perspective_coords(p1, p2, p3, [x_10, y_10], tex_coords, zs)
+                        [u_01, v_01] = texture_perspective_coords(p1, p2, p3, [x_01, y_01], tex_coords, zs)
+                    
+
+                        # Calculando as derivadas (dudx, dudy, dvdx, dvdy) para o cálculo do LOD
+                        dudx = (u_10 - u_00)/(x_10 - x_00)*image_texture.shape[0]  # texture.shape[1] é a largura da textura
+                        dudy = (u_01 - u_00)/(y_01 - y_00)*image_texture.shape[0]
+                        
+                        dvdx = (v_10 - v_00)/(x_10 - x_00)*image_texture.shape[1]  # texture.shape[0] é a altura da textura
+                        dvdy = (v_01 - v_00)/(y_01 - y_00)*image_texture.shape[1]
+
+
+                        # Calculando o nível de Mipmap baseado nas derivadas
+                        L = max(np.sqrt(dudx ** 2 + dvdx ** 2), np.sqrt(dudy ** 2 + dvdy ** 2))
+                        D = np.log2(L)
+
+                        
+                        mip_level = round(np.clip(D, 0, len(texture_mipmaps) - 1))
+                        if mip_level_print != mip_level:
+                            print(f'Mip level: {mip_level_print}')
+                        mip_level_print = mip_level
+
+                        # Selecionando a textura do nível de mipmap apropriado
+                        texture = texture_mipmaps[mip_level]
+
+                        u = int(u * (texture.shape[0] - 1))  # texture.shape[1] é a largura da textura
+                        v = int(-v * (texture.shape[1] - 1) + texture.shape[0])  # texture.shape[0] é a altura da textura
+
+                    Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
                     Z_stored = gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)
 
                     # if x == 5 and y == 6:
@@ -322,10 +424,15 @@ class GL:
                         #     print(f'prev_color: {prev_color}')
                         #     print(f'new_color: {new_color}')
                         final_color = (prev_color + new_color).astype(np.uint8)
+                        if textureFlag:
+                            
+                            final_color = texture[u, v]
+                            if len(final_color) > 3:
+                                final_color = final_color[:3]
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, final_color)
 
     @staticmethod
-    def triangleSet(point, colors, colorPerVertex=False):
+    def triangleSet(point, colors, triangle_texture, image_texture, colorPerVertex=False, textureFlag=False):
         """Função usada para renderizar TriangleSet."""
         
         # Iterate over each triangle (each group of 3 points)
@@ -368,7 +475,7 @@ class GL:
             zs = [z1_camera, z2_camera, z3_camera]
             
             
-            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs, colorPerVertex)
+            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs, colorPerVertex, textureFlag, triangle_texture, image_texture)
         
 
 
@@ -597,14 +704,20 @@ class GL:
                        texCoord, texCoordIndex, colors, current_texture):
         """Função usada para renderizar IndexedFaceSet."""
         colorPerVertex = colorPerVertex and colorIndex
+        textureFlag = False
+        if texCoord and texCoordIndex:
+            if len(texCoord) > 0 and len(texCoordIndex) > 0:
+                textureFlag = True
+        
 
         # print(f'coord: {coord}')
-        print(f'coordIndex: {coordIndex}')
+        # print(f'coordIndex: {coordIndex}')
         # print(f'colorPerVertex: {colorPerVertex}')
         # print(f'color: {color}')
         # print(f'colorIndex: {colorIndex}')
-        # print(f'texCoord: {texCoord}')
-        # print(f'texCoordIndex: {texCoordIndex}')
+        print(f'texCoord: {texCoord}')
+        print(f'texCoordIndex: {texCoordIndex}')
+        print(f'textureFlag: {textureFlag}')
         # print(f'colors: {colors}')
         # print(f'current_texture: {current_texture}')
 
@@ -614,9 +727,13 @@ class GL:
         call_count = 0
         pivot_point = coord[coordIndex[i]*3:coordIndex[i]*3+3]
         pivot_index = coordIndex[i]
+        image_texture = None
         # print(f"colorPerVertex: {colorPerVertex}")
         if colorPerVertex:
             pivot_color = color[colorIndex[i]*3:colorIndex[i]*3+3]
+        if textureFlag:
+            pivot_texture = texCoord[texCoordIndex[i]*2:texCoordIndex[i]*2+2]
+            image_texture = gpu.GPU.load_texture(current_texture[0])
 
         i +=1 
         while i < len(coordIndex)-2:
@@ -630,6 +747,8 @@ class GL:
                 pivot_index = coordIndex[i]
                 if colorPerVertex:
                     pivot_color = color[colorIndex[i]*3:colorIndex[i]*3+3]
+                elif textureFlag:
+                    pivot_texture = texCoord[texCoordIndex[i]*2:texCoordIndex[i]*2+2]
                 i += 1
                 continue
 
@@ -639,9 +758,13 @@ class GL:
 
             if colorPerVertex:
                 colors['polarColor'] = pivot_color + color[colorIndex[i]*3:colorIndex[i]*3+3] + color[colorIndex[i+1]*3:colorIndex[i+1]*3+3]
+            elif textureFlag:
+                triangle_texture = pivot_texture + texCoord[texCoordIndex[i]*2:texCoordIndex[i]*2+2] + texCoord[texCoordIndex[i+1]*2:texCoordIndex[i+1]*2+2]
+            else:
+                triangle_texture = None
             call_count += 1
             print(f"calling triangleSet {call_count} with {[pivot_index, coordIndex[i], coordIndex[i+1]]}")
-            GL.triangleSet(triangle, colors, colorPerVertex)
+            GL.triangleSet(triangle, colors, triangle_texture, image_texture, colorPerVertex, textureFlag)
             i += 1
 
 
