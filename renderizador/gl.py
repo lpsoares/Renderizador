@@ -432,7 +432,7 @@ class GL:
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, final_color)
 
     @staticmethod
-    def triangleSet(point, colors, triangle_texture, image_texture, colorPerVertex=False, textureFlag=False):
+    def triangleSet(point, colors, triangle_texture=None, image_texture=None, colorPerVertex=False, textureFlag=False):
         """Função usada para renderizar TriangleSet."""
         
         # Iterate over each triangle (each group of 3 points)
@@ -755,13 +755,13 @@ class GL:
             
 
             triangle = pivot_point + coord[coordIndex[i]*3:coordIndex[i]*3+3] + coord[coordIndex[i+1]*3:coordIndex[i+1]*3+3]
-
+            triangle_texture = None
             if colorPerVertex:
                 colors['polarColor'] = pivot_color + color[colorIndex[i]*3:colorIndex[i]*3+3] + color[colorIndex[i+1]*3:colorIndex[i+1]*3+3]
             elif textureFlag:
                 triangle_texture = pivot_texture + texCoord[texCoordIndex[i]*2:texCoordIndex[i]*2+2] + texCoord[texCoordIndex[i+1]*2:texCoordIndex[i+1]*2+2]
-            else:
-                triangle_texture = None
+            
+                
             call_count += 1
             print(f"calling triangleSet {call_count} with {[pivot_index, coordIndex[i], coordIndex[i+1]]}")
             GL.triangleSet(triangle, colors, triangle_texture, image_texture, colorPerVertex, textureFlag)
