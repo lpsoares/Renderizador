@@ -199,6 +199,10 @@ def SFNode(node, name, default):
                 return Box(child)
             if child.tag == "Sphere":
                 return Sphere(child)
+            if child.tag == "Cone":
+                return Cone(child)
+            if child.tag == "Cylinder":
+                return Cylinder(child)
             if child.tag == "IndexedFaceSet":
                 return IndexedFaceSet(child)
         elif name == "X3DMaterialNode":
