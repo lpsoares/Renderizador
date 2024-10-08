@@ -36,6 +36,7 @@ TESTE = []
 with open('docs/exemplos.json', 'r') as f:
     data = json.load(f)
 
+
 # Populate the TESTE list based on the JSON data
 for section in data['examples']:
     for example in section['examples']:
