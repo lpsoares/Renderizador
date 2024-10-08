@@ -50,7 +50,8 @@
       },
       { "title": "Primitivas Geométricas",
         "examples": [
-          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true }
+          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/primitivas/", "x3d": "outras_duas", "width": 300, "height": 200, "pause": true }
         ]
       },
       { "title": "Iluminação",
