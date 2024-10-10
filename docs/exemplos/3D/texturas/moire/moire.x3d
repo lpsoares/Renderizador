@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position='0 -0.112 2.5'/>
+    <Transform rotation="1 0 0 -1.0">
+      <Shape>
+        <IndexedFaceSet colorPerVertex='false' coordIndex='0 1 2 -1 2 3 0 -1' texCoordIndex='0 1 2 -1 2 3 0 -1'>
+          <Coordinate point='-1 -1.2 0  1 -1.2 0  1 4 0  -1 4 0 '/>
+          <TextureCoordinate point='0 0 1 0 1 1 0 1'/>
+        </IndexedFaceSet>
+        <Appearance>
+          <ImageTexture url=' "green_dark_grey_lines_128x128.png" '/>
+        </Appearance>
+      </Shape>
+    </Transform>
+  </Scene>
+</X3D>

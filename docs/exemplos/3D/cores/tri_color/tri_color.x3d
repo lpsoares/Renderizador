@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position="0 0 10"/>
+    <Transform rotation="0 1 0 0.52">
+      <Shape>
+        <IndexedFaceSet colorPerVertex='true' coordIndex='0 1 2 -1' colorIndex='0 1 2 -1'>
+          <Coordinate point='-1 -1 0 1 -1 0 0 1 0'/>
+          <Color color='1 0 0 0 1 0 0 0 1'/>
+        </IndexedFaceSet>
+      </Shape>
+    </Transform>
+  </Scene>
+</X3D>

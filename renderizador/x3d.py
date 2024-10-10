@@ -199,6 +199,10 @@ def SFNode(node, name, default):
                 return Box(child)
             if child.tag == "Sphere":
                 return Sphere(child)
+            if child.tag == "Cone":
+                return Cone(child)
+            if child.tag == "Cylinder":
+                return Cylinder(child)
             if child.tag == "IndexedFaceSet":
                 return IndexedFaceSet(child)
         elif name == "X3DMaterialNode":
@@ -905,6 +909,42 @@ class Sphere(X3DGeometryNode):
         if self.radius:
             X3D.renderer["Sphere"](radius=self.radius, colors=colors)
 
+
+class Cone(X3DGeometryNode):
+    """Classe responsável por geometria Cone, que é um cone com centro no (0,0,0)."""
+
+    def __init__(self, node):
+        """Parse do nó X3D."""
+        super().__init__(node) # Chama construtor da classe pai
+        self.bottomRadius  = SFFloat(node, "bottomRadius", 1)
+        self.height = SFFloat(node, "height", 2)
+
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        if "Cone" not in X3D.renderer:
+            raise Exception("Cone não foi implementado.")
+
+        colors = get_colors(appearance)
+        if self.height and self.bottomRadius:
+            X3D.renderer["Cone"](bottomRadius=self.bottomRadius, height=self.height, colors=colors)
+
+class Cylinder(X3DGeometryNode):
+    """Classe responsável por geometria Cylinder, que é uma cilindro com centro no (0,0,0)."""
+
+    def __init__(self, node):
+        """Parse do nó X3D."""
+        super().__init__(node) # Chama construtor da classe pai
+        self.radius = SFFloat(node, "radius", 1)
+        self.height = SFFloat(node, "height", 2)
+
+    def render(self, appearance=None):
+        """Rotina de renderização."""
+        if "Cylinder" not in X3D.renderer:
+            raise Exception("Cylinder não foi implementado.")
+
+        colors = get_colors(appearance)
+        if self.radius and self.height:
+            X3D.renderer["Cylinder"](radius=self.radius, height=self.height, colors=colors)
 
 class IndexedFaceSet(X3DComposedGeometryNode):
     """Classe responsável por geometria Indexed Face Set, que é uma malha de polígonos."""

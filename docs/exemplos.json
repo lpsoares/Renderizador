@@ -34,23 +34,24 @@
           
         ]
       },
-      { "title": "Cores e Texturas",
+      { "title": "Interpolação 3D",
         "examples": [
           { "path": "3D/cores/", "x3d": "quadrado", "width": 300, "height": 200, "pause": true },
           { "path": "3D/cores/", "x3d": "flechas", "width": 300, "height": 200, "pause": true },
           { "path": "3D/texturas/", "x3d": "textura", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/texturas/", "x3d": "texturas", "width": 300, "height": 200, "pause": true }
+          { "path": "3D/texturas/", "x3d": "texturas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "retangulos", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/transparencia/", "x3d": "transparente", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/cores/", "x3d": "tri_color", "width": 60, "height": 40, "pause": true },
+          { "path": "3D/texturas/", "x3d": "tri_textur", "width": 60, "height": 40, "pause": true },
+          { "path": "3D/grafo_de_cena/", "x3d": "dois_tri", "width": 12, "height": 10, "pause": true },
+          { "path": "3D/transparencia/", "x3d": "tri_trans", "width": 12, "height": 10, "pause": true }
         ]
       },
       { "title": "Primitivas Geométricas",
         "examples": [
-          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true }
-        ]
-      },
-      { "title": "Z-buffer e Transparência",
-        "examples": [
-          { "path": "3D/malhas/", "x3d": "retangulos", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/transparencia/", "x3d": "transparente", "width": 300, "height": 200, "pause": true }
+          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/primitivas/", "x3d": "outras_duas", "width": 300, "height": 200, "pause": true }
         ]
       },
       { "title": "Iluminação",
