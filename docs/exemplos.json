@@ -65,7 +65,8 @@
       { "title": "Animações",
         "examples": [
           { "path": "3D/animacoes/", "x3d": "onda", "width": 300, "height": 200, "pause": false },
-          { "path": "3D/animacoes/", "x3d": "piramide", "width": 300, "height": 200, "pause": false }
+          { "path": "3D/animacoes/", "x3d": "piramide", "width": 300, "height": 200, "pause": false },
+          { "path": "3D/animacoes/", "x3d": "voltas", "width": 200, "height": 200, "pause": false }
         ]
       }
     ]

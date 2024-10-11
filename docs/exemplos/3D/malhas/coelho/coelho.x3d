@@ -2,11 +2,11 @@
 <X3D>
   <Scene>
 
-    <NavigationInfo headlight="true"/> <!-- You can ignore this node for the moment -->
+    <NavigationInfo headlight="true"/>
 
     <Viewpoint position="-1 4.3 10"/> <!-- https://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/navigation.html -->
 
-    <!-- Coelho -->
+    <!-- Coelho de Stanford: https://graphics.stanford.edu/data/3Dscanrep/ -->
     <Transform scale="44 44 44">
       <Shape>
         <Appearance><Material diffuseColor="0.95 0.95 0.95"/></Appearance>
