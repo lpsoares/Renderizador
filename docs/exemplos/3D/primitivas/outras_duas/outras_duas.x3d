@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position="0 0 10" fieldOfView="0.785" orientation="0 0 1 0"/>
+    <NavigationInfo headlight='false'/>
+
+    <Transform translation="-5 0 -10" rotation="0.7071 0 0.7071 0.7">
+      <Shape>
+        <Cylinder height="8" radius="3"/>
+        <Appearance>
+          <Material emissiveColor="0.9 0.9 0.5"/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <Transform translation="6 0 -10" rotation="1 0 0 0.5">
+      <Shape>
+        <Cone height="8" bottomRadius="4"/>
+        <Appearance>
+          <Material emissiveColor="0.9 0.3 0.2"/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+  </Scene>
+</X3D>

@@ -50,20 +50,23 @@
       },
       { "title": "Primitivas Geométricas",
         "examples": [
-          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true }
+          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/primitivas/", "x3d": "outras_duas", "width": 300, "height": 200, "pause": true }
         ]
       },
       { "title": "Iluminação",
         "examples": [
           { "path": "3D/malhas/", "x3d": "difusos", "width": 300, "height": 200, "pause": true },
           { "path": "3D/primitivas/", "x3d": "caixas", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/iluminacao/", "x3d": "esferas", "width": 150, "height": 100, "pause": true }
+          { "path": "3D/iluminacao/", "x3d": "esferas", "width": 150, "height": 100, "pause": true },
+          { "path": "3D/malhas/", "x3d": "coelho", "width": 600, "height": 400, "pause": true }
         ]
       },
       { "title": "Animações",
         "examples": [
           { "path": "3D/animacoes/", "x3d": "onda", "width": 300, "height": 200, "pause": false },
-          { "path": "3D/animacoes/", "x3d": "piramide", "width": 300, "height": 200, "pause": false }
+          { "path": "3D/animacoes/", "x3d": "piramide", "width": 300, "height": 200, "pause": false },
+          { "path": "3D/animacoes/", "x3d": "voltas", "width": 200, "height": 200, "pause": false }
         ]
       }
     ]

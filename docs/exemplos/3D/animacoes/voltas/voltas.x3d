@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position='0 0 10'/>
+    <NavigationInfo headlight='false'/>
+    <DirectionalLight ambientIntensity='0.5' direction="0.096 -0.804 -0.587"/>
+
+    <TimeSensor DEF='relogio' cycleInterval='10' loop='true'/>
+    <OrientationInterpolator DEF='rotacao_1' key='0.00 0.25 0.50 0.75 1.00' keyValue='1 0 0 0 1 0 0 1.57079 1 0 0 3.14159 1 0 0 4.7123889 1 0 0 6.2831852'/>
+    <OrientationInterpolator DEF='rotacao_2' key='0.00 0.25 0.50 0.75 1.00' keyValue='0 1 0 0 0 1 0 1.57079 0 1 0 3.14159 0 1 0 4.7123889 0 1 0 6.2831852'/>
+
+    <Transform  DEF='cubo_1'>
+      <Transform  DEF='cubo_2'>
+        <Shape>
+          <Box size="2 2 2"/>
+          <Appearance>
+            <Material diffuseColor="1 1 1" ambientIntensity="0.80"/>
+            <ImageTexture url=' "insper.png" '/>
+          </Appearance>
+        </Shape>
+      </Transform>
+    </Transform>
+
+    <ROUTE fromNode='relogio' fromField='fraction_changed' toNode='rotacao_1' toField='set_fraction'/>
+    <ROUTE fromNode='rotacao_1' fromField='value_changed' toNode='cubo_1' toField='rotation'/>
+    
+    <ROUTE fromNode='relogio' fromField='fraction_changed' toNode='rotacao_2' toField='set_fraction'/>
+    <ROUTE fromNode='rotacao_2' fromField='value_changed' toNode='cubo_2' toField='rotation'/>
+
+  </Scene>
+</X3D>
