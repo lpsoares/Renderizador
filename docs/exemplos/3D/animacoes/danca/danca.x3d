@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+  
+    <Viewpoint position="0 0 10"/>
+    
+    <TimeSensor DEF='relogio' cycleInterval='8' loop='true'/>
+  
+    <SplinePositionInterpolator DEF="move" closed="false"
+          key="     0.00     0.2     0.4      0.6    0.8     1.00"
+          keyValue="-5 -1 0  -3 1 0  -1 -1 0  1 1 0  3 -1 0  5 1 0"/>
+  
+    <Transform DEF='esfera'>
+      <Shape>
+        <Sphere/>
+        <Appearance>
+          <Material diffuseColor='0.0 1.0 1.0'/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+    <ROUTE fromNode='relogio' fromField='fraction_changed' toNode='move' toField='set_fraction'/>
+    <ROUTE fromNode='move' fromField='value_changed' toNode='esfera' toField='translation'/>
+
+  </Scene>
+</X3D>
