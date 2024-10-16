@@ -60,6 +60,7 @@
           { "path": "3D/primitivas/", "x3d": "caixas", "width": 300, "height": 200, "pause": true },
           { "path": "3D/iluminacao/", "x3d": "esferas", "width": 150, "height": 100, "pause": true },
           { "path": "3D/iluminacao/", "x3d": "cubo", "width": 150, "height": 100, "pause": true },
+          { "path": "3D/malhas/", "x3d": "teapot", "width": 150, "height": 100, "pause": true },
           { "path": "3D/malhas/", "x3d": "coelho", "width": 600, "height": 400, "pause": true }
         ]
       },
