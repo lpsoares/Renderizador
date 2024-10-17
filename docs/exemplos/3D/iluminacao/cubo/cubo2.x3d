@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+  
+    <Viewpoint position="0 0 5"/>
+    <NavigationInfo headlight='false'/>
+  
+    <DirectionalLight direction="0 -0.8 -0.6" color="1 1 1" intensity="1" ambientIntensity="0.4"/>
+
+    <Transform rotation="0.64 0.75 0 0.7">
+      <Shape>
+        <Box/>
+        <Appearance>
+          <Material specularColor='1.0 1.0 1.0' diffuseColor='1.0 1.0 0.0' shininess='0.2'
+                    ambientIntensity="0.3" emissiveColor="0 0 0"/>
+        </Appearance>
+      </Shape>
+    </Transform>
+
+  </Scene>
+</X3D>
