@@ -436,7 +436,9 @@ class GL:
         """Função usada para renderizar TriangleSet."""
         
         # Iterate over each triangle (each group of 3 points)
+        print("Drawing triangle")
         for i in range(0, len(point), 9):  # 9 values for each triangle (3 points x 3 coordinates)
+            print("Drawing triangle")
             # Extract the three vertices of the triangle
             p1 = np.array([point[i], point[i+1], point[i+2], 1])  # Homogeneous coordinates
             p2 = np.array([point[i+3], point[i+4], point[i+5], 1])
@@ -503,6 +505,7 @@ class GL:
         # Conversão de rotação (eixo + ângulo) para quaternion
         axis = np.array(orientation[:3])
         angle = orientation[3]
+        print(angle)
         axis = axis / np.linalg.norm(axis)  # Normaliza o eixo de rotação
         sin_half_angle = np.sin(angle / 2)
         cos_half_angle = np.cos(angle / 2)
@@ -521,7 +524,7 @@ class GL:
             [2*x*y + 2*z*w, 1 - 2*x*x - 2*z*z, 2*y*z - 2*x*w, 0],
             [2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*x*x - 2*y*y, 0],
             [0, 0, 0, 1]
-        ])
+        ]).T
 
         # Create the translation matrix to move the scene by the negative camera position
         translation_matrix = np.array([
@@ -763,7 +766,6 @@ class GL:
             
                 
             call_count += 1
-            print(f"calling triangleSet {call_count} with {[pivot_index, coordIndex[i], coordIndex[i+1]]}")
             GL.triangleSet(triangle, colors, triangle_texture, image_texture, colorPerVertex, textureFlag)
             i += 1
 
@@ -772,66 +774,209 @@ class GL:
     @staticmethod
     def box(size, colors):
         """Função usada para renderizar Boxes."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/geometry3D.html#Box
-        # A função box é usada para desenhar paralelepípedos na cena. O Box é centrada no
-        # (0, 0, 0) no sistema de coordenadas local e alinhado com os eixos de coordenadas
-        # locais. O argumento size especifica as extensões da caixa ao longo dos eixos X, Y
-        # e Z, respectivamente, e cada valor do tamanho deve ser maior que zero. Para desenha
-        # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
-        # encontre os vértices e defina os triângulos.
+        # Box is centered at (0, 0, 0) and extends along the X, Y, and Z axes based on 'size'.
+        
+        # Extracting size values for clarity
+        sx, sy, sz = size[0] / 2, size[1] / 2, size[2] / 2  # Divide by 2 since the box is centered at the origin
+        
+        # Define the 8 vertices of the box
+        coord = [
+            [-sx, sy, -sz],  
+            [-sx, sy, sz],  
+            [sx,  sy, sz],
+            [sx,  sy, -sz],  
+            [-sx, -sy,  -sz],  
+            [-sx, -sy,  sz],  
+            [sx,  -sy,  sz],  
+            [sx,  -sy,  -sz]   
+        ]
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Box : size = {0}".format(size)) # imprime no terminal pontos
-        print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
+        # Define the faces of the box using indices
+        # Each face is represented by two triangles (triangle strips or indexed faces)
+        points = [
+            coord[0], coord[1], coord[3],
+            coord[1], coord[2], coord[3],
+            coord[0], coord[4], coord[1],
+            coord[4], coord[5], coord[1],
+            coord[1], coord[5], coord[2],
+            coord[5], coord[6], coord[2],
+            coord[2], coord[6], coord[3],
+            coord[6], coord[7], coord[3],
+            coord[3], coord[7], coord[0],
+            coord[7], coord[4], coord[0],
+            coord[4], coord[7], coord[5],
+            coord[7], coord[6], coord[5]
+        ]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        points = np.array(points).flatten()
+
+        # If no specific colors are provided, we can assume a default color (e.g., white)
+        if colors is None:
+            colors = {'polarColor': [1.0, 1.0, 1.0] * 4}
+        print(points)
+        GL.triangleSet(points, colors)
+
+
 
     @staticmethod
     def sphere(radius, colors):
         """Função usada para renderizar Esferas."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/geometry3D.html#Sphere
-        # A função sphere é usada para desenhar esferas na cena. O esfera é centrada no
-        # (0, 0, 0) no sistema de coordenadas local. O argumento radius especifica o
-        # raio da esfera que está sendo criada. Para desenha essa esfera você vai
-        # precisar tesselar ela em triângulos, para isso encontre os vértices e defina
-        # os triângulos.
+        
+        # Configurações para tesselar a esfera
+        lat_steps = 20  # Número de divisões ao longo da latitude
+        lon_steps = 20  # Número de divisões ao longo da longitude
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
-        print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
+        # Arrays para armazenar os vértices e os índices
+        coord = []
+        coordIndex = []
+
+        # Gerar vértices da esfera
+        for i in range(lat_steps + 1):
+            theta = i * math.pi / lat_steps  # De 0 a pi (de polo a polo)
+            sin_theta = math.sin(theta)
+            cos_theta = math.cos(theta)
+
+            for j in range(lon_steps):
+                phi = j * 2 * math.pi / lon_steps  # De 0 a 2*pi (em torno da esfera)
+                sin_phi = math.sin(phi)
+                cos_phi = math.cos(phi)
+
+                # Coordenadas do vértice na esfera
+                x = radius * sin_theta * cos_phi
+                y = radius * cos_theta
+                z = radius * sin_theta * sin_phi
+
+                coord.extend([x, y, z])
+
+        # Gerar os índices para criar os triângulos (faces)
+        for i in range(lat_steps):
+            for j in range(lon_steps):
+                first = i * lon_steps + j
+                second = first + lon_steps
+
+                # Criar dois triângulos para cada quadrado da malha
+                coordIndex.extend([first, second, (first + 1) % lon_steps + i * lon_steps, -1])
+                coordIndex.extend([(first + 1) % lon_steps + i * lon_steps, second, (second + 1) % lon_steps + (i + 1) * lon_steps, -1])
+
+        # Se as cores não forem fornecidas, usa uma cor padrão (branco)
+        if colors is None:
+            colors = {'polarColor': [1.0, 1.0, 1.0] * 4}
+
+        # Nenhuma textura está sendo usada aqui
+        texCoord = None
+        texCoordIndex = None
+        current_texture = None
+
+        # Chamar a função indexedFaceSet para desenhar a esfera
+        GL.indexedFaceSet(coord, coordIndex, False, None, None, texCoord, texCoordIndex, colors, current_texture)
+
+
 
     @staticmethod
-    def cone(bottomRadius, height, colors):
+    def cone(bottomRadius, height, colors, sides=20):
         """Função usada para renderizar Cones."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/geometry3D.html#Cone
-        # A função cone é usada para desenhar cones na cena. O cone é centrado no
-        # (0, 0, 0) no sistema de coordenadas local. O argumento bottomRadius especifica o
-        # raio da base do cone e o argumento height especifica a altura do cone.
-        # O cone é alinhado com o eixo Y local. O cone é fechado por padrão na base.
-        # Para desenha esse cone você vai precisar tesselar ele em triângulos, para isso
-        # encontre os vértices e defina os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Cone : bottomRadius = {0}".format(bottomRadius)) # imprime no terminal o raio da base do cone
-        print("Cone : height = {0}".format(height)) # imprime no terminal a altura do cone
-        print("Cone : colors = {0}".format(colors)) # imprime no terminal as cores
+        # Listas para armazenar os vértices e os índices
+        coord = []
+        coordIndex = []
+
+        # Adicionar o vértice da ponta do cone (o vértice superior)
+        apex = [0, height / 2, 0]  # Vértice superior centrado no eixo Y
+        coord.extend(apex)
+
+        # Gerar os vértices da base do cone (distribuídos ao longo de um círculo)
+        for i in range(sides):
+            angle = i * 2 * math.pi / sides
+            x = bottomRadius * math.cos(angle)
+            z = bottomRadius * math.sin(angle)
+            coord.extend([x, -height / 2, z])  # Adicionar vértice da base no eixo Y negativo
+
+        # Adicionar os índices para os triângulos laterais (da ponta à base)
+        for i in range(sides):
+            next_index = (i + 1) % sides + 1
+            coordIndex.extend([0, i + 1, next_index, -1])
+
+        # Adicionar os índices para a base (usando triângulos em "leque")
+        base_center_index = len(coord) // 3  # Índice para o centro da base
+        coord.extend([0, -height / 2, 0])  # Adicionar o centro da base
+
+        for i in range(sides):
+            next_index = (i + 1) % sides + 1
+            coordIndex.extend([base_center_index, next_index, i + 1, -1])
+
+        # Se as cores não forem fornecidas, usar uma cor padrão (branco)
+        if colors is None:
+            colors = {'polarColor': [1.0, 1.0, 1.0] * 3}
+
+        # Nenhuma textura está sendo usada aqui
+        texCoord = None
+        texCoordIndex = None
+        current_texture = None
+
+        # Chamar a função indexedFaceSet para desenhar o cone
+        GL.indexedFaceSet(coord, coordIndex, False, None, None, texCoord, texCoordIndex, colors, current_texture)
+
 
     @staticmethod
-    def cylinder(radius, height, colors):
+    def cylinder(radius, height, colors, sides=20):
         """Função usada para renderizar Cilindros."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/geometry3D.html#Cylinder
-        # A função cylinder é usada para desenhar cilindros na cena. O cilindro é centrado no
-        # (0, 0, 0) no sistema de coordenadas local. O argumento radius especifica o
-        # raio da base do cilindro e o argumento height especifica a altura do cilindro.
-        # O cilindro é alinhado com o eixo Y local. O cilindro é fechado por padrão em ambas as extremidades.
-        # Para desenha esse cilindro você vai precisar tesselar ele em triângulos, para isso
-        # encontre os vértices e defina os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Cylinder : radius = {0}".format(radius)) # imprime no terminal o raio do cilindro
-        print("Cylinder : height = {0}".format(height)) # imprime no terminal a altura do cilindro
-        print("Cylinder : colors = {0}".format(colors)) # imprime no terminal as cores
+        # Listas para armazenar os vértices e os índices
+        coord = []
+        coordIndex = []
+
+        # Gerar os vértices das bases do cilindro (superior e inferior)
+        for i in range(sides):
+            angle = i * 2 * math.pi / sides
+            x = radius * math.cos(angle)
+            z = radius * math.sin(angle)
+
+            # Vértice superior (no eixo Y positivo)
+            coord.extend([x, height / 2, z])
+            # Vértice inferior (no eixo Y negativo)
+            coord.extend([x, -height / 2, z])
+
+        # Adicionar os índices para os triângulos das laterais do cilindro
+        for i in range(sides):
+            next_index = (i + 1) % sides
+            top1 = i * 2
+            bottom1 = i * 2 + 1
+            top2 = next_index * 2
+            bottom2 = next_index * 2 + 1
+            # Triângulo 1 da lateral
+            coordIndex.extend([top1, bottom1, top2, -1])
+            # Triângulo 2 da lateral
+            coordIndex.extend([bottom1, bottom2, top2, -1])
+
+        # Adicionar os vértices centrais das bases
+        top_center_index = len(coord) // 3
+        coord.extend([0, height / 2, 0])  # Centro da base superior
+        bottom_center_index = top_center_index + 1
+        coord.extend([0, -height / 2, 0])  # Centro da base inferior
+
+        # Adicionar os índices para fechar as bases (triângulos em leque)
+        for i in range(sides):
+            next_index = (i + 1) % sides
+            top1 = i * 2
+            bottom1 = i * 2 + 1
+
+            # Fechar a base superior
+            coordIndex.extend([top_center_index, top1, next_index * 2, -1])
+            # Fechar a base inferior
+            coordIndex.extend([bottom_center_index, next_index * 2 + 1, bottom1, -1])
+
+        # Se as cores não forem fornecidas, usar uma cor padrão (branco)
+        if colors is None:
+            colors = {'polarColor': [1.0, 1.0, 1.0] * 3}
+
+        # Nenhuma textura está sendo usada aqui
+        texCoord = None
+        texCoordIndex = None
+        current_texture = None
+
+        # Chamar a função indexedFaceSet para desenhar o cilindro
+        GL.indexedFaceSet(coord, coordIndex, False, None, None, texCoord, texCoordIndex, colors, current_texture)
+
 
     @staticmethod
     def navigationInfo(headlight):
