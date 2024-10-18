@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+  
+    <Viewpoint position="0 0 10"/>
+    <NavigationInfo headlight='true'/>
+  
+    <Transform>
+			<Shape>
+				<Appearance>
+          <Material specularColor='1.0 1.0 1.0' diffuseColor='0.1 0.7 1.0' shininess='0.4'
+                    ambientIntensity="0.0" emissiveColor="0 0 0"/>
+        </Appearance>
+				<TriangleSet>
+					<Coordinate point='
+										-5  -4  -1 
+										 7  -2  -3
+										 2   5  -4
+								'/>
+				</TriangleSet>
+			</Shape>
+		</Transform>
+
+  </Scene>
+</X3D>
