@@ -28,6 +28,12 @@ class GL:
     projection_matrix = None  # Armazena a matriz de projeção
     transformation_stack = [np.identity(4)]  # Pilha para armazenar as matrizes de transformação
     view_matrix = None  # Armazena a matriz de visualização
+    directional_light = {
+        "ambientIntensity": 0.0,
+        "color": np.array([1.0, 1.0, 1.0]),  # Default white light
+        "intensity": 1.0,
+        "direction": np.array([0.0, 0.0, -1.0])  # Default direction
+    }
 
     @staticmethod
     def setup(width, height, ssaa_factor, near=0.01, far=1000):
@@ -279,11 +285,19 @@ class GL:
         return mipmaps
 
     @staticmethod
-    def draw_filled_triangle(p1, p2, p3, colors, zs, colorPerVertex, textureFlag, tex_coords, image_texture):
+    def draw_filled_triangle(p1, p2, p3, colors, zs, colorPerVertex, textureFlag, tex_coords, image_texture, p1_view, p2_view, p3_view):
         """Função usada para renderizar TriangleSet2D com bounding box para melhorar a performance."""
 
         if textureFlag:
             texture_mipmaps = GL.generate_mipmaps(image_texture)
+
+        # Compute the normal in camera space for lighting calculations
+        def compute_normal_camera_space(p1_view, p2_view, p3_view):
+            u = p2_view[:3] - p1_view[:3]  # Vector from p1 to p2 in camera space
+            v = p3_view[:3] - p1_view[:3]  # Vector from p1 to p3 in camera space
+            normal = np.cross(u, v)        # Cross product to find normal
+            normal /= np.linalg.norm(normal)  # Normalize the normal vector
+            return normal
 
 
         def L1(x, y):
@@ -342,6 +356,33 @@ class GL:
             v = Z*(v0 * alpha / z0 + v1 * beta / z1 + v2 * gamma / z2)
 
             return [u, v]
+        
+        def get_color(color_array, flag):
+            
+            I_Lrgb = GL.directional_light["color"] #light color
+            I_i = GL.directional_light["intensity"] #light intensity
+            I_ia = GL.directional_light["ambientIntensity"] #ambient intensity
+            O_Ergb = np.array(color_array["emissiveColor"]) #emissive color
+            O_Drgb = np.array(color_array["diffuseColor"])
+            O_Srgb = np.array(color_array["specularColor"])
+            O_a = np.array(color_array["ambientIntensity"])
+
+            # Direction of the light source remember to handle the sign
+            L = -GL.directional_light["direction"]
+            # normalizes normal vector at this point on geometry
+            N = compute_normal_camera_space(p1_view, p2_view, p3_view)
+            # normalized vector from point on geometry to viewers position
+            v = N # vector from point on geometry to viewers position
+
+            
+
+            ambient_i = I_ia * O_Drgb * O_a
+            diffuse_i = I_i * O_Drgb * np.dot(L, N)
+            specular_i = I_i * O_Srgb * (np.dot(N, (L + v)/np.linalg.norm(L+v)))**(color_array["shininess"]*128)
+            I_rgb = O_Ergb + I_i * (ambient_i + diffuse_i + specular_i)
+
+            I_rgb = np.clip(I_rgb, 0, 1)
+            return [round(n*255) for n in I_rgb]
         
         z0 = abs(zs[0])
         z1 = abs(zs[1])
@@ -409,41 +450,32 @@ class GL:
                     Z = 1/(alpha/z0 + beta/z1 + gamma/z2)
                     Z_stored = gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)
 
-                    # if x == 5 and y == 6:
-                    #     print(f'Z_stored: {Z_stored}')
-                    #     print(f'Z: {Z}')
-
                     if Z < Z_stored[0]:
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [Z])
                         prev_color = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8) * transparency
                         if colorPerVertex:
                             new_color = np.array(perspective_color(p1, p2, p3, [x, y], colors["polarColor"], zs)) * (1 - transparency)
                         else:
-                            new_color = np.array([round(n * 255) for n in colors["emissiveColor"]]) * (1 - transparency)
-                        # if x == 5 and y == 6:
-                        #     print(f'prev_color: {prev_color}')
-                        #     print(f'new_color: {new_color}')
+                            c = get_color(colors,flag=False)
+                            new_color = np.array(c) * (1 - transparency)
+
                         final_color = (prev_color + new_color).astype(np.uint8)
                         if textureFlag:
-                            
                             final_color = texture[u, v]
                             if len(final_color) > 3:
                                 final_color = final_color[:3]
+
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, final_color)
+
 
     @staticmethod
     def triangleSet(point, colors, triangle_texture=None, image_texture=None, colorPerVertex=False, textureFlag=False):
         """Função usada para renderizar TriangleSet."""
-        
-        # Iterate over each triangle (each group of 3 points)
-        print("Drawing triangle")
-        for i in range(0, len(point), 9):  # 9 values for each triangle (3 points x 3 coordinates)
-            print("Drawing triangle")
-            # Extract the three vertices of the triangle
-            p1 = np.array([point[i], point[i+1], point[i+2], 1])  # Homogeneous coordinates
-            p2 = np.array([point[i+3], point[i+4], point[i+5], 1])
-            p3 = np.array([point[i+6], point[i+7], point[i+8], 1])
 
+        for i in range(0, len(point), 9):  # 9 values for each triangle (3 points x 3 coordinates)
+            p1 = np.array([point[i], point[i + 1], point[i + 2], 1])  # Homogeneous coordinates
+            p2 = np.array([point[i + 3], point[i + 4], point[i + 5], 1])
+            p3 = np.array([point[i + 6], point[i + 7], point[i + 8], 1])
 
             # Apply the current transformation matrix from the stack
             current_transform = GL.transformation_stack[-1]
@@ -451,17 +483,17 @@ class GL:
             p2_transformed = current_transform @ p2
             p3_transformed = current_transform @ p3
 
-            # Apply view
-            p2_view = GL.view_matrix @ p2_transformed
+            # Apply view transformation
             p1_view = GL.view_matrix @ p1_transformed
+            p2_view = GL.view_matrix @ p2_transformed
             p3_view = GL.view_matrix @ p3_transformed
 
-            # Apply projection
+            # Apply projection transformation
             p1_projected = GL.projection_matrix @ p1_view
             p2_projected = GL.projection_matrix @ p2_view
             p3_projected = GL.projection_matrix @ p3_view
 
-            # Convert from homogeneous to 2D coordinates
+            # Convert from homogeneous to 2D screen coordinates
             p1_screen = p1_projected[:2] / p1_projected[3]
             p2_screen = p2_projected[:2] / p2_projected[3]
             p3_screen = p3_projected[:2] / p3_projected[3]
@@ -471,14 +503,11 @@ class GL:
             p2_screen = np.array([(p2_screen[0] + 1) * (GL.width / 2), (1 - p2_screen[1]) * (GL.height / 2)])
             p3_screen = np.array([(p3_screen[0] + 1) * (GL.width / 2), (1 - p3_screen[1]) * (GL.height / 2)])
 
-            z1_camera = p1_view[2]
-            z2_camera = p2_view[2]
-            z3_camera = p3_view[2]
-            zs = [z1_camera, z2_camera, z3_camera]
-            
-            
-            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs, colorPerVertex, textureFlag, triangle_texture, image_texture)
-        
+            # Z values in camera space (used for depth comparison)
+            zs = [p1_view[2], p2_view[2], p3_view[2]]
+
+            # Now pass the view-space coordinates (p1_view, p2_view, p3_view) to the draw_filled_triangle function
+            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs, colorPerVertex, textureFlag, triangle_texture, image_texture, p1_view, p2_view, p3_view)
 
 
     @staticmethod
@@ -823,8 +852,8 @@ class GL:
         """Função usada para renderizar Esferas."""
         
         # Configurações para tesselar a esfera
-        lat_steps = 20  # Número de divisões ao longo da latitude
-        lon_steps = 20  # Número de divisões ao longo da longitude
+        lat_steps = 100  # Número de divisões ao longo da latitude
+        lon_steps = 100  # Número de divisões ao longo da longitude
 
         # Arrays para armazenar os vértices e os índices
         coord = []
@@ -855,8 +884,10 @@ class GL:
                 second = first + lon_steps
 
                 # Criar dois triângulos para cada quadrado da malha
-                coordIndex.extend([first, second, (first + 1) % lon_steps + i * lon_steps, -1])
-                coordIndex.extend([(first + 1) % lon_steps + i * lon_steps, second, (second + 1) % lon_steps + (i + 1) * lon_steps, -1])
+                # Invertendo a ordem dos vértices para cada triângulo
+                coordIndex.extend([first, (first + 1) % lon_steps + i * lon_steps, second, -1])
+                coordIndex.extend([(first + 1) % lon_steps + i * lon_steps, (second + 1) % lon_steps + (i + 1) * lon_steps, second, -1])
+
 
         # Se as cores não forem fornecidas, usa uma cor padrão (branco)
         if colors is None:
@@ -980,32 +1011,29 @@ class GL:
 
     @staticmethod
     def navigationInfo(headlight):
-        """Características físicas do avatar do visualizador e do modelo de visualização."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/navigation.html#NavigationInfo
-        # O campo do headlight especifica se um navegador deve acender um luz direcional que
-        # sempre aponta na direção que o usuário está olhando. Definir este campo como TRUE
-        # faz com que o visualizador forneça sempre uma luz do ponto de vista do usuário.
-        # A luz headlight deve ser direcional, ter intensidade = 1, cor = (1 1 1),
-        # ambientIntensity = 0,0 e direção = (0 0 −1).
+        """Define if the headlight (directional light from the user's perspective) is on or off."""
+        
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("NavigationInfo : headlight = {0}".format(headlight)) # imprime no terminal
+        # **NEW: If the headlight is on, we set a default directional light**
+        if headlight:
+            GL.directional_light = {
+                "ambientIntensity": 0.0,
+                "color": np.array([1.0, 1.0, 1.0]),  # White light
+                "intensity": 1.0,
+                "direction": np.array([0.0, 0.0, -1.0])  # Default direction (user's view direction)
+            }
 
     @staticmethod
     def directionalLight(ambientIntensity, color, intensity, direction):
-        """Luz direcional ou paralela."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/lighting.html#DirectionalLight
-        # Define uma fonte de luz direcional que ilumina ao longo de raios paralelos
-        # em um determinado vetor tridimensional. Possui os campos básicos ambientIntensity,
-        # cor, intensidade. O campo de direção especifica o vetor de direção da iluminação
-        # que emana da fonte de luz no sistema de coordenadas local. A luz é emitida ao
-        # longo de raios paralelos de uma distância infinita.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("DirectionalLight : ambientIntensity = {0}".format(ambientIntensity))
-        print("DirectionalLight : color = {0}".format(color)) # imprime no terminal
-        print("DirectionalLight : intensity = {0}".format(intensity)) # imprime no terminal
-        print("DirectionalLight : direction = {0}".format(direction)) # imprime no terminal
+        """Define the directional light parameters."""
+        GL.directional_light = {
+            "ambientIntensity": ambientIntensity,
+            "color": np.array(color),
+            "intensity": intensity,
+            "direction": np.array(direction)
+        }
+        print("entrou")
+        print(GL.directional_light)
 
     @staticmethod
     def pointLight(ambientIntensity, color, intensity, location):
