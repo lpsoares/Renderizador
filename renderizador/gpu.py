@@ -250,3 +250,4 @@ class GPU:
     @staticmethod
     def swap_buffers():
         """Método para a troca dos buffers (NÃO IMPLEMENTADA)."""
+        

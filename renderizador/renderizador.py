@@ -120,6 +120,7 @@ class Renderizador:
 
         gpu.GPU.bind_framebuffer(gpu.GPU.READ_FRAMEBUFFER, self.framebuffers["SUPER_SAMPLING"])
         gpu.GPU.bind_framebuffer(gpu.GPU.DRAW_FRAMEBUFFER, self.framebuffers["FRONT"])
+        gpu.GPU.clear_buffer()
         
         
         # Loop through each pixel in the FRONT buffer
@@ -147,6 +148,9 @@ class Renderizador:
                 gpu.GPU.draw_pixel((x, y), gpu.GPU.RGB8, avg_color)
 
         gpu.GPU.bind_framebuffer(gpu.GPU.READ_FRAMEBUFFER, self.framebuffers["FRONT"])
+
+
+
 
 
     def pre(self):

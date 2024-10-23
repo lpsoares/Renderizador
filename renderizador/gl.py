@@ -25,6 +25,7 @@ class GL:
     height = 600  # altura da tela
     near = 0.01   # plano de corte próximo
     far = 1000    # plano de corte distante
+    start_time = None
     projection_matrix = None  # Armazena a matriz de projeção
     transformation_stack = [np.identity(4)]  # Pilha para armazenar as matrizes de transformação
     view_matrix = None  # Armazena a matriz de visualização
@@ -534,7 +535,6 @@ class GL:
         # Conversão de rotação (eixo + ângulo) para quaternion
         axis = np.array(orientation[:3])
         angle = orientation[3]
-        print(angle)
         axis = axis / np.linalg.norm(axis)  # Normaliza o eixo de rotação
         sin_half_angle = np.sin(angle / 2)
         cos_half_angle = np.cos(angle / 2)
@@ -742,16 +742,6 @@ class GL:
                 textureFlag = True
         
 
-        # print(f'coord: {coord}')
-        # print(f'coordIndex: {coordIndex}')
-        # print(f'colorPerVertex: {colorPerVertex}')
-        # print(f'color: {color}')
-        # print(f'colorIndex: {colorIndex}')
-        print(f'texCoord: {texCoord}')
-        print(f'texCoordIndex: {texCoordIndex}')
-        print(f'textureFlag: {textureFlag}')
-        # print(f'colors: {colors}')
-        # print(f'current_texture: {current_texture}')
 
         # Add check if colorIndex list is empty
         
@@ -842,7 +832,7 @@ class GL:
         # If no specific colors are provided, we can assume a default color (e.g., white)
         if colors is None:
             colors = {'polarColor': [1.0, 1.0, 1.0] * 4}
-        print(points)
+    
         GL.triangleSet(points, colors)
 
 
@@ -1032,8 +1022,6 @@ class GL:
             "intensity": intensity,
             "direction": np.array(direction)
         }
-        print("entrou")
-        print(GL.directional_light)
 
     @staticmethod
     def pointLight(ambientIntensity, color, intensity, location):
@@ -1069,74 +1057,180 @@ class GL:
 
     @staticmethod
     def timeSensor(cycleInterval, loop):
-        """Gera eventos conforme o tempo passa."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/time.html#TimeSensor
-        # Os nós TimeSensor podem ser usados para muitas finalidades, incluindo:
-        # Condução de simulações e animações contínuas; Controlar atividades periódicas;
-        # iniciar eventos de ocorrência única, como um despertador;
-        # Se, no final de um ciclo, o valor do loop for FALSE, a execução é encerrada.
-        # Por outro lado, se o loop for TRUE no final de um ciclo, um nó dependente do
-        # tempo continua a execução no próximo ciclo. O ciclo de um nó TimeSensor dura
-        # cycleInterval segundos. O valor de cycleInterval deve ser maior que zero.
+        """Generates events as time passes, considering the loop condition."""
+        if GL.start_time is None:
+            GL.start_time = time.time()
+        
+        elapsed = time.time() - GL.start_time
 
-        # Deve retornar a fração de tempo passada em fraction_changed
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TimeSensor : cycleInterval = {0}".format(cycleInterval)) # imprime no terminal
-        print("TimeSensor : loop = {0}".format(loop))
-
-        # Esse método já está implementado para os alunos como exemplo
-        epoch = time.time()  # time in seconds since the epoch as a floating point number.
-        fraction_changed = (epoch % cycleInterval) / cycleInterval
+        if loop:
+            fraction_changed = (elapsed % cycleInterval) / cycleInterval
+        else:
+            if elapsed >= cycleInterval:
+                fraction_changed = 1.0  # Execution is terminated after one cycle
+            else:
+                fraction_changed = elapsed / cycleInterval
 
         return fraction_changed
 
     @staticmethod
     def splinePositionInterpolator(set_fraction, key, keyValue, closed):
-        """Interpola não linearmente entre uma lista de vetores 3D."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/interpolators.html#SplinePositionInterpolator
-        # Interpola não linearmente entre uma lista de vetores 3D. O campo keyValue possui
-        # uma lista com os valores a serem interpolados, key possui uma lista respectiva de chaves
-        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
-        # zeroa a um. O campo keyValue deve conter exatamente tantos vetores 3D quanto os
-        # quadros-chave no key. O campo closed especifica se o interpolador deve tratar a malha
-        # como fechada, com uma transições da última chave para a primeira chave. Se os keyValues
-        # na primeira e na última chave não forem idênticos, o campo closed será ignorado.
+        """Interpolates non-linearly between a list of 3D vectors."""
+        num_keys = len(key)
+        positions = [
+            [keyValue[3 * i], keyValue[3 * i + 1], keyValue[3 * i + 2]]
+            for i in range(num_keys)
+        ]
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
-        print("SplinePositionInterpolator : key = {0}".format(key)) # imprime no terminal
-        print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
-        print("SplinePositionInterpolator : closed = {0}".format(closed))
+        is_closed = closed and positions[0] == positions[-1]
 
-        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
+        # Find the appropriate segment index
+        if set_fraction <= key[0]:
+            i = 0
+        elif set_fraction >= key[-1]:
+            i = num_keys - 2
+        else:
+            for j in range(num_keys - 1):
+                if key[j] <= set_fraction <= key[j + 1]:
+                    i = j
+                    break
+
+        # Compute local t
+        t0 = key[i]
+        t1 = key[i + 1]
+        local_t = (set_fraction - t0) / (t1 - t0)
+
+        # Get control points
+        P1 = positions[i]
+        P2 = positions[i + 1]
+
+        if i == 0:
+            P0 = positions[-2] if is_closed else P1
+        else:
+            P0 = positions[i - 1]
+
+        if i + 2 < num_keys:
+            P3 = positions[i + 2]
+        else:
+            P3 = positions[1] if is_closed else P2
+
+        # Catmull-Rom spline interpolation
+        t = local_t
+        t2 = t * t
+        t3 = t2 * t
+
         value_changed = [0.0, 0.0, 0.0]
-        
+        for d in range(3):
+            P0d, P1d, P2d, P3d = P0[d], P1[d], P2[d], P3[d]
+            value_changed[d] = 0.5 * (
+                (2 * P1d)
+                + (-P0d + P2d) * t
+                + (2 * P0d - 5 * P1d + 4 * P2d - P3d) * t2
+                + (-P0d + 3 * P1d - 3 * P2d + P3d) * t3
+            )
         return value_changed
 
     @staticmethod
     def orientationInterpolator(set_fraction, key, keyValue):
-        """Interpola entre uma lista de valores de rotação especificos."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/interpolators.html#OrientationInterpolator
-        # Interpola rotações são absolutas no espaço do objeto e, portanto, não são cumulativas.
-        # Uma orientação representa a posição final de um objeto após a aplicação de uma rotação.
-        # Um OrientationInterpolator interpola entre duas orientações calculando o caminho mais
-        # curto na esfera unitária entre as duas orientações. A interpolação é linear em
-        # comprimento de arco ao longo deste caminho. Os resultados são indefinidos se as duas
-        # orientações forem diagonalmente opostas. O campo keyValue possui uma lista com os
-        # valores a serem interpolados, key possui uma lista respectiva de chaves
-        # dos valores em keyValue, a fração a ser interpolada vem de set_fraction que varia de
-        # zeroa a um. O campo keyValue deve conter exatamente tantas rotações 3D quanto os
-        # quadros-chave no key.
+        """Interpolates between a list of specific rotation values."""
+        num_keys = len(key)
+        rotations = [
+            [
+                keyValue[4 * i],
+                keyValue[4 * i + 1],
+                keyValue[4 * i + 2],
+                keyValue[4 * i + 3],
+            ]
+            for i in range(num_keys)
+        ]
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("OrientationInterpolator : set_fraction = {0}".format(set_fraction))
-        print("OrientationInterpolator : key = {0}".format(key)) # imprime no terminal
-        print("OrientationInterpolator : keyValue = {0}".format(keyValue))
+        # Find the appropriate segment index
+        if set_fraction <= key[0]:
+            i = 0
+        elif set_fraction >= key[-1]:
+            i = num_keys - 2
+        else:
+            for j in range(num_keys - 1):
+                if key[j] <= set_fraction <= key[j + 1]:
+                    i = j
+                    break
 
-        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
-        value_changed = [0, 0, 1, 0]
+        # Compute local t
+        t0 = key[i]
+        t1 = key[i + 1]
+        local_t = (set_fraction - t0) / (t1 - t0)
 
+        # Get rotations
+        R1 = rotations[i]
+        R2 = rotations[i + 1]
+
+        # Convert axis-angle to quaternion
+        def axis_angle_to_quaternion(axis_angle):
+            x, y, z, angle = axis_angle
+            norm = math.sqrt(x * x + y * y + z * z)
+            if norm == 0:
+                return [1.0, 0.0, 0.0, 0.0]
+            x /= norm
+            y /= norm
+            z /= norm
+            half_angle = angle / 2.0
+            sin_half_angle = math.sin(half_angle)
+            w = math.cos(half_angle)
+            x *= sin_half_angle
+            y *= sin_half_angle
+            z *= sin_half_angle
+            return [w, x, y, z]
+
+        q1 = axis_angle_to_quaternion(R1)
+        q2 = axis_angle_to_quaternion(R2)
+
+        # Compute the dot product
+        dot = sum(q1[j] * q2[j] for j in range(4))
+
+        # Adjust quaternions if necessary
+        if dot < 0.0:
+            q2 = [-q for q in q2]
+            dot = -dot
+
+        # Perform SLERP interpolation
+        if dot > 0.9995:
+            q = [q1[j] + local_t * (q2[j] - q1[j]) for j in range(4)]
+            norm = math.sqrt(sum(q[j] * q[j] for j in range(4)))
+            q = [q[j] / norm for j in range(4)]
+        else:
+            theta_0 = math.acos(dot)
+            sin_theta_0 = math.sin(theta_0)
+
+            theta = theta_0 * local_t
+            sin_theta = math.sin(theta)
+
+            s0 = math.cos(theta) - dot * sin_theta / sin_theta_0
+            s1 = sin_theta / sin_theta_0
+
+            q = [s0 * q1[j] + s1 * q2[j] for j in range(4)]
+
+        # Convert quaternion back to axis-angle
+        def quaternion_to_axis_angle(q):
+            w, x, y, z = q
+            norm = math.sqrt(w * w + x * x + y * y + z * z)
+            w /= norm
+            x /= norm
+            y /= norm
+            z /= norm
+
+            angle = 2 * math.acos(w)
+            s = math.sqrt(1 - w * w)
+            if s < 0.001:
+                x_axis = x
+                y_axis = y
+                z_axis = z
+            else:
+                x_axis = x / s
+                y_axis = y / s
+                z_axis = z / s
+            return [x_axis, y_axis, z_axis, angle]
+
+        value_changed = quaternion_to_axis_angle(q)
         return value_changed
 
     # Para o futuro (Não para versão atual do projeto.)
