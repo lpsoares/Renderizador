@@ -31,7 +31,7 @@ class GL:
     view_matrix = None  # Armazena a matriz de visualização
     directional_light = {
         "ambientIntensity": 0.0,
-        "color": np.array([1.0, 1.0, 1.0]),  # Default white light
+        "color": np.array([0.0, 0.0, 0.0]),  # Default white light
         "intensity": 1.0,
         "direction": np.array([0.0, 0.0, -1.0])  # Default direction
     }
@@ -286,8 +286,9 @@ class GL:
         return mipmaps
 
     @staticmethod
-    def draw_filled_triangle(p1, p2, p3, colors, zs, colorPerVertex, textureFlag, tex_coords, image_texture, p1_view, p2_view, p3_view):
+    def draw_filled_triangle(p1, p2, p3, colors, zs, colorPerVertex, textureFlag, tex_coords, image_texture, N1, N2, N3, Sm):
         """Função usada para renderizar TriangleSet2D com bounding box para melhorar a performance."""
+
 
         if textureFlag:
             texture_mipmaps = GL.generate_mipmaps(image_texture)
@@ -299,6 +300,18 @@ class GL:
             normal = np.cross(u, v)        # Cross product to find normal
             normal /= np.linalg.norm(normal)  # Normalize the normal vector
             return normal
+        
+        # ***NEW*** Function to interpolate the normal at a point
+        def interpolate_normal(p, p1, p2, p3, N1, N2, N3):
+            alpha, beta, gamma = barycentric(p1, p2, p3, p)
+            normal = alpha * N1 + beta * N2 + gamma * N3
+            normal /= np.linalg.norm(normal)  # Normalize the interpolated normal
+            return normal
+
+        # Compute lighting color with interpolated normal
+        def get_color_with_interpolated_normal(color_array, p, p1, p2, p3, N1, N2, N3):
+            normal = interpolate_normal(p, p1, p2, p3, N1, N2, N3) if Sm else compute_normal_camera_space(N1, N2, N3)
+            return get_color(color_array, False, normal)
 
 
         def L1(x, y):
@@ -358,7 +371,7 @@ class GL:
 
             return [u, v]
         
-        def get_color(color_array, flag):
+        def get_color(color_array, flag, N):
             
             I_Lrgb = GL.directional_light["color"] #light color
             I_i = GL.directional_light["intensity"] #light intensity
@@ -371,7 +384,6 @@ class GL:
             # Direction of the light source remember to handle the sign
             L = -GL.directional_light["direction"]
             # normalizes normal vector at this point on geometry
-            N = compute_normal_camera_space(p1_view, p2_view, p3_view)
             # normalized vector from point on geometry to viewers position
             v = N # vector from point on geometry to viewers position
 
@@ -380,9 +392,25 @@ class GL:
             ambient_i = I_ia * O_Drgb * O_a
             diffuse_i = I_i * O_Drgb * np.dot(L, N)
             specular_i = I_i * O_Srgb * (np.dot(N, (L + v)/np.linalg.norm(L+v)))**(color_array["shininess"]*128)
-            I_rgb = O_Ergb + I_i * (ambient_i + diffuse_i + specular_i)
+            I_rgb = O_Ergb + I_Lrgb * (ambient_i + diffuse_i + specular_i)
+
+            # print(f'I_Lrgb: {I_Lrgb}')
+            # print(f'I_i: {I_i}')
+            # print(f'I_ia: {I_ia}')
+            # print(f'O_Ergb: {O_Ergb}')
+            # print(f'O_Drgb: {O_Drgb}')
+            # print(f'O_Srgb: {O_Srgb}')
+            # print(f'O_a: {O_a}')
+            # print(f'L: {L}')
+            # print(f'N: {N}')
+            # print(f'v: {v}')
+            # print(f'ambient_i: {ambient_i}')
+            # print(f'diffuse_i: {diffuse_i}')
+            # print(f'specular_i: {specular_i}')
+            # print(f'I_rgb: {I_rgb}')
 
             I_rgb = np.clip(I_rgb, 0, 1)
+            # print(f"Color: {I_rgb}")
             return [round(n*255) for n in I_rgb]
         
         z0 = abs(zs[0])
@@ -457,7 +485,7 @@ class GL:
                         if colorPerVertex:
                             new_color = np.array(perspective_color(p1, p2, p3, [x, y], colors["polarColor"], zs)) * (1 - transparency)
                         else:
-                            c = get_color(colors,flag=False)
+                            c = get_color_with_interpolated_normal(colors, [x, y], p1, p2, p3, N1, N2, N3)
                             new_color = np.array(c) * (1 - transparency)
 
                         final_color = (prev_color + new_color).astype(np.uint8)
@@ -470,9 +498,85 @@ class GL:
 
 
     @staticmethod
-    def triangleSet(point, colors, triangle_texture=None, image_texture=None, colorPerVertex=False, textureFlag=False):
+    def triangleSet(point, colors, triangle_texture=None, image_texture=None, colorPerVertex=False, textureFlag=False, smoothShading=True):
         """Função usada para renderizar TriangleSet."""
+        print('-'*50)
+        print("TriangleSet")
+        print(f"Point: {point}")
+        print(f"Colors: {colors}")
+        print(f"Triangle_texture: {triangle_texture}")
+        print(f"Image_texture: {image_texture}")
+        print(f"ColorPerVertex: {colorPerVertex}")
+        print(f"TextureFlag: {textureFlag}")
+        print(f"SmoothShading: {smoothShading}")
+        print('-'*50)
+        
+        def group_by_n(arr, n):
+            return [arr[i:i+n] for i in range(0, len(arr), n)]
+        def find_subarray_indices(large_array, subarray):
+            indices = []
+            subarray = np.array(subarray)  # Ensure subarray is a NumPy array for comparison
+            # Loop through each 9-length group
+            for i, group in enumerate(large_array):
+                # Check if the subarray exists in any of the 3-length subgroups within the 9-length group
+                for subgroup in group:
+                    if np.array_equal(np.array(subgroup), subarray):
+                        indices.append(i)
+                        break  # No need to check further subgroups in this group
+            return indices
+        # Compute the normal in camera space for lighting calculations
+        def compute_normal_camera_space(p1_view, p2_view, p3_view):
+            u = p2_view[:3] - p1_view[:3]  # Vector from p1 to p2 in camera space
+            v = p3_view[:3] - p1_view[:3]  # Vector from p1 to p3 in camera space
+            normal = np.cross(u, v)        # Cross product to find normal
+            normal /= np.linalg.norm(normal)  # Normalize the normal vector
+            return normal
+        
+        def remove_duplicates(array):
+            result = []
 
+            # Helper function to flatten the arrays for comparison
+            def flatten(subarray):
+                return subarray.flatten()
+
+            # Check if a subarray is a duplicate using np.allclose
+            def is_duplicate(subarray, result):
+                return any(np.allclose(flatten(subarray), flatten(existing_array)) for existing_array in result)
+
+            # Check if a subarray contains all NaN values
+            def is_all_nan(subarray):
+                return np.isnan(subarray).all()
+
+            count = 0	
+            for subarray in array:
+                # Skip subarrays that are all NaN
+                if is_all_nan(subarray):
+                    continue
+                
+                # Add to result if not a duplicate
+                if not is_duplicate(subarray, result):
+                    result.append(subarray)
+                count += 1
+            
+            return result
+
+
+        
+
+
+
+        # index_list = find_subarray_indices(large_array, [-0.5, -0.5, -0.5])
+
+        # normal_array = np.array([[compute_normal_camera_space(large_array[i][0], large_array[i][1], large_array[i][2])] for i in index_list])
+
+        # print(f'Normal_array: {normal_array}')
+
+        # normal_array = remove_duplicates(normal_array)
+        # mean_normal = np.mean(np.vstack(normal_array), axis=0)
+
+        # print("Mean normal vector:", mean_normal)
+        arg_list = []
+        normal_points = []
         for i in range(0, len(point), 9):  # 9 values for each triangle (3 points x 3 coordinates)
             p1 = np.array([point[i], point[i + 1], point[i + 2], 1])  # Homogeneous coordinates
             p2 = np.array([point[i + 3], point[i + 4], point[i + 5], 1])
@@ -506,9 +610,61 @@ class GL:
 
             # Z values in camera space (used for depth comparison)
             zs = [p1_view[2], p2_view[2], p3_view[2]]
+            arg_list.append([p1_screen, p2_screen, p3_screen, zs, p1_view, p2_view, p3_view])
+            normal_points.append([p1_view, p2_view, p3_view])
+            print(f'normal points: {normal_points}')	
+            print(f'Reading triangle {i+1} out of {len(point)}')
+
+        normal_points = np.array(normal_points)
+        print(f'normal points: {normal_points}')
+        flatten_normal_points = normal_points.reshape(-1, 4)	
+        print(f'flattenning normal points')
+        points_list = remove_duplicates(flatten_normal_points)
+        print(f'points list: {points_list}')
+        print(f'removing duplicates')
+        large_array = [list(map(np.array, group)) for group in normal_points]
+        print(f'grouping normal points')
+        print(f'lare array: {np.array(large_array)}')
+
+        # dict maping point to normal
+        dict_normal = {}
+
+        for p in points_list:
+            index_list = find_subarray_indices(large_array, p)
+            print(f'index list: {index_list}')
+            normal_array = np.array([compute_normal_camera_space(large_array[i][0], large_array[i][1], large_array[i][2]) for i in index_list])
+            normal_array = remove_duplicates(normal_array)
+            print(f'calculated normal for point {p} is {normal_array}')
+            mean_normal = np.mean(np.vstack(normal_array), axis=0)
+            dict_normal[tuple(np.round(p*1000))] = mean_normal
+            print(f'calculated normal for point {p}')
+
+        def is_all_nan(subarray):
+            return np.isnan(subarray).all()
+
+        #pretty print for dict
+        for k, v in dict_normal.items():
+            print(f'{k}: {v}')
+
+        for i in range(len(arg_list)):
+            p1_screen, p2_screen, p3_screen, zs, p1_view, p2_view, p3_view = arg_list[i]
+            N1 = dict_normal[tuple(np.round(p1_view*1000))] if (smoothShading and not is_all_nan(p1_view)) else p1_view
+            N2 = dict_normal[tuple(np.round(p2_view*1000))] if (smoothShading and not is_all_nan(p2_view)) else p2_view
+            N3 = dict_normal[tuple(np.round(p3_view*1000))] if (smoothShading and not is_all_nan(p2_view)) else p3_view
 
             # Now pass the view-space coordinates (p1_view, p2_view, p3_view) to the draw_filled_triangle function
-            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs, colorPerVertex, textureFlag, triangle_texture, image_texture, p1_view, p2_view, p3_view)
+            if textureFlag:
+                triangle_texture = triangle_texture[i]
+
+            # verify if colors is type dict
+            if isinstance(colors, dict):
+                pass
+            else:
+                colors = colors[i]
+
+            print(f'printing triangle {i+1} out of {len(arg_list)}')
+            print(f'p1_view: {p1_view}, p2_view: {p2_view}, p3_view: {p3_view}')
+            GL.draw_filled_triangle(p1_screen, p2_screen, p3_screen, colors, zs, colorPerVertex, textureFlag, triangle_texture, image_texture, N1, N2, N3, smoothShading)
 
 
     @staticmethod
@@ -734,17 +890,24 @@ class GL:
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
                        texCoord, texCoordIndex, colors, current_texture):
+        
+        print(coord)
+        print(coordIndex)
+        print(colorPerVertex)
+        print(color)
+        print(colorIndex)
+        print(texCoord)
+        print(texCoordIndex)
+        print(colors)
+        print(current_texture)
         """Função usada para renderizar IndexedFaceSet."""
         colorPerVertex = colorPerVertex and colorIndex
         textureFlag = False
         if texCoord and texCoordIndex:
             if len(texCoord) > 0 and len(texCoordIndex) > 0:
                 textureFlag = True
-        
-
 
         # Add check if colorIndex list is empty
-        
         i = 0
         call_count = 0
         pivot_point = coord[coordIndex[i]*3:coordIndex[i]*3+3]
@@ -758,6 +921,10 @@ class GL:
             image_texture = gpu.GPU.load_texture(current_texture[0])
 
         i +=1 
+        arg_list = []
+        triangle_list = []
+        triangle_texture_list = []
+        colors_list = []
         while i < len(coordIndex)-2:
             # Connect last vertex with the first one to close the triangle strip
             
@@ -783,10 +950,21 @@ class GL:
             elif textureFlag:
                 triangle_texture = pivot_texture + texCoord[texCoordIndex[i]*2:texCoordIndex[i]*2+2] + texCoord[texCoordIndex[i+1]*2:texCoordIndex[i+1]*2+2]
             
-                
+            
             call_count += 1
-            GL.triangleSet(triangle, colors, triangle_texture, image_texture, colorPerVertex, textureFlag)
+            
+            triangle_list.append(triangle)
+            triangle_texture_list.append(triangle_texture)
+            colors_list.append(colors)
+            print(f"Triangle {call_count}: {triangle}")
             i += 1
+
+        triangle_list = np.array(triangle_list).flatten()
+        colors_list = np.array(colors_list)
+        triangle_texture_list = np.array(triangle_texture_list)
+        print('About to call GL.triangleSet')
+        GL.triangleSet(triangle_list, colors_list, triangle_texture_list, image_texture, colorPerVertex, textureFlag)
+        print(f"Call count: {call_count}")
 
 
 
@@ -842,8 +1020,8 @@ class GL:
         """Função usada para renderizar Esferas."""
         
         # Configurações para tesselar a esfera
-        lat_steps = 100  # Número de divisões ao longo da latitude
-        lon_steps = 100  # Número de divisões ao longo da longitude
+        lat_steps = 10  # Número de divisões ao longo da latitude
+        lon_steps = 10  # Número de divisões ao longo da longitude
 
         # Arrays para armazenar os vértices e os índices
         coord = []

@@ -1,4 +1,6 @@
 # Renderizador
+
+## Para ligar e desligar o smooth shading altere a variável `smooth_shading` no cabeçalho da função TriangleSet, vai estar ligado por padrão. E por isso os exemplos Caixas e Piramide estáo diferentes dos exemplos do site.
 Renderizador base para o curso de Computação Gráfica
 
 Pré-requisitos:
