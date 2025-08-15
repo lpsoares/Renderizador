@@ -108,20 +108,43 @@ class GL:
     @staticmethod
     def triangleSet2D(vertices, colors):
         """Função usada para renderizar TriangleSet2D."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/geometry2D.html#TriangleSet2D
-        # Nessa função você receberá os vertices de um triângulo no parâmetro vertices,
-        # esses pontos são uma lista de pontos x, y sempre na ordem. Assim point[0] é o
-        # valor da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto.
-        # Já point[2] é a coordenada x do segundo ponto e assim por diante. Assuma que a
-        # quantidade de pontos é sempre multiplo de 3, ou seja, 6 valores ou 12 valores, etc.
-        # O parâmetro colors é um dicionário com os tipos cores possíveis, para o TriangleSet2D
-        # você pode assumir inicialmente o desenho das linhas com a cor emissiva (emissiveColor).
-        print("TriangleSet2D : vertices = {0}".format(vertices)) # imprime no terminal
-        print("TriangleSet2D : colors = {0}".format(colors)) # imprime no terminal as cores
+        if len(vertices) < 6:
+            return
 
-        # Exemplo:
-        gpu.GPU.draw_pixel([6, 8], gpu.GPU.RGB8, [255, 255, 0])  # altera pixel (u, v, tipo, r, g, b)
+        emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
+        col = [max(0, min(255, int(c * 255))) for c in emissive]
 
+        def draw_filled_triangle(p0, p1, p2):
+            (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
+            # reduzindo iterações
+            min_x = max(0, min(x0, x1, x2))
+            max_x = min(GL.width - 1, max(x0, x1, x2))
+            min_y = max(0, min(y0, y1, y2))
+            max_y = min(GL.height - 1, max(y0, y1, y2))
+
+            # Área dupla do triângulo
+            area = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0)
+            if area == 0:
+                return  # Dava errado
+
+            # Pré-cálculo para incremento baricentrico
+            for y in range(min_y, max_y + 1):
+                for x in range(min_x, max_x + 1):
+                    w0 = (x1 - x0) * (y - y0) - (y1 - y0) * (x - x0)
+                    w1 = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
+                    w2 = (x0 - x2) * (y - y2) - (y0 - y2) * (x - x2)
+                    if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0):
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col)
+
+        # Percorre cada triângulo (3 vértices -> 6 valores)
+        for i in range(0, len(vertices), 6):
+            if i + 5 >= len(vertices):
+                break
+            p0 = (int(round(vertices[i])),     int(round(vertices[i + 1])))
+            p1 = (int(round(vertices[i + 2])), int(round(vertices[i + 3])))
+            p2 = (int(round(vertices[i + 4])), int(round(vertices[i + 5])))
+            draw_filled_triangle(p0, p1, p2)
+            
 
     @staticmethod
     def triangleSet(point, colors):
