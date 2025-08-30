@@ -1,0 +1,35 @@
+<X3D>
+  <Scene>
+    
+    <!-- base para fazer a atividade do boneco -->
+
+    <Transform translation='0 0 0'>
+      <Shape>
+        <Polyline2D lineSegments='-1 0 -0.5 1 0 0 0.5 1 1 0'/>
+        <Appearance><Material emissiveColor='0.5 0.5 1'/></Appearance>
+      </Shape>
+    </Transform>
+    
+     <Transform translation='0 0 0'>
+      <Shape>
+        <Arc2D radius='2'/>
+        <Appearance><Material emissiveColor='1 1 0'/></Appearance>
+      </Shape>
+    </Transform>
+
+    <Transform translation='3 2 0'>
+      <Shape>
+        <Circle2D/>
+        <Appearance><Material emissiveColor='0 1 0'/></Appearance>
+      </Shape>
+    </Transform>
+
+    <Transform translation='-0.5 0.5 0'>
+      <Shape>
+        <Polypoint2D point='0 0 0 1 1 0 1 1'/>
+        <Appearance><Material emissiveColor='1 1 1'/></Appearance>
+      </Shape>
+    </Transform>
+
+  </Scene>
+</X3D>
