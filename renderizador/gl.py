@@ -267,48 +267,7 @@ class GL:
         # inicialmente, para o TriangleSet, o desenho das linhas com a cor emissiva
         # (emissiveColor), conforme implementar novos materias você deverá suportar outros
         # tipos de cores.
-
-        emissive_color = colors.get("emissiveColor", [1.0, 1.0, 1.0])
-        rgb = [int(c * 255) for c in emissive_color]
-
-        def draw_triangle_edges(v0, v1, v2, color):
-            # Draw edges of triangle using polyline2D logic
-            def draw_line(x0, y0, x1, y1, color):
-                dx = abs(x1 - x0)
-                dy = abs(y1 - y0)
-                x, y = x0, y0
-                sx = 1 if x0 < x1 else -1
-                sy = 1 if y0 < y1 else -1
-                if dx > dy:
-                    err = dx // 2
-                    while x != x1:
-                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
-                        err -= dy
-                        if err < 0:
-                            y += sy
-                            err += dx
-                        x += sx
-                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
-                else:
-                    err = dy // 2
-                    while y != y1:
-                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
-                        err -= dx
-                        if err < 0:
-                            x += sx
-                            err += dy
-                        y += sy
-                    gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, color)
-
-            draw_line(int(v0[0]), int(v0[1]), int(v1[0]), int(v1[1]), color)
-            draw_line(int(v1[0]), int(v1[1]), int(v2[0]), int(v2[1]), color)
-            draw_line(int(v2[0]), int(v2[1]), int(v0[0]), int(v0[1]), color)
-
-        for i in range(0, len(point), 9):
-            v0 = point[i:i+3]
-            v1 = point[i+3:i+6]
-            v2 = point[i+6:i+9]
-            draw_triangle_edges(v0, v1, v2, rgb)
+        
         
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
