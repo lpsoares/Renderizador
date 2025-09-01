@@ -162,49 +162,177 @@ class GL:
         # inicialmente, para o TriangleSet, o desenho das linhas com a cor emissiva
         # (emissiveColor), conforme implementar novos materias você deverá suportar outros
         # tipos de cores.
+        if not point or len(point) < 9:
+            return
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
-        print("TriangleSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
+        col = [max(0, min(255, int(c * 255))) for c in emissive]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        def transform_vertex(v):
+            # v = [x, y, z]
+            vec = np.array([v[0], v[1], v[2], 1.0])
+            # Aplica modelo, visão e projeção
+            if hasattr(GL, 'model_matrix'):
+                vec = GL.model_matrix @ vec
+            if hasattr(GL, 'view_matrix'):
+                vec = GL.view_matrix @ vec
+            if hasattr(GL, 'projection_matrix'):
+                vec = GL.projection_matrix @ vec
+            # Normaliza para NDC
+            if vec[3] != 0:
+                vec = vec / vec[3]
+            # Converte para coordenadas de tela
+            x = int((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1))
+            y = int((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1))
+            return (x, y)
+
+        for i in range(0, len(point), 9):
+            if i + 8 >= len(point):
+                break
+            v0 = [point[i], point[i+1], point[i+2]]
+            v1 = [point[i+3], point[i+4], point[i+5]]
+            v2 = [point[i+6], point[i+7], point[i+8]]
+            p0 = transform_vertex(v0)
+            p1 = transform_vertex(v1)
+            p2 = transform_vertex(v2)
+            # Preenche o triângulo
+            def draw_filled_triangle(p0, p1, p2):
+                (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
+                min_x = max(0, min(x0, x1, x2))
+                max_x = min(GL.width - 1, max(x0, x1, x2))
+                min_y = max(0, min(y0, y1, y2))
+                max_y = min(GL.height - 1, max(y0, y1, y2))
+                area = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0)
+                if area == 0:
+                    return
+                for y in range(min_y, max_y + 1):
+                    for x in range(min_x, max_x + 1):
+                        w0 = (x1 - x0)*(y - y0) - (y1 - y0)*(x - x0)
+                        w1 = (x2 - x1)*(y - y1) - (y2 - y1)*(x - x1)
+                        w2 = (x0 - x2)*(y - y2) - (y0 - y2)*(x - x2)
+                        if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0):
+                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col)
+            draw_filled_triangle(p0, p1, p2)
+
+            def draw_line(a, b):
+                x0, y0 = a
+                x1, y1 = b
+                dx = abs(x1 - x0)
+                dy = abs(y1 - y0)
+                sx = 1 if x0 < x1 else -1
+                sy = 1 if y0 < y1 else -1
+                err = dx - dy
+                while True:
+                    if 0 <= x0 < GL.width and 0 <= y0 < GL.height:
+                        gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8, col)
+                    if x0 == x1 and y0 == y1:
+                        break
+                    e2 = 2 * err
+                    if e2 > -dy:
+                        err -= dy
+                        x0 += sx
+                    if e2 < dx:
+                        err += dx
+                        y0 += sy
+
+            draw_line(p0, p1)
+            draw_line(p1, p2)
+            draw_line(p2, p0)
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
-        """Função usada para renderizar (na verdade coletar os dados) de Viewpoint."""
-        # Na função de viewpoint você receberá a posição, orientação e campo de visão da
-        # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
-        # perspectiva para poder aplicar nos pontos dos objetos geométricos.
+        """Coleta parâmetros do Viewpoint e monta as matrizes de câmera e projeção."""
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Viewpoint : ", end='')
-        print("position = {0} ".format(position), end='')
-        print("orientation = {0} ".format(orientation), end='')
-        print("fieldOfView = {0} ".format(fieldOfView))
+        # guarda
+        GL.camera_position = position
+        GL.camera_orientation = orientation
+        GL.camera_fov = fieldOfView
 
+        # ----- axis-angle -> rotation matrix (reuses logic from transform_in) -----
+        def axis_angle_to_matrix(ax):
+            if not ax or len(ax) != 4:
+                return np.identity(4)
+            x, y, z, theta = ax
+            c = math.cos(theta)
+            s = math.sin(theta)
+            n = math.sqrt(x*x + y*y + z*z) or 1.0
+            x, y, z = x/n, y/n, z/n
+            return np.array([
+                [c + x*x*(1-c),     x*y*(1-c) - z*s, x*z*(1-c) + y*s, 0],
+                [y*x*(1-c) + z*s,   c + y*y*(1-c),   y*z*(1-c) - x*s, 0],
+                [z*x*(1-c) - y*s,   z*y*(1-c) + x*s, c + z*z*(1-c),   0],
+                [0,                 0,               0,               1]
+            ])
+
+        # rotate default forward (-Z) and up (+Y)
+        R = axis_angle_to_matrix(orientation)
+        fwd = (R @ np.array([0, 0, -1, 0]))[:3]
+        up  = (R @ np.array([0, 1,  0, 0]))[:3]
+        eye = np.array(position)
+        center = (eye + fwd).tolist()
+        up = up.tolist()
+
+        def look_at(eye, center, up):
+            f = np.array(center) - np.array(eye)
+            f = f / (np.linalg.norm(f) or 1.0)
+            s = np.cross(up, f)                 # <- swapped order to make it right-handed
+            s = s / (np.linalg.norm(s) or 1.0)
+            u = np.cross(f, s)
+            m = np.identity(4)
+            m[0, :3] = s
+            m[1, :3] = u
+            m[2, :3] = -f
+            m[:3, 3] = -np.dot(m[:3, :3], np.array(eye))
+            return m
+
+        GL.view_matrix = look_at(eye, center, up)
+
+        # projeção (como você já tinha)
+        aspect = GL.width / GL.height
+        near, far = GL.near, GL.far
+        fovy = fieldOfView if fieldOfView and fieldOfView <= math.pi else math.radians(fieldOfView or 60)
+        f = 1.0 / math.tan(fovy / 2)
+        proj = np.zeros((4, 4))
+        proj[0, 0] = f / aspect
+        proj[1, 1] = f
+        proj[2, 2] = (far + near) / (near - far)
+        proj[2, 3] = (2 * far * near) / (near - far)
+        proj[3, 2] = -1.0
+        GL.projection_matrix = proj
+
+    @staticmethod
     @staticmethod
     def transform_in(translation, scale, rotation):
         """Função usada para renderizar (na verdade coletar os dados) de Transform."""
-        # A função transform_in será chamada quando se entrar em um nó X3D do tipo Transform
-        # do grafo de cena. Os valores passados são a escala em um vetor [x, y, z]
-        # indicando a escala em cada direção, a translação [x, y, z] nas respectivas
-        # coordenadas e finalmente a rotação por [x, y, z, t] sendo definida pela rotação
-        # do objeto ao redor do eixo x, y, z por t radianos, seguindo a regra da mão direita.
-        # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
-        # modelos do mundo para depois potencialmente usar em outras chamadas. 
-        # Quando começar a usar Transforms dentre de outros Transforms, mais a frente no curso
-        # Você precisará usar alguma estrutura de dados pilha para organizar as matrizes.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Transform : ", end='')
+        # Matriz de transformação composta
+        t = np.identity(4)
         if translation:
-            print("translation = {0} ".format(translation), end='') # imprime no terminal
+            t[:3, 3] = translation[:3]
+        s = np.identity(4)
         if scale:
-            print("scale = {0} ".format(scale), end='') # imprime no terminal
-        if rotation:
-            print("rotation = {0} ".format(rotation), end='') # imprime no terminal
-        print("")
+            s[0, 0] = scale[0]
+            s[1, 1] = scale[1]
+            s[2, 2] = scale[2]
+        r = np.identity(4)
+        if rotation and len(rotation) == 4:
+            x, y, z, theta = rotation
+            c = math.cos(theta)
+            s_ = math.sin(theta)
+            norm = math.sqrt(x*x + y*y + z*z)
+            if norm == 0:
+                norm = 1
+            x /= norm
+            y /= norm
+            z /= norm
+            rmat = np.array([
+                [c + x*x*(1-c),     x*y*(1-c) - z*s_, x*z*(1-c) + y*s_, 0],
+                [y*x*(1-c) + z*s_,  c + y*y*(1-c),    y*z*(1-c) - x*s_, 0],
+                [z*x*(1-c) - y*s_,  z*y*(1-c) + x*s_, c + z*z*(1-c),    0],
+                [0,                 0,               0,                1]
+            ])
+            r = rmat
+        # Composição: T * R * S
+        GL.model_matrix = t @ r @ s
 
     @staticmethod
     def transform_out():
