@@ -275,7 +275,7 @@ class GL:
         def look_at(eye, center, up):
             f = np.array(center) - np.array(eye)
             f = f / (np.linalg.norm(f) or 1.0)
-            s = np.cross(up, f)                 # <- swapped order to make it right-handed
+            s = np.cross(up, f)
             s = s / (np.linalg.norm(s) or 1.0)
             u = np.cross(f, s)
             m = np.identity(4)
