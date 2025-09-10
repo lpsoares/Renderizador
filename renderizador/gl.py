@@ -299,8 +299,7 @@ class GL:
         proj[2, 3] = (2 * far * near) / (near - far)
         proj[3, 2] = -1.0
         GL.projection_matrix = proj
-
-    @staticmethod
+        
     @staticmethod
     def transform_in(translation, scale, rotation):
         """Função usada para renderizar (na verdade coletar os dados) de Transform."""
