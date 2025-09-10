@@ -287,7 +287,7 @@ class GL:
 
         GL.view_matrix = look_at(eye, center, up)
 
-        # projeção (como você já tinha)
+        # projeção
         aspect = GL.width / GL.height
         near, far = GL.near, GL.far
         fovy = fieldOfView if fieldOfView and fieldOfView <= math.pi else math.radians(fieldOfView or 60)
