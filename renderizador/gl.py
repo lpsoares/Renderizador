@@ -159,6 +159,7 @@ class GL:
         # indicando a escala em cada direção, a translação [x, y, z] nas respectivas
         # coordenadas e finalmente a rotação por [x, y, z, t] sendo definida pela rotação
         # do objeto ao redor do eixo x, y, z por t radianos, seguindo a regra da mão direita.
+        # ESSES NÃO SÃO OS VALORES DE QUATÉRNIOS AS CONTAS AINDA PRECISAM SER FEITAS.
         # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
         # modelos do mundo para depois potencialmente usar em outras chamadas. 
         # Quando começar a usar Transforms dentre de outros Transforms, mais a frente no curso
