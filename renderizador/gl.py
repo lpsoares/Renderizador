@@ -23,6 +23,7 @@ class GL:
     height = 600  # altura da tela
     near = 0.01   # plano de corte próximo
     far = 1000    # plano de corte distante
+    transform_stack = []  # pilha para transforms aninhados
 
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
@@ -182,8 +183,8 @@ class GL:
             if vec[3] != 0:
                 vec = vec / vec[3]
             # Converte para coordenadas de tela
-            x = int((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1))
-            y = int((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1))
+            x = int(round((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1)))
+            y = int(round((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1)))
             return (x, y)
 
         for i in range(0, len(point), 9):
@@ -195,49 +196,48 @@ class GL:
             p0 = transform_vertex(v0)
             p1 = transform_vertex(v1)
             p2 = transform_vertex(v2)
-            # Preenche o triângulo
+            # Preenche o triângulo usando a regra Top-Left para evitar falhas nas bordas
             def draw_filled_triangle(p0, p1, p2):
                 (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
-                min_x = max(0, min(x0, x1, x2))
-                max_x = min(GL.width - 1, max(x0, x1, x2))
-                min_y = max(0, min(y0, y1, y2))
-                max_y = min(GL.height - 1, max(y0, y1, y2))
-                area = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0)
+                # Bounding box half-open [min, max)
+                min_x = max(0, int(math.floor(min(x0, x1, x2))))
+                max_x = min(GL.width, int(math.ceil(max(x0, x1, x2))) )
+                min_y = max(0, int(math.floor(min(y0, y1, y2))))
+                max_y = min(GL.height, int(math.ceil(max(y0, y1, y2))) )
+
+                def edge(ax, ay, bx, by, px, py):
+                    return (px - ax) * (by - ay) - (py - ay) * (bx - ax)
+
+                def is_top_left(ax, ay, bx, by):
+                    dx = bx - ax
+                    dy = by - ay
+                    return (dy > 0) or (dy == 0 and dx < 0)
+
+                area = edge(x0, y0, x1, y1, x2, y2)
                 if area == 0:
                     return
-                for y in range(min_y, max_y + 1):
-                    for x in range(min_x, max_x + 1):
-                        w0 = (x1 - x0)*(y - y0) - (y1 - y0)*(x - x0)
-                        w1 = (x2 - x1)*(y - y1) - (y2 - y1)*(x - x1)
-                        w2 = (x0 - x2)*(y - y2) - (y0 - y2)*(x - x2)
-                        if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0):
+                # Orientação consistente (CCW)
+                if area < 0:
+                    x1, y1, x2, y2 = x2, y2, x1, y1
+                    area = -area
+
+                topLeft0 = is_top_left(x1, y1, x2, y2)
+                topLeft1 = is_top_left(x2, y2, x0, y0)
+                topLeft2 = is_top_left(x0, y0, x1, y1)
+
+                eps = 0.0  # com amostragem no centro, não precisamos de epsilon
+                for y in range(min_y, max_y):
+                    for x in range(min_x, max_x):
+                        px = x + 0.5
+                        py = y + 0.5
+                        w0 = edge(x1, y1, x2, y2, px, py)
+                        w1 = edge(x2, y2, x0, y0, px, py)
+                        w2 = edge(x0, y0, x1, y1, px, py)
+                        if (w0 > eps or (w0 >= -eps and topLeft0)) and \
+                           (w1 > eps or (w1 >= -eps and topLeft1)) and \
+                           (w2 > eps or (w2 >= -eps and topLeft2)):
                             gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col)
             draw_filled_triangle(p0, p1, p2)
-
-            def draw_line(a, b):
-                x0, y0 = a
-                x1, y1 = b
-                dx = abs(x1 - x0)
-                dy = abs(y1 - y0)
-                sx = 1 if x0 < x1 else -1
-                sy = 1 if y0 < y1 else -1
-                err = dx - dy
-                while True:
-                    if 0 <= x0 < GL.width and 0 <= y0 < GL.height:
-                        gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8, col)
-                    if x0 == x1 and y0 == y1:
-                        break
-                    e2 = 2 * err
-                    if e2 > -dy:
-                        err -= dy
-                        x0 += sx
-                    if e2 < dx:
-                        err += dx
-                        y0 += sy
-
-            draw_line(p0, p1)
-            draw_line(p1, p2)
-            draw_line(p2, p0)
 
     @staticmethod
     def viewpoint(position, orientation, fieldOfView):
@@ -302,138 +302,399 @@ class GL:
         
     @staticmethod
     def transform_in(translation, scale, rotation):
-        """Função usada para renderizar (na verdade coletar os dados) de Transform."""
-        # Matriz de transformação composta
+        """Empilha transform atual e aplica nova (suporte a transforms aninhados)."""
+        # Monta T, R, S
         t = np.identity(4)
         if translation:
             t[:3, 3] = translation[:3]
-        s = np.identity(4)
+        s_mat = np.identity(4)
         if scale:
-            s[0, 0] = scale[0]
-            s[1, 1] = scale[1]
-            s[2, 2] = scale[2]
-        r = np.identity(4)
+            s_mat[0, 0] = scale[0]
+            s_mat[1, 1] = scale[1]
+            s_mat[2, 2] = scale[2]
+        r_mat = np.identity(4)
         if rotation and len(rotation) == 4:
             x, y, z, theta = rotation
             c = math.cos(theta)
             s_ = math.sin(theta)
-            norm = math.sqrt(x*x + y*y + z*z)
-            if norm == 0:
-                norm = 1
-            x /= norm
-            y /= norm
-            z /= norm
-            rmat = np.array([
+            n = math.sqrt(x*x + y*y + z*z) or 1.0
+            x, y, z = x/n, y/n, z/n
+            r_mat = np.array([
                 [c + x*x*(1-c),     x*y*(1-c) - z*s_, x*z*(1-c) + y*s_, 0],
                 [y*x*(1-c) + z*s_,  c + y*y*(1-c),    y*z*(1-c) - x*s_, 0],
                 [z*x*(1-c) - y*s_,  z*y*(1-c) + x*s_, c + z*z*(1-c),    0],
                 [0,                 0,               0,                1]
             ])
-            r = rmat
-        # Composição: T * R * S
-        GL.model_matrix = t @ r @ s
+        local = t @ r_mat @ s_mat  # T * R * S
+        prev = getattr(GL, 'model_matrix', np.identity(4))
+        GL.transform_stack.append(prev)
+        GL.model_matrix = prev @ local
 
     @staticmethod
     def transform_out():
-        """Função usada para renderizar (na verdade coletar os dados) de Transform."""
-        # A função transform_out será chamada quando se sair em um nó X3D do tipo Transform do
-        # grafo de cena. Não são passados valores, porém quando se sai de um nó transform se
-        # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
-        # pilha implementada.
-
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Saindo de Transform")
+        """Sai de um nó Transform: desempilha a matriz anterior."""
+        if GL.transform_stack:
+            GL.model_matrix = GL.transform_stack.pop()
+        else:
+            if hasattr(GL, 'model_matrix'):
+                delattr(GL, 'model_matrix')
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
-        """Função usada para renderizar TriangleStripSet."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/rendering.html#TriangleStripSet
-        # A função triangleStripSet é usada para desenhar tiras de triângulos interconectados,
-        # você receberá as coordenadas dos pontos no parâmetro point, esses pontos são uma
-        # lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x
-        # do primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
-        # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e assim
-        # por diante. No TriangleStripSet a quantidade de vértices a serem usados é informado
-        # em uma lista chamada stripCount (perceba que é uma lista). Ligue os vértices na ordem,
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
-        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
+        """Renderiza TriangleStripSet (tiras sequenciais de triângulos)."""
+        if not point or not stripCount:
+            return
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleStripSet : pontos = {0} ".format(point), end='')
-        for i, strip in enumerate(stripCount):
-            print("strip[{0}] = {1} ".format(i, strip), end='')
-        print("")
-        print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
+        col = [max(0, min(255, int(c * 255))) for c in emissive]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        # lista de vértices 3D
+        verts = []
+        for i in range(0, len(point), 3):
+            verts.append([point[i], point[i+1], point[i+2]])
+
+        def transform_vertex(v):
+            vec = np.array([v[0], v[1], v[2], 1.0])
+            if hasattr(GL, 'model_matrix'):
+                vec = GL.model_matrix @ vec
+            if hasattr(GL, 'view_matrix'):
+                vec = GL.view_matrix @ vec
+            if hasattr(GL, 'projection_matrix'):
+                vec = GL.projection_matrix @ vec
+            if vec[3] != 0:
+                vec = vec / vec[3]
+            x = int(round((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1)))
+            y = int(round((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1)))
+            return (x, y)
+
+        def fill_triangle(p0, p1, p2):
+            (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
+            min_x = max(0, int(math.floor(min(x0, x1, x2))))
+            max_x = min(GL.width, int(math.ceil(max(x0, x1, x2))))
+            min_y = max(0, int(math.floor(min(y0, y1, y2))))
+            max_y = min(GL.height, int(math.ceil(max(y0, y1, y2))))
+
+            def edge(ax, ay, bx, by, px, py):
+                return (px - ax) * (by - ay) - (py - ay) * (bx - ax)
+
+            def is_top_left(ax, ay, bx, by):
+                dx = bx - ax
+                dy = by - ay
+                return (dy > 0) or (dy == 0 and dx < 0)
+
+            area = edge(x0, y0, x1, y1, x2, y2)
+            if area == 0:
+                return
+            if area < 0:
+                x1, y1, x2, y2 = x2, y2, x1, y1
+                area = -area
+
+            topLeft0 = is_top_left(x1, y1, x2, y2)
+            topLeft1 = is_top_left(x2, y2, x0, y0)
+            topLeft2 = is_top_left(x0, y0, x1, y1)
+
+            for y in range(min_y, max_y):
+                for x in range(min_x, max_x):
+                    px = x + 0.5
+                    py = y + 0.5
+                    w0 = edge(x1, y1, x2, y2, px, py)
+                    w1 = edge(x2, y2, x0, y0, px, py)
+                    w2 = edge(x0, y0, x1, y1, px, py)
+                    if (w0 > 0 or (w0 == 0 and topLeft0)) and \
+                       (w1 > 0 or (w1 == 0 and topLeft1)) and \
+                       (w2 > 0 or (w2 == 0 and topLeft2)):
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col)
+
+        base = 0
+        for count in stripCount:
+            if count < 3:
+                base += count
+                continue
+            for i in range(count - 2):
+                i0 = base + i
+                i1 = base + i + 1
+                i2 = base + i + 2
+                if i % 2 == 0:
+                    order = (i0, i1, i2)
+                else:
+                    order = (i1, i0, i2)
+                p0 = transform_vertex(verts[order[0]])
+                p1 = transform_vertex(verts[order[1]])
+                p2 = transform_vertex(verts[order[2]])
+                fill_triangle(p0, p1, p2)
+            base += count
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
-        """Função usada para renderizar IndexedTriangleStripSet."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/rendering.html#IndexedTriangleStripSet
-        # A função indexedTriangleStripSet é usada para desenhar tiras de triângulos
-        # interconectados, você receberá as coordenadas dos pontos no parâmetro point, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
-        # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
-        # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedTriangleStripSet uma lista informando
-        # como conectar os vértices é informada em index, o valor -1 indica que a lista
-        # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
-        # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-        # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
-        # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
+        """Renderiza IndexedTriangleStripSet (-1 separa tiras)."""
+        if not point or not index:
+            return
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
-        print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
+        emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
+        col = [max(0, min(255, int(c * 255))) for c in emissive]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        verts = []
+        for i in range(0, len(point), 3):
+            verts.append([point[i], point[i+1], point[i+2]])
+
+        def transform_vertex(v):
+            vec = np.array([v[0], v[1], v[2], 1.0])
+            if hasattr(GL, 'model_matrix'):
+                vec = GL.model_matrix @ vec
+            if hasattr(GL, 'view_matrix'):
+                vec = GL.view_matrix @ vec
+            if hasattr(GL, 'projection_matrix'):
+                vec = GL.projection_matrix @ vec
+            if vec[3] != 0:
+                vec = vec / vec[3]
+            x = int(round((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1)))
+            y = int(round((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1)))
+            return (x, y)
+
+        def fill_triangle(p0, p1, p2):
+            (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
+            min_x = max(0, int(math.floor(min(x0, x1, x2))))
+            max_x = min(GL.width, int(math.ceil(max(x0, x1, x2))))
+            min_y = max(0, int(math.floor(min(y0, y1, y2))))
+            max_y = min(GL.height, int(math.ceil(max(y0, y1, y2))))
+
+            def edge(ax, ay, bx, by, px, py):
+                return (px - ax) * (by - ay) - (py - ay) * (bx - ax)
+
+            def is_top_left(ax, ay, bx, by):
+                dx = bx - ax
+                dy = by - ay
+                return (dy > 0) or (dy == 0 and dx < 0)
+
+            area = edge(x0, y0, x1, y1, x2, y2)
+            if area == 0:
+                return
+            if area < 0:
+                x1, y1, x2, y2 = x2, y2, x1, y1
+
+            topLeft0 = is_top_left(x1, y1, x2, y2)
+            topLeft1 = is_top_left(x2, y2, x0, y0)
+            topLeft2 = is_top_left(x0, y0, x1, y1)
+
+            for y in range(min_y, max_y):
+                for x in range(min_x, max_x):
+                    px = x + 0.5
+                    py = y + 0.5
+                    w0 = edge(x1, y1, x2, y2, px, py)
+                    w1 = edge(x2, y2, x0, y0, px, py)
+                    w2 = edge(x0, y0, x1, y1, px, py)
+                    if (w0 > 0 or (w0 == 0 and topLeft0)) and \
+                       (w1 > 0 or (w1 == 0 and topLeft1)) and \
+                       (w2 > 0 or (w2 == 0 and topLeft2)):
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col)
+
+        current = []
+        for idx in index:
+            if idx == -1:
+                if len(current) >= 3:
+                    for i in range(len(current) - 2):
+                        i0, i1, i2 = current[i], current[i+1], current[i+2]
+                        order = (i0, i1, i2) if (i % 2 == 0) else (i1, i0, i2)
+                        p0 = transform_vertex(verts[order[0]])
+                        p1 = transform_vertex(verts[order[1]])
+                        p2 = transform_vertex(verts[order[2]])
+                        fill_triangle(p0, p1, p2)
+                current = []
+            else:
+                if 0 <= idx < len(verts):
+                    current.append(idx)
+        if len(current) >= 3:
+            for i in range(len(current) - 2):
+                i0, i1, i2 = current[i], current[i+1], current[i+2]
+                order = (i0, i1, i2) if (i % 2 == 0) else (i1, i0, i2)
+                p0 = transform_vertex(verts[order[0]])
+                p1 = transform_vertex(verts[order[1]])
+                p2 = transform_vertex(verts[order[2]])
+                fill_triangle(p0, p1, p2)
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
                        texCoord, texCoordIndex, colors, current_texture):
-        """Função usada para renderizar IndexedFaceSet."""
-        # https://www.web3d.org/specifications/X3Dv4/ISO-IEC19775-1v4-IS/Part01/components/geometry3D.html#IndexedFaceSet
-        # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
-        # forma muito simular a IndexedTriangleStripSet porém com mais recursos.
-        # Você receberá as coordenadas dos pontos no parâmetro cord, esses
-        # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim coord[0] é o valor
-        # da coordenada x do primeiro ponto, coord[1] o valor y do primeiro ponto, coord[2]
-        # o valor z da coordenada z do primeiro ponto. Já coord[3] é a coordenada x do
-        # segundo ponto e assim por diante. No IndexedFaceSet uma lista de vértices é informada
-        # em coordIndex, o valor -1 indica que a lista acabou.
-        # A ordem de conexão não possui uma ordem oficial, mas em geral se o primeiro ponto com os dois
-        # seguintes e depois este mesmo primeiro ponto com o terçeiro e quarto ponto. Por exemplo: numa
-        # sequencia 0, 1, 2, 3, 4, -1 o primeiro triângulo será com os vértices 0, 1 e 2, depois serão
-        # os vértices 0, 2 e 3, e depois 0, 3 e 4, e assim por diante, até chegar no final da lista.
-        # Adicionalmente essa implementação do IndexedFace aceita cores por vértices, assim
-        # se a flag colorPerVertex estiver habilitada, os vértices também possuirão cores
-        # que servem para definir a cor interna dos poligonos, para isso faça um cálculo
-        # baricêntrico de que cor deverá ter aquela posição. Da mesma forma se pode definir uma
-        # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
-        # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
-        # implementadado um método para a leitura de imagens.
+        """Renderiza IndexedFaceSet triangulando em fan, com cores por vértice e textura simples."""
+        if not coord or not coordIndex:
+            return
 
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedFaceSet : ")
-        if coord:
-            print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        print("colorPerVertex = {0}".format(colorPerVertex))
+        # vertices
+        verts = []
+        for i in range(0, len(coord), 3):
+            verts.append([coord[i], coord[i+1], coord[i+2]])
+
+        # faces como listas de índices, separadas por -1
+        faces = []
+        cur = []
+        for idx in coordIndex:
+            if idx == -1:
+                if len(cur) >= 3:
+                    faces.append(cur)
+                cur = []
+            else:
+                if 0 <= idx < len(verts):
+                    cur.append(idx)
+        if len(cur) >= 3:
+            faces.append(cur)
+
+        # cores por vértice (opcional)
+        face_colors = None
         if colorPerVertex and color and colorIndex:
-            print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        if texCoord and texCoordIndex:
-            print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
-        if current_texture:
-            image = gpu.GPU.load_texture(current_texture[0])
-            print("\t Matriz com image = {0}".format(image))
-            print("\t Dimensões da image = {0}".format(image.shape))
-        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+            colors_list = []
+            for i in range(0, len(color), 3):
+                colors_list.append([color[i], color[i+1], color[i+2]])
+            face_colors = []
+            curc = []
+            for ci in colorIndex:
+                if ci == -1:
+                    if len(curc) >= 3:
+                        face_colors.append(curc)
+                    curc = []
+                else:
+                    if 0 <= ci < len(colors_list):
+                        curc.append(colors_list[ci])
+            if len(curc) >= 3:
+                face_colors.append(curc)
+            if len(face_colors) != len(faces):
+                face_colors = None
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        # textura (opcional)
+        tex_faces = None
+        texture_img = None
+        if current_texture and texCoord and texCoordIndex:
+            try:
+                texture_img = gpu.GPU.load_texture(current_texture[0])
+            except Exception:
+                texture_img = None
+            if texture_img is not None:
+                uv_list = []
+                for i in range(0, len(texCoord), 2):
+                    uv_list.append([texCoord[i], texCoord[i+1]])
+                tex_faces = []
+                curu = []
+                for ti in texCoordIndex:
+                    if ti == -1:
+                        if len(curu) >= 3:
+                            tex_faces.append(curu)
+                        curu = []
+                    else:
+                        if 0 <= ti < len(uv_list):
+                            curu.append(uv_list[ti])
+                if len(curu) >= 3:
+                    tex_faces.append(curu)
+                if len(tex_faces) != len(faces):
+                    tex_faces = None
+
+        emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
+        emissive_col = [max(0, min(255, int(c * 255))) for c in emissive]
+
+        def transform_vertex(v):
+            vec = np.array([v[0], v[1], v[2], 1.0])
+            if hasattr(GL, 'model_matrix'):
+                vec = GL.model_matrix @ vec
+            if hasattr(GL, 'view_matrix'):
+                vec = GL.view_matrix @ vec
+            if hasattr(GL, 'projection_matrix'):
+                vec = GL.projection_matrix @ vec
+            if vec[3] != 0:
+                vec = vec / vec[3]
+            x = int(round((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1)))
+            y = int(round((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1)))
+            return (x, y)
+
+        def sample_tex(u, v):
+            if texture_img is None:
+                return emissive_col
+            h, w = texture_img.shape[0], texture_img.shape[1]
+            u = max(0.0, min(1.0, u))
+            v = max(0.0, min(1.0, v))
+            xi = int(u * (w - 1))
+            yi = int((1 - v) * (h - 1))
+            px = texture_img[yi, xi]
+            if len(px) >= 3:
+                return [int(px[0]), int(px[1]), int(px[2])]
+            return emissive_col
+
+        def draw_triangle(p0, p1, p2, c0, c1, c2, uv0, uv1, uv2):
+            (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
+            min_x = max(0, int(math.floor(min(x0, x1, x2))))
+            max_x = min(GL.width, int(math.ceil(max(x0, x1, x2))))
+            min_y = max(0, int(math.floor(min(y0, y1, y2))))
+            max_y = min(GL.height, int(math.ceil(max(y0, y1, y2))))
+
+            def edge(ax, ay, bx, by, px, py):
+                return (px - ax) * (by - ay) - (py - ay) * (bx - ax)
+
+            def is_top_left(ax, ay, bx, by):
+                dx = bx - ax
+                dy = by - ay
+                return (dy > 0) or (dy == 0 and dx < 0)
+
+            den = edge(x0, y0, x1, y1, x2, y2)
+            if den == 0:
+                return
+            if den < 0:
+                x1, y1, x2, y2 = x2, y2, x1, y1
+                den = -den
+
+            topLeft0 = is_top_left(x1, y1, x2, y2)
+            topLeft1 = is_top_left(x2, y2, x0, y0)
+            topLeft2 = is_top_left(x0, y0, x1, y1)
+
+            for y in range(min_y, max_y):
+                for x in range(min_x, max_x):
+                    px = x + 0.5
+                    py = y + 0.5
+                    w0 = edge(x1, y1, x2, y2, px, py)
+                    w1 = edge(x2, y2, x0, y0, px, py)
+                    w2 = edge(x0, y0, x1, y1, px, py)
+                    if (w0 > 0 or (w0 == 0 and topLeft0)) and \
+                       (w1 > 0 or (w1 == 0 and topLeft1)) and \
+                       (w2 > 0 or (w2 == 0 and topLeft2)):
+                        # baricêntricas normalizadas
+                        wA = w0 / den
+                        wB = w1 / den
+                        wC = w2 / den
+                        if uv0 is not None and uv1 is not None and uv2 is not None and texture_img is not None:
+                            u = wA*uv0[0] + wB*uv1[0] + wC*uv2[0]
+                            v = wA*uv0[1] + wB*uv1[1] + wC*uv2[1]
+                            col_px = sample_tex(u, v)
+                        elif c0 is not None and c1 is not None and c2 is not None:
+                            R = wA*c0[0] + wB*c1[0] + wC*c2[0]
+                            G = wA*c0[1] + wB*c1[1] + wC*c2[1]
+                            B = wA*c0[2] + wB*c1[2] + wC*c2[2]
+                            col_px = [int(max(0, min(255, R*255))), int(max(0, min(255, G*255))), int(max(0, min(255, B*255)))]
+                        else:
+                            col_px = emissive_col
+                        gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col_px)
+
+        for fi, face in enumerate(faces):
+            base = face[0]
+            for k in range(1, len(face) - 1):
+                i0, i1, i2 = base, face[k], face[k+1]
+                p0 = transform_vertex(verts[i0])
+                p1 = transform_vertex(verts[i1])
+                p2 = transform_vertex(verts[i2])
+                c0 = c1 = c2 = None
+                if face_colors and fi < len(face_colors):
+                    fc = face_colors[fi]
+                    try:
+                        c0 = fc[ face.index(i0) ]
+                        c1 = fc[ face.index(i1) ]
+                        c2 = fc[ face.index(i2) ]
+                    except Exception:
+                        c0 = c1 = c2 = None
+                uv0 = uv1 = uv2 = None
+                if tex_faces and fi < len(tex_faces):
+                    tf = tex_faces[fi]
+                    try:
+                        uv0 = tf[ face.index(i0) ]
+                        uv1 = tf[ face.index(i1) ]
+                        uv2 = tf[ face.index(i2) ]
+                    except Exception:
+                        uv0 = uv1 = uv2 = None
+                draw_triangle(p0, p1, p2, c0, c1, c2, uv0, uv1, uv2)
 
     @staticmethod
     def box(size, colors):
