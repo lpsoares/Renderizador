@@ -343,14 +343,21 @@ class GL:
         # Quando começar a usar Transforms dentre de outros Transforms, mais a frente no curso
         # Você precisará usar alguma estrutura de dados pilha para organizar as matrizes.
 
-        T = np.identity(4)
+        if not hasattr(GL, "model_matrix"):
+            GL.model_matrix = np.identity(4)
+        if not hasattr(GL, "matrix_stack"):
+            GL.matrix_stack = []
 
+        # Push current matrix
+        GL.matrix_stack.append(GL.model_matrix.copy())
+
+        T = np.identity(4)
         if translation:
-            T[:3,3] = translation[:3]
+            T[:3, 3] = translation[:3]
 
         S = np.identity(4)
         if scale:
-            S[0,0], S[1,1], S[2,2] = scale[0], scale[1], scale[2]
+            S[0,0], S[1,1], S[2,2] = scale
 
         def build_rotation_matrix(axis_angle):
             if not axis_angle or len(axis_angle) < 4:
@@ -365,11 +372,11 @@ class GL:
                 [z*x*(1-c) - y*s, z*y*(1-c) + x*s, c + z*z*(1-c),   0],
                 [0,               0,               0,               1]
             ])
-        
+
         R = build_rotation_matrix(rotation)
 
-        # Composição: T * R * S
-        GL.model_matrix = T @ R @ S
+        # Compose new model matrix: parent * T * R * S
+        GL.model_matrix = GL.model_matrix @ (T @ R @ S)
 
     @staticmethod
     def transform_out():
@@ -379,8 +386,10 @@ class GL:
         # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
         # pilha implementada.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Saindo de Transform")
+        if hasattr(GL, "matrix_stack") and GL.matrix_stack:
+            GL.model_matrix = GL.matrix_stack.pop()
+        else:
+            GL.model_matrix = np.identity(4)
 
     @staticmethod
     def triangleStripSet(point, stripCount, colors):
@@ -397,15 +406,102 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("TriangleStripSet : pontos = {0} ".format(point), end='')
-        for i, strip in enumerate(stripCount):
-            print("strip[{0}] = {1} ".format(i, strip), end='')
-        print("")
-        print("TriangleStripSet : colors = {0}".format(colors)) # imprime no terminal as cores
+        if not point or len(point) < 9 or not stripCount or len(stripCount) < 1:
+            return
+        
+        emissive_color = colors["emissiveColor"]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        def transform(vertex):
+            vec = np.array([vertex[0], vertex[1], vertex[2], 1.0])
+
+            if hasattr(GL, "model_matrix"):
+                vec = GL.model_matrix @ vec
+            if hasattr(GL, "view_matrix"):
+                vec = GL.view_matrix @ vec
+            if hasattr(GL, "projection_matrix"):
+                vec = GL.projection_matrix @ vec
+
+            # Perspective divide
+            if vec[3] != 0:
+                vec = vec / vec[3]
+
+            # NDC → screen coords
+            x = int((vec[0] * 0.5 + 0.5) * (GL.width - 1))
+            y = int((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1))
+
+            return (x, y)
+        
+        def draw_inside_triangle(p0, p1, p2, emissive_color):
+            v0_x, v0_y = p0
+            v1_x, v1_y = p1
+            v2_x, v2_y = p2
+
+            min_x, max_x = min(v0_x, v1_x, v2_x), max(v0_x, v1_x, v2_x)
+            min_y, max_y = min(v0_y, v1_y, v2_y), max(v0_y, v1_y, v2_y)
+
+            def edge_func(x0, y0, x1, y1, x, y):
+                return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0)
+
+            for x in range(min_x, max_x + 1):
+                for y in range(min_y, max_y + 1):
+                    w0 = edge_func(v1_x, v1_y, v2_x, v2_y, x, y)
+                    w1 = edge_func(v2_x, v2_y, v0_x, v0_y, x, y)
+                    w2 = edge_func(v0_x, v0_y, v1_x, v1_y, x, y)
+
+                    if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0):
+                        if 0 <= x < GL.width and 0 <= y < GL.height:
+                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8,
+                                [emissive_color[0] * 255,
+                                emissive_color[1] * 255,
+                                emissive_color[2] * 255])
+                            
+        def draw_line(p0, p1, emissive_color):
+            x0, y0 = p0
+            x1, y1 = p1
+
+            dx, dy = abs(x1 - x0), abs(y1 - y0)
+            sx = 1 if x0 < x1 else -1
+            sy = 1 if y0 < y1 else -1
+            err = dx - dy
+
+            while True:
+                if 0 <= x0 < GL.width and 0 <= y0 < GL.height:
+                    gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8,
+                        [emissive_color[0] * 255, emissive_color[1] * 255, emissive_color[2] * 255])
+
+                if x0 == x1 and y0 == y1:
+                    break
+
+                e2 = 2 * err
+                if e2 > -dy:
+                    err -= dy
+                    x0 += sx
+                if e2 < dx:
+                    err += dx
+                    y0 += sy
+
+        index = 0
+        for count in stripCount:
+            if count < 3:
+                index += count
+                continue
+            
+            vertices = [transform(point[i:i + 3]) for i in range(index * 3, (index + count) * 3, 3)]
+            screen_coords = vertices
+
+            for i in range(count - 2):
+                if i % 2 == 0:
+                    p0, p1, p2 = screen_coords[i], screen_coords[i+1], screen_coords[i+2]
+                else:
+                    p0, p1, p2 = screen_coords[i], screen_coords[i+2], screen_coords[i+1]
+                
+                draw_inside_triangle(p0, p1, p2, emissive_color)
+                draw_line(p0, p1, emissive_color)
+                draw_line(p1, p2, emissive_color)
+                draw_line(p2, p0, emissive_color)
+
+            index += count
+
 
     @staticmethod
     def indexedTriangleStripSet(point, index, colors):
@@ -423,12 +519,102 @@ class GL:
         # depois 2, 3 e 4, e assim por diante. Cuidado com a orientação dos vértices, ou seja,
         # todos no sentido horário ou todos no sentido anti-horário, conforme especificado.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index))
-        print("IndexedTriangleStripSet : colors = {0}".format(colors)) # imprime as cores
+        if not point or len(point) < 9 or not index or len(index) < 3:
+            return
+        
+        emissive_color = colors["emissiveColor"]
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        def transform(vertex):
+            vec = np.array([vertex[0], vertex[1], vertex[2], 1.0])
+
+            if hasattr(GL, "model_matrix"):
+                vec = GL.model_matrix @ vec
+            if hasattr(GL, "view_matrix"):
+                vec = GL.view_matrix @ vec
+            if hasattr(GL, "projection_matrix"):
+                vec = GL.projection_matrix @ vec
+
+            # Perspective divide
+            if vec[3] != 0:
+                vec = vec / vec[3]
+
+            # NDC → screen coords
+            x = int((vec[0] * 0.5 + 0.5) * (GL.width - 1))
+            y = int((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1))
+
+            return (x, y)
+        
+        def draw_inside_triangle(p0, p1, p2, emissive_color):
+            v0_x, v0_y = p0
+            v1_x, v1_y = p1
+            v2_x, v2_y = p2
+
+            min_x, max_x = min(v0_x, v1_x, v2_x), max(v0_x, v1_x, v2_x)
+            min_y, max_y = min(v0_y, v1_y, v2_y), max(v0_y, v1_y, v2_y)
+
+            def edge_func(x0, y0, x1, y1, x, y):
+                return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0)
+
+            for x in range(min_x, max_x + 1):
+                for y in range(min_y, max_y + 1):
+                    w0 = edge_func(v1_x, v1_y, v2_x, v2_y, x, y)
+                    w1 = edge_func(v2_x, v2_y, v0_x, v0_y, x, y)
+                    w2 = edge_func(v0_x, v0_y, v1_x, v1_y, x, y)
+
+                    if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0):
+                        if 0 <= x < GL.width and 0 <= y < GL.height:
+                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8,
+                                [emissive_color[0] * 255,
+                                emissive_color[1] * 255,
+                                emissive_color[2] * 255])
+                            
+        def draw_line(p0, p1, emissive_color):
+            x0, y0 = p0
+            x1, y1 = p1
+
+            dx, dy = abs(x1 - x0), abs(y1 - y0)
+            sx = 1 if x0 < x1 else -1
+            sy = 1 if y0 < y1 else -1
+            err = dx - dy
+
+            while True:
+                if 0 <= x0 < GL.width and 0 <= y0 < GL.height:
+                    gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8,
+                        [emissive_color[0] * 255, emissive_color[1] * 255, emissive_color[2] * 255])
+
+                if x0 == x1 and y0 == y1:
+                    break
+
+                e2 = 2 * err
+                if e2 > -dy:
+                    err -= dy
+                    x0 += sx
+                if e2 < dx:
+                    err += dx
+                    y0 += sy
+
+        current_strip = []
+        for idx in index:
+            if idx == -1:
+                if len(current_strip) >= 3:
+                    vertices = [transform(point[i:i + 3]) for i in current_strip]
+                    screen_coords = vertices
+
+                    for i in range(len(current_strip) - 2):
+                        if i % 2 == 0:
+                            p0, p1, p2 = screen_coords[i], screen_coords[i+1], screen_coords[i+2]
+                        else:
+                            p0, p1, p2 = screen_coords[i], screen_coords[i+2], screen_coords[i+1]
+                        
+                        draw_inside_triangle(p0, p1, p2, emissive_color)
+                        draw_line(p0, p1, emissive_color)
+                        draw_line(p1, p2, emissive_color)
+                        draw_line(p2, p0, emissive_color)
+
+                current_strip = []
+            else:
+                if 0 <= idx * 3 + 2 < len(point):
+                    current_strip.append(idx * 3)
 
     @staticmethod
     def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex,
@@ -455,23 +641,101 @@ class GL:
         # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
         # implementadado um método para a leitura de imagens.
 
-        # Os prints abaixo são só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("IndexedFaceSet : ")
-        if coord:
-            print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex))
-        print("colorPerVertex = {0}".format(colorPerVertex))
-        if colorPerVertex and color and colorIndex:
-            print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex))
-        if texCoord and texCoordIndex:
-            print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex))
-        if current_texture:
-            image = gpu.GPU.load_texture(current_texture[0])
-            print("\t Matriz com image = {0}".format(image))
-            print("\t Dimensões da image = {0}".format(image.shape))
-        print("IndexedFaceSet : colors = {0}".format(colors))  # imprime no terminal as cores
+        gpu.GPU.load_texture(current_texture[0]) if current_texture and current_texture[0] else None
 
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        if not coord or len(coord) < 9 or not coordIndex or len(coordIndex) < 3:
+            return
+        
+        emissive_color = colors["emissiveColor"]
+
+        def transform(vertex):
+            vec = np.array([vertex[0], vertex[1], vertex[2], 1.0])
+
+            if hasattr(GL, "model_matrix"):
+                vec = GL.model_matrix @ vec
+            if hasattr(GL, "view_matrix"):
+                vec = GL.view_matrix @ vec
+            if hasattr(GL, "projection_matrix"):
+                vec = GL.projection_matrix @ vec
+
+            # Perspective divide
+            if vec[3] != 0:
+                vec = vec / vec[3]
+
+            # NDC → screen coords
+            x = int((vec[0] * 0.5 + 0.5) * (GL.width - 1))
+            y = int((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1))
+
+            return (x, y)
+
+        def draw_inside_triangle(p0, p1, p2, emissive_color):
+            v0_x, v0_y = p0
+            v1_x, v1_y = p1
+            v2_x, v2_y = p2
+
+            min_x, max_x = min(v0_x, v1_x, v2_x), max(v0_x, v1_x, v2_x)
+            min_y, max_y = min(v0_y, v1_y, v2_y), max(v0_y, v1_y, v2_y)
+
+            def edge_func(x0, y0, x1, y1, x, y):
+                return (x - x0) * (y1 - y0) - (y - y0) * (x1 - x0)
+
+            for x in range(min_x, max_x + 1):
+                for y in range(min_y, max_y + 1):
+                    w0 = edge_func(v1_x, v1_y, v2_x, v2_y, x, y)
+                    w1 = edge_func(v2_x, v2_y, v0_x, v0_y, x, y)
+                    w2 = edge_func(v0_x, v0_y, v1_x, v1_y, x, y)
+
+                    if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0):
+                        if 0 <= x < GL.width and 0 <= y < GL.height:
+                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8,
+                                [emissive_color[0] * 255,
+                                emissive_color[1] * 255,
+                                emissive_color[2] * 255])
+                            
+        def draw_line(p0, p1, emissive_color):
+            x0, y0 = p0
+            x1, y1 = p1
+
+            dx, dy = abs(x1 - x0), abs(y1 - y0)
+            sx = 1 if x0 < x1 else -1
+            sy = 1 if y0 < y1 else -1
+            err = dx - dy
+
+            while True:
+                if 0 <= x0 < GL.width and 0 <= y0 < GL.height:
+                    gpu.GPU.draw_pixel([x0, y0], gpu.GPU.RGB8,
+                        [emissive_color[0] * 255, emissive_color[1] * 255, emissive_color[2] * 255])
+
+                if x0 == x1 and y0 == y1:
+                    break
+
+                e2 = 2 * err
+                if e2 > -dy:
+                    err -= dy
+                    x0 += sx
+                if e2 < dx:
+                    err += dx
+                    y0 += sy
+
+        current_face = []
+        for idx in coordIndex:
+            if idx == -1:
+                if len(current_face) >= 3:
+                    vertices = [transform(coord[i:i + 3]) for i in current_face]
+                    screen_coords = vertices
+
+                    for i in range(1, len(current_face) - 1):
+                        p0, p1, p2 = screen_coords[0], screen_coords[i], screen_coords[i+1]
+                        
+                        draw_inside_triangle(p0, p1, p2, emissive_color)
+                        draw_line(p0, p1, emissive_color)
+                        draw_line(p1, p2, emissive_color)
+                        draw_line(p2, p0, emissive_color)
+
+                current_face = []
+            else:
+                if 0 <= idx * 3 + 2 < len(coord):
+                    current_face.append(idx * 3)
 
     @staticmethod
     def box(size, colors):
