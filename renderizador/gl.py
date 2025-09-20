@@ -167,25 +167,43 @@ class GL:
             return
 
         emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
-        col = [max(0, min(255, int(c * 255))) for c in emissive]
+        base_col = [max(0, min(255, int(c * 255))) for c in emissive]
+        transp = colors.get("transparency", 0.0) if colors else 0.0
 
         def transform_vertex(v):
-            # v = [x, y, z]
+            # Retorna (x_screen, y_screen, z_ndc, inv_w)
             vec = np.array([v[0], v[1], v[2], 1.0])
-            # Aplica modelo, visão e projeção
             if hasattr(GL, 'model_matrix'):
                 vec = GL.model_matrix @ vec
             if hasattr(GL, 'view_matrix'):
                 vec = GL.view_matrix @ vec
             if hasattr(GL, 'projection_matrix'):
                 vec = GL.projection_matrix @ vec
-            # Normaliza para NDC
-            if vec[3] != 0:
-                vec = vec / vec[3]
-            # Converte para coordenadas de tela
-            x = int(round((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1)))
-            y = int(round((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1)))
-            return (x, y)
+            w = vec[3] if vec[3] != 0 else 1.0
+            inv_w = 1.0 / w
+            # NDC
+            x_ndc = vec[0] * inv_w
+            y_ndc = vec[1] * inv_w
+            z_ndc = vec[2] * inv_w  # assumindo z em [-1,1]
+            x = int(round((1.0 - (x_ndc * 0.5 + 0.5)) * (GL.width - 1)))
+            y = int(round((1.0 - (y_ndc * 0.5 + 0.5)) * (GL.height - 1)))
+            return (x, y, z_ndc, inv_w)
+
+        def depth_test_and_write(x, y, z):
+            try:
+                current = gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)[0]
+            except Exception:
+                # depth buffer não alocado
+                return True
+            # Converter z_ndc [-1,1] para [0,1] (1 longe, 0 perto) assumindo clear_depth=1
+            depth = (z + 1.0) * 0.5
+            if depth < current:  # mais perto
+                gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [depth])
+                return True
+            return False
+
+        def blend(dst, src, alpha):
+            return [int(src[i] * (1-alpha) + dst[i] * alpha) for i in range(3)]
 
         for i in range(0, len(point), 9):
             if i + 8 >= len(point):
@@ -198,7 +216,7 @@ class GL:
             p2 = transform_vertex(v2)
             # Preenche o triângulo usando a regra Top-Left para evitar falhas nas bordas
             def draw_filled_triangle(p0, p1, p2):
-                (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
+                (x0, y0, z0, w0), (x1, y1, z1, w1), (x2, y2, z2, w2) = p0, p1, p2
                 # Bounding box half-open [min, max)
                 min_x = max(0, int(math.floor(min(x0, x1, x2))))
                 max_x = min(GL.width, int(math.ceil(max(x0, x1, x2))) )
@@ -219,6 +237,8 @@ class GL:
                 # Orientação consistente (CCW)
                 if area < 0:
                     x1, y1, x2, y2 = x2, y2, x1, y1
+                    z1, z2 = z2, z1
+                    w1, w2 = w2, w1
                     area = -area
 
                 topLeft0 = is_top_left(x1, y1, x2, y2)
@@ -236,7 +256,18 @@ class GL:
                         if (w0 > eps or (w0 >= -eps and topLeft0)) and \
                            (w1 > eps or (w1 >= -eps and topLeft1)) and \
                            (w2 > eps or (w2 >= -eps and topLeft2)):
-                            gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col)
+                            # baricêntricas não normalizadas -> normalizar
+                            wA = w0 / area
+                            wB = w1 / area
+                            wC = w2 / area
+                            # perspective correct via 1/w
+                            z_interp = wA * z0 + wB * z1 + wC * z2
+                            if depth_test_and_write(x, y, z_interp):
+                                final_col = base_col
+                                if transp > 0.0:
+                                    dst = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
+                                    final_col = blend(dst, base_col, transp)
+                                gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, final_col)
             draw_filled_triangle(p0, p1, p2)
 
     @staticmethod
@@ -559,15 +590,33 @@ class GL:
             if len(face_colors) != len(faces):
                 face_colors = None
 
-        # textura (opcional)
+        # textura (opcional) com geração de mipmaps
         tex_faces = None
-        texture_img = None
+        mipmaps = None  # lista de níveis [level0, level1, ...]
         if current_texture and texCoord and texCoordIndex:
             try:
-                texture_img = gpu.GPU.load_texture(current_texture[0])
+                base_img = gpu.GPU.load_texture(current_texture[0])
             except Exception:
-                texture_img = None
-            if texture_img is not None:
+                base_img = None
+            if base_img is not None:
+                # gera pirâmide até 1x1
+                mipmaps = [base_img]
+                lvl = 0
+                current = base_img
+                while current.shape[0] > 1 or current.shape[1] > 1:
+                    h, w = current.shape[0], current.shape[1]
+                    new_h = max(1, h // 2)
+                    new_w = max(1, w // 2)
+                    # média 2x2 simples (se ímpar, último pixel repete)
+                    new_level = np.zeros((new_h, new_w, current.shape[2]), dtype=current.dtype)
+                    for y in range(new_h):
+                        for x in range(new_w):
+                            block = current[y*2:min(h, y*2+2), x*2:min(w, x*2+2)]
+                            new_level[y, x] = block.mean(axis=(0,1))
+                    mipmaps.append(new_level)
+                    current = new_level
+                    lvl += 1
+                # montar faces de UV
                 uv_list = []
                 for i in range(0, len(texCoord), 2):
                     uv_list.append([texCoord[i], texCoord[i+1]])
@@ -588,6 +637,7 @@ class GL:
 
         emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
         emissive_col = [max(0, min(255, int(c * 255))) for c in emissive]
+        transp = colors.get("transparency", 0.0) if colors else 0.0
 
         def transform_vertex(v):
             vec = np.array([v[0], v[1], v[2], 1.0])
@@ -597,27 +647,66 @@ class GL:
                 vec = GL.view_matrix @ vec
             if hasattr(GL, 'projection_matrix'):
                 vec = GL.projection_matrix @ vec
-            if vec[3] != 0:
-                vec = vec / vec[3]
-            x = int(round((1.0 - (vec[0] * 0.5 + 0.5)) * (GL.width - 1)))
-            y = int(round((1.0 - (vec[1] * 0.5 + 0.5)) * (GL.height - 1)))
-            return (x, y)
+            w = vec[3] if vec[3] != 0 else 1.0
+            inv_w = 1.0 / w
+            x_ndc = vec[0] * inv_w
+            y_ndc = vec[1] * inv_w
+            z_ndc = vec[2] * inv_w
+            x = int(round((1.0 - (x_ndc * 0.5 + 0.5)) * (GL.width - 1)))
+            y = int(round((1.0 - (y_ndc * 0.5 + 0.5)) * (GL.height - 1)))
+            return (x, y, z_ndc, inv_w)
 
-        def sample_tex(u, v):
-            if texture_img is None:
+        def choose_mip_level(uv0, uv1, uv2, p0, p1, p2):
+            # Aproxima dU/dx, dV/dy via diferenças de tela -> heurística simples
+            try:
+                (x0, y0, *_), (x1, y1, *_), (x2, y2, *_) = p0, p1, p2
+                du1 = uv1[0] - uv0[0]; dv1 = uv1[1] - uv0[1]
+                du2 = uv2[0] - uv0[0]; dv2 = uv2[1] - uv0[1]
+                dx1 = x1 - x0; dy1 = y1 - y0
+                dx2 = x2 - x0; dy2 = y2 - y0
+                # área em pixels
+                area = abs(dx1*dy2 - dy1*dx2) + 1e-6
+                # magnitude média de variação de UV
+                du_avg = (abs(du1) + abs(du2)) * 0.5
+                dv_avg = (abs(dv1) + abs(dv2)) * 0.5
+                # estimativa粗: densidade de texels por pixel ~ (du_avg+dv_avg)/sqrt(area)
+                density = (du_avg + dv_avg) / math.sqrt(area)
+                level = max(0, math.log2(density * (mipmaps[0].shape[0] + mipmaps[0].shape[1]) * 0.25)) if density>0 else 0
+                return int(min(level, len(mipmaps)-1))
+            except Exception:
+                return 0
+
+        def sample_tex(u, v, level):
+            if mipmaps is None:
                 return emissive_col
-            h, w = texture_img.shape[0], texture_img.shape[1]
+            level = int(max(0, min(level, len(mipmaps)-1)))
+            tex = mipmaps[level]
+            h, w = tex.shape[0], tex.shape[1]
             u = max(0.0, min(1.0, u))
             v = max(0.0, min(1.0, v))
             xi = int(u * (w - 1))
             yi = int((1 - v) * (h - 1))
-            px = texture_img[yi, xi]
+            px = tex[yi, xi]
             if len(px) >= 3:
                 return [int(px[0]), int(px[1]), int(px[2])]
             return emissive_col
 
+        def depth_test_and_write(x, y, z_ndc):
+            try:
+                current = gpu.GPU.read_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F)[0]
+            except Exception:
+                return True
+            depth = (z_ndc + 1.0) * 0.5
+            if depth < current:
+                gpu.GPU.draw_pixel([x, y], gpu.GPU.DEPTH_COMPONENT32F, [depth])
+                return True
+            return False
+
+        def blend(dst, src, alpha):
+            return [int(src[i]*(1-alpha) + dst[i]*alpha) for i in range(3)]
+
         def draw_triangle(p0, p1, p2, c0, c1, c2, uv0, uv1, uv2):
-            (x0, y0), (x1, y1), (x2, y2) = p0, p1, p2
+            (x0, y0, z0, iw0), (x1, y1, z1, iw1), (x2, y2, z2, iw2) = p0, p1, p2
             min_x = max(0, int(math.floor(min(x0, x1, x2))))
             max_x = min(GL.width, int(math.ceil(max(x0, x1, x2))))
             min_y = max(0, int(math.floor(min(y0, y1, y2))))
@@ -636,6 +725,10 @@ class GL:
                 return
             if den < 0:
                 x1, y1, x2, y2 = x2, y2, x1, y1
+                z1, z2 = z2, z1
+                iw1, iw2 = iw2, iw1
+                c1, c2 = c2, c1
+                uv1, uv2 = uv2, uv1
                 den = -den
 
             topLeft0 = is_top_left(x1, y1, x2, y2)
@@ -646,27 +739,41 @@ class GL:
                 for x in range(min_x, max_x):
                     px = x + 0.5
                     py = y + 0.5
-                    w0 = edge(x1, y1, x2, y2, px, py)
-                    w1 = edge(x2, y2, x0, y0, px, py)
-                    w2 = edge(x0, y0, x1, y1, px, py)
-                    if (w0 > 0 or (w0 == 0 and topLeft0)) and \
-                       (w1 > 0 or (w1 == 0 and topLeft1)) and \
-                       (w2 > 0 or (w2 == 0 and topLeft2)):
-                        # baricêntricas normalizadas
-                        wA = w0 / den
-                        wB = w1 / den
-                        wC = w2 / den
-                        if uv0 is not None and uv1 is not None and uv2 is not None and texture_img is not None:
-                            u = wA*uv0[0] + wB*uv1[0] + wC*uv2[0]
-                            v = wA*uv0[1] + wB*uv1[1] + wC*uv2[1]
-                            col_px = sample_tex(u, v)
+                    e0 = edge(x1, y1, x2, y2, px, py)
+                    e1 = edge(x2, y2, x0, y0, px, py)
+                    e2 = edge(x0, y0, x1, y1, px, py)
+                    if (e0 > 0 or (e0 == 0 and topLeft0)) and \
+                       (e1 > 0 or (e1 == 0 and topLeft1)) and \
+                       (e2 > 0 or (e2 == 0 and topLeft2)):
+                        wA = e0 / den
+                        wB = e1 / den
+                        wC = e2 / den
+                        # perspective correct usando 1/w
+                        inv_wA = wA * iw0
+                        inv_wB = wB * iw1
+                        inv_wC = wC * iw2
+                        sum_inv = inv_wA + inv_wB + inv_wC
+                        if sum_inv == 0:
+                            continue
+                        inv_norm = 1.0 / sum_inv
+                        z_interp = (z0*inv_wA + z1*inv_wB + z2*inv_wC) * inv_norm
+                        if not depth_test_and_write(x, y, z_interp):
+                            continue
+                        if uv0 is not None and uv1 is not None and uv2 is not None and mipmaps is not None:
+                            u = (uv0[0]*inv_wA + uv1[0]*inv_wB + uv2[0]*inv_wC) * inv_norm
+                            v = (uv0[1]*inv_wA + uv1[1]*inv_wB + uv2[1]*inv_wC) * inv_norm
+                            lvl = choose_mip_level(uv0, uv1, uv2, p0, p1, p2)
+                            col_px = sample_tex(u, v, lvl)
                         elif c0 is not None and c1 is not None and c2 is not None:
-                            R = wA*c0[0] + wB*c1[0] + wC*c2[0]
-                            G = wA*c0[1] + wB*c1[1] + wC*c2[1]
-                            B = wA*c0[2] + wB*c1[2] + wC*c2[2]
+                            R = (c0[0]*inv_wA + c1[0]*inv_wB + c2[0]*inv_wC) * inv_norm
+                            G = (c0[1]*inv_wA + c1[1]*inv_wB + c2[1]*inv_wC) * inv_norm
+                            B = (c0[2]*inv_wA + c1[2]*inv_wB + c2[2]*inv_wC) * inv_norm
                             col_px = [int(max(0, min(255, R*255))), int(max(0, min(255, G*255))), int(max(0, min(255, B*255)))]
                         else:
                             col_px = emissive_col
+                        if transp > 0.0:
+                            dst = gpu.GPU.read_pixel([x, y], gpu.GPU.RGB8)
+                            col_px = blend(dst, col_px, transp)
                         gpu.GPU.draw_pixel([x, y], gpu.GPU.RGB8, col_px)
 
         for fi, face in enumerate(faces):

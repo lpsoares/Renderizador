@@ -35,19 +35,26 @@ class Renderizador:
         self.image_file = "tela.png"
         self.scene = None
         self.framebuffers = {}
+        # Fator de super amostragem padrão (2 = 2x2). Pode ser ajustado externamente.
+        self.ssaa_factor = 2
 
     def setup(self):
         """Configura o sistema para a renderização."""
-        # Configurando color buffers para exibição na tela
+        # Configurando color buffers: podemos ter um framebuffer super (SSAA) e um final (FRONT)
+        if self.ssaa_factor > 1:
+            fbo = gpu.GPU.gen_framebuffers(2)
+            self.framebuffers["SUPER"] = fbo[0]
+            self.framebuffers["FRONT"] = fbo[1]
+        else:
+            fbo = gpu.GPU.gen_framebuffers(1)
+            self.framebuffers["FRONT"] = fbo[0]
 
-        # Cria uma (1) posição de FrameBuffer na GPU
-        fbo = gpu.GPU.gen_framebuffers(1)
-
-        # Define o atributo FRONT como o FrameBuffe principal
-        self.framebuffers["FRONT"] = fbo[0]
-
-        # Define que a posição criada será usada para desenho e leitura
-        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
+        # Define que a posição FRONT será usada para leitura final (display)
+        gpu.GPU.bind_framebuffer(gpu.GPU.READ_FRAMEBUFFER, self.framebuffers["FRONT"])
+        # E SUPER/FRONT para escrita conforme fator
+        draw_target = self.framebuffers["SUPER"] if self.ssaa_factor > 1 else self.framebuffers["FRONT"]
+        gpu.GPU.bind_framebuffer(gpu.GPU.DRAW_FRAMEBUFFER, draw_target)
+        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, draw_target)  # conveniência para read/write iguais de início
         # Opções:
         # - DRAW_FRAMEBUFFER: Faz o bind só para escrever no framebuffer
         # - READ_FRAMEBUFFER: Faz o bind só para leitura no framebuffer
@@ -55,23 +62,53 @@ class Renderizador:
 
         # Aloca memória no FrameBuffer para um tipo e tamanho especificado de buffer
 
-        # Memória de Framebuffer para canal de cores
-        gpu.GPU.framebuffer_storage(
-            self.framebuffers["FRONT"],
-            gpu.GPU.COLOR_ATTACHMENT,
-            gpu.GPU.RGB8,
-            self.width,
-            self.height
-        )
+        target_w = self.width * self.ssaa_factor
+        target_h = self.height * self.ssaa_factor
+        # Atualiza dimensões da GL para rasterização correta em supersampling
+        gl.GL.width = target_w
+        gl.GL.height = target_h
 
-        # Descomente as seguintes linhas se for usar um Framebuffer para profundidade
-        # gpu.GPU.framebuffer_storage(
-        #     self.framebuffers["FRONT"],
-        #     gpu.GPU.DEPTH_ATTACHMENT,
-        #     gpu.GPU.DEPTH_COMPONENT32F,
-        #     self.width,
-        #     self.height
-        # )
+        # Se houver supersampling, SUPER é o alvo de renderização; FRONT mantém resolução nativa
+        if self.ssaa_factor > 1:
+            # SUPER: color + depth em resolução aumentada
+            gpu.GPU.framebuffer_storage(
+                self.framebuffers["SUPER"],
+                gpu.GPU.COLOR_ATTACHMENT,
+                gpu.GPU.RGB8,
+                target_w,
+                target_h
+            )
+            gpu.GPU.framebuffer_storage(
+                self.framebuffers["SUPER"],
+                gpu.GPU.DEPTH_ATTACHMENT,
+                gpu.GPU.DEPTH_COMPONENT32F,
+                target_w,
+                target_h
+            )
+            # FRONT: apenas cor na resolução final
+            gpu.GPU.framebuffer_storage(
+                self.framebuffers["FRONT"],
+                gpu.GPU.COLOR_ATTACHMENT,
+                gpu.GPU.RGB8,
+                self.width,
+                self.height
+            )
+        else:
+            # FRONT único: color + depth
+            gpu.GPU.framebuffer_storage(
+                self.framebuffers["FRONT"],
+                gpu.GPU.COLOR_ATTACHMENT,
+                gpu.GPU.RGB8,
+                target_w,
+                target_h
+            )
+            gpu.GPU.framebuffer_storage(
+                self.framebuffers["FRONT"],
+                gpu.GPU.DEPTH_ATTACHMENT,
+                gpu.GPU.DEPTH_COMPONENT32F,
+                target_w,
+                target_h
+            )
     
         # Opções:
         # - COLOR_ATTACHMENT: alocações para as cores da imagem renderizada
@@ -91,14 +128,17 @@ class Renderizador:
         # Assuma 1.0 o mais afastado e -1.0 o mais próximo da camera
         gpu.GPU.clear_depth(1.0)
 
-        # Definindo tamanho do Viewport para renderização
-        self.scene.viewport(width=self.width, height=self.height)
+        # Definindo tamanho do Viewport para renderização (usa resolução de render)
+        self.scene.viewport(width=target_w, height=target_h)
 
     def pre(self):
         """Rotinas pré renderização."""
         # Função invocada antes do processo de renderização iniciar.
-
-        # Limpa o frame buffers atual
+        # Define framebuffer de desenho correto
+        if self.ssaa_factor > 1:
+            gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["SUPER"])
+        else:
+            gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
         gpu.GPU.clear_buffer()
 
         # Recursos que podem ser úteis:
@@ -115,6 +155,29 @@ class Renderizador:
 
         # Método para a troca dos buffers (NÃO IMPLEMENTADO)
         # Esse método será utilizado na fase de implementação de animações
+        if self.ssaa_factor > 1:
+            # Downsample simples (box filter) de SUPER -> FRONT
+            super_fb = gpu.GPU.frame_buffer[self.framebuffers["SUPER"]].color
+            factor = self.ssaa_factor
+            h_super, w_super, _ = super_fb.shape
+            # Segurança
+            assert w_super == self.width * factor and h_super == self.height * factor
+            # Preparar destino
+            dest_fb = gpu.GPU.frame_buffer[self.framebuffers["FRONT"]].color
+            for y in range(self.height):
+                sy0 = y * factor
+                sy1 = sy0 + factor
+                for x in range(self.width):
+                    sx0 = x * factor
+                    sx1 = sx0 + factor
+                    block = super_fb[sy0:sy1, sx0:sx1]
+                    # Média simples
+                    avg = block.mean(axis=(0,1))
+                    dest_fb[y, x] = avg.astype(dest_fb.dtype)
+            # Garantir que leitura ocorra do FRONT
+            gpu.GPU.bind_framebuffer(gpu.GPU.READ_FRAMEBUFFER, self.framebuffers["FRONT"])
+        else:
+            gpu.GPU.bind_framebuffer(gpu.GPU.READ_FRAMEBUFFER, self.framebuffers["FRONT"])
         gpu.GPU.swap_buffers()
 
     def mapping(self):

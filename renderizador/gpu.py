@@ -238,7 +238,14 @@ class GPU:
     def load_texture(textura):
         """Método para ler textura."""
         file = os.path.join(GPU.path, textura)
-        imagem = Image.open(file).transpose(Image.TRANSPOSE)
+        imagem = Image.open(file)
+        # Garantir formato consistente (RGB ou RGBA) sem rotações/espelhamentos implícitos
+        if imagem.mode not in ("RGB", "RGBA"):
+            # Preferir manter alfa se existir
+            if "A" in imagem.getbands():
+                imagem = imagem.convert("RGBA")
+            else:
+                imagem = imagem.convert("RGB")
         matriz = np.array(imagem)
         return matriz
 
