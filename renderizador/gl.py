@@ -24,6 +24,108 @@ class GL:
     near = 0.01   # plano de corte próximo
     far = 1000    # plano de corte distante
     transform_stack = []  # pilha para transforms aninhados
+    
+    # Lighting system variables
+    lights = []  # Lista de luzes direcionais
+    headlight_enabled = True  # NavigationInfo headlight
+    ambient_light = [0.2, 0.2, 0.2]  # Luz ambiente global
+
+    @staticmethod
+    def calculate_lighting(world_pos, normal, material):
+        """Calcula a iluminação para um ponto usando o modelo de iluminação Phong."""
+        if not normal or len(normal) != 3:
+            return material.get("diffuseColor", [0.8, 0.8, 0.8])
+        
+        # Normaliza a normal
+        norm_length = math.sqrt(sum(n*n for n in normal)) or 1.0
+        normal = [n / norm_length for n in normal]
+        
+        # Extrai propriedades do material
+        diffuse = material.get("diffuseColor", [0.8, 0.8, 0.8])
+        specular = material.get("specularColor", [0.0, 0.0, 0.0])
+        emissive = material.get("emissiveColor", [0.0, 0.0, 0.0])
+        shininess = material.get("shininess", 0.2)
+        ambient_intensity = material.get("ambientIntensity", 0.2)
+        
+        # Cor ambiente
+        ambient = [ambient_intensity * diffuse[i] for i in range(3)]
+        
+        # Cor final acumulada
+        final_color = [emissive[i] + ambient[i] for i in range(3)]
+        
+        # Calcular contribuição de cada luz
+        for light in GL.lights:
+            if light['type'] in ['directional', 'headlight']:
+                # Direção da luz (para DirectionalLight é fixa, para headlight é a direção da câmera)
+                light_dir = light['direction']
+                if light['type'] == 'headlight' and hasattr(GL, 'view_matrix'):
+                    # Transforma direção da luz pelo espaço da câmera
+                    light_dir = [0.0, 0.0, -1.0]  # Sempre para frente na câmera
+                
+                # Produto escalar: normal . luz (máximo 0)
+                dot_nl = max(0.0, sum(normal[i] * (-light_dir[i]) for i in range(3)))
+                
+                if dot_nl > 0:
+                    # Componente difusa
+                    diffuse_contrib = [
+                        light['intensity'] * light['color'][i] * diffuse[i] * dot_nl
+                        for i in range(3)
+                    ]
+                    
+                    # Componente especular (se houver)
+                    if any(s > 0 for s in specular) and shininess > 0:
+                        # Direção da câmera (assumindo que está na origem para simplificar)
+                        view_dir = [0.0, 0.0, 1.0]  # Direção padrão da câmera
+                        
+                        # Direção de reflexão: R = 2(N·L)N - L
+                        reflect_dir = [
+                            2 * dot_nl * normal[i] - (-light_dir[i])
+                            for i in range(3)
+                        ]
+                        
+                        # Produto escalar: R . V
+                        dot_rv = max(0.0, sum(reflect_dir[i] * view_dir[i] for i in range(3)))
+                        spec_factor = pow(dot_rv, shininess * 128)  # Shininess normalizado
+                        
+                        specular_contrib = [
+                            light['intensity'] * light['color'][i] * specular[i] * spec_factor
+                            for i in range(3)
+                        ]
+                        
+                        # Adiciona contribuição especular
+                        for i in range(3):
+                            final_color[i] += specular_contrib[i]
+                    
+                    # Adiciona contribuição difusa
+                    for i in range(3):
+                        final_color[i] += diffuse_contrib[i]
+        
+        # Limita valores entre 0 e 1
+        final_color = [max(0.0, min(1.0, c)) for c in final_color]
+        return final_color
+
+    @staticmethod
+    def clear_lights():
+        """Limpa todas as luzes da cena."""
+        GL.lights = []
+
+    @staticmethod
+    def calculate_triangle_normal(v0, v1, v2):
+        """Calcula a normal de um triângulo usando produto vetorial."""
+        # Vetores das arestas
+        edge1 = [v1[i] - v0[i] for i in range(3)]
+        edge2 = [v2[i] - v0[i] for i in range(3)]
+        
+        # Produto vetorial edge1 x edge2
+        normal = [
+            edge1[1] * edge2[2] - edge1[2] * edge2[1],
+            edge1[2] * edge2[0] - edge1[0] * edge2[2],
+            edge1[0] * edge2[1] - edge1[1] * edge2[0]
+        ]
+        
+        # Normaliza
+        length = math.sqrt(sum(n*n for n in normal)) or 1.0
+        return [n / length for n in normal]
 
     @staticmethod
     def setup(width, height, near=0.01, far=1000):
@@ -32,6 +134,9 @@ class GL:
         GL.height = height
         GL.near = near
         GL.far = far
+        # Reset lighting system for each scene
+        GL.lights = []
+        GL.headlight_enabled = True
 
     @staticmethod
     def polypoint2D(point, colors):
@@ -166,8 +271,6 @@ class GL:
         if not point or len(point) < 9:
             return
 
-        emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
-        base_col = [max(0, min(255, int(c * 255))) for c in emissive]
         transp = colors.get("transparency", 0.0) if colors else 0.0
 
         def transform_vertex(v):
@@ -211,6 +314,33 @@ class GL:
             v0 = [point[i], point[i+1], point[i+2]]
             v1 = [point[i+3], point[i+4], point[i+5]]
             v2 = [point[i+6], point[i+7], point[i+8]]
+            
+            # Calcula a normal do triângulo no espaço mundial
+            triangle_normal = GL.calculate_triangle_normal(v0, v1, v2)
+            
+            # Transforma normal para o espaço mundial
+            if hasattr(GL, 'model_matrix'):
+                # Para transformar normais, usamos a transposta da inversa da matriz de modelo
+                # Simplificação: assumimos que a matriz não tem escala não-uniforme
+                normal_vec = np.array([triangle_normal[0], triangle_normal[1], triangle_normal[2], 0.0])
+                world_normal = (GL.model_matrix @ normal_vec)[:3]
+                norm_length = np.linalg.norm(world_normal) or 1.0
+                triangle_normal = (world_normal / norm_length).tolist()
+            
+            # Calcula centro do triângulo para lighting
+            center_world = [(v0[i] + v1[i] + v2[i]) / 3.0 for i in range(3)]
+            if hasattr(GL, 'model_matrix'):
+                center_vec = np.array([center_world[0], center_world[1], center_world[2], 1.0])
+                center_world = (GL.model_matrix @ center_vec)[:3].tolist()
+            
+            # Calcula a cor usando lighting
+            if GL.lights:  # Se há luzes na cena, usa lighting
+                lit_color = GL.calculate_lighting(center_world, triangle_normal, colors)
+                base_col = [max(0, min(255, int(c * 255))) for c in lit_color]
+            else:  # Caso contrário, usa cor emissiva apenas
+                emissive = colors.get("emissiveColor", [1.0, 1.0, 1.0]) if colors else [1.0, 1.0, 1.0]
+                base_col = [max(0, min(255, int(c * 255))) for c in emissive]
+            
             p0 = transform_vertex(v0)
             p1 = transform_vertex(v1)
             p2 = transform_vertex(v2)
@@ -814,12 +944,47 @@ class GL:
         # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
         # encontre os vértices e defina os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Box : size = {0}".format(size)) # imprime no terminal pontos
-        print("Box : colors = {0}".format(colors)) # imprime no terminal as cores
-
-        # Exemplo de desenho de um pixel branco na coordenada 10, 10
-        gpu.GPU.draw_pixel([10, 10], gpu.GPU.RGB8, [255, 255, 255])  # altera pixel
+        if not size or len(size) < 3:
+            return
+        
+        sx, sy, sz = size[0] / 2, size[1] / 2, size[2] / 2
+        
+        # Vértices do cubo (8 vértices)
+        vertices = [
+            [-sx, -sy, -sz],  # 0: Bottom-left-back
+            [ sx, -sy, -sz],  # 1: Bottom-right-back
+            [ sx,  sy, -sz],  # 2: Top-right-back
+            [-sx,  sy, -sz],  # 3: Top-left-back
+            [-sx, -sy,  sz],  # 4: Bottom-left-front
+            [ sx, -sy,  sz],  # 5: Bottom-right-front
+            [ sx,  sy,  sz],  # 6: Top-right-front
+            [-sx,  sy,  sz],  # 7: Top-left-front
+        ]
+        
+        # Faces do cubo (12 triângulos, 2 por face)
+        faces = [
+            # Back face (z = -sz)
+            [0, 2, 1], [0, 3, 2],
+            # Front face (z = sz)
+            [4, 5, 6], [4, 6, 7],
+            # Left face (x = -sx)
+            [0, 4, 7], [0, 7, 3],
+            # Right face (x = sx)
+            [1, 6, 5], [1, 2, 6],
+            # Bottom face (y = -sy)
+            [0, 1, 5], [0, 5, 4],
+            # Top face (y = sy)
+            [3, 6, 2], [3, 7, 6],
+        ]
+        
+        # Converte as faces em uma lista de pontos para o triangleSet
+        points = []
+        for face in faces:
+            for vertex_idx in face:
+                points.extend(vertices[vertex_idx])
+        
+        # Chama triangleSet para renderizar
+        GL.triangleSet(points, colors)
 
     @staticmethod
     def sphere(radius, colors):
@@ -831,9 +996,50 @@ class GL:
         # precisar tesselar ela em triângulos, para isso encontre os vértices e defina
         # os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Sphere : radius = {0}".format(radius)) # imprime no terminal o raio da esfera
-        print("Sphere : colors = {0}".format(colors)) # imprime no terminal as cores
+        if not radius or radius <= 0:
+            return
+        
+        # Parâmetros de tesselação
+        latitudes = 16   # Divisões horizontais
+        longitudes = 32  # Divisões verticais
+        
+        vertices = []
+        
+        # Gera vértices usando coordenadas esféricas
+        for i in range(latitudes + 1):
+            lat = math.pi * i / latitudes - math.pi / 2  # de -π/2 a π/2
+            for j in range(longitudes):
+                lng = 2 * math.pi * j / longitudes  # de 0 a 2π
+                
+                x = radius * math.cos(lat) * math.cos(lng)
+                y = radius * math.sin(lat)
+                z = radius * math.cos(lat) * math.sin(lng)
+                vertices.append([x, y, z])
+        
+        # Gera triângulos
+        points = []
+        for i in range(latitudes):
+            for j in range(longitudes):
+                # Índices dos vértices para formar dois triângulos
+                i0 = i * longitudes + j
+                i1 = i * longitudes + (j + 1) % longitudes
+                i2 = (i + 1) * longitudes + j
+                i3 = (i + 1) * longitudes + (j + 1) % longitudes
+                
+                # Primeiro triângulo
+                if i < latitudes:
+                    points.extend(vertices[i0])
+                    points.extend(vertices[i2])
+                    points.extend(vertices[i1])
+                
+                # Segundo triângulo
+                if i < latitudes:
+                    points.extend(vertices[i1])
+                    points.extend(vertices[i2])
+                    points.extend(vertices[i3])
+        
+        # Chama triangleSet para renderizar
+        GL.triangleSet(points, colors)
 
     @staticmethod
     def cone(bottomRadius, height, colors):
@@ -846,10 +1052,51 @@ class GL:
         # Para desenha esse cone você vai precisar tesselar ele em triângulos, para isso
         # encontre os vértices e defina os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Cone : bottomRadius = {0}".format(bottomRadius)) # imprime no terminal o raio da base do cone
-        print("Cone : height = {0}".format(height)) # imprime no terminal a altura do cone
-        print("Cone : colors = {0}".format(colors)) # imprime no terminal as cores
+        if not bottomRadius or not height or bottomRadius <= 0 or height <= 0:
+            return
+        
+        # Parâmetros de tesselação
+        segments = 32  # Divisões circulares
+        
+        vertices = []
+        
+        # Vértice do topo do cone
+        top_vertex = [0, height / 2, 0]
+        
+        # Vértices da base
+        base_vertices = []
+        for i in range(segments):
+            angle = 2 * math.pi * i / segments
+            x = bottomRadius * math.cos(angle)
+            z = bottomRadius * math.sin(angle)
+            y = -height / 2
+            base_vertices.append([x, y, z])
+        
+        # Centro da base
+        base_center = [0, -height / 2, 0]
+        
+        points = []
+        
+        # Triângulos da lateral do cone
+        for i in range(segments):
+            i_next = (i + 1) % segments
+            
+            # Triângulo lateral
+            points.extend(top_vertex)
+            points.extend(base_vertices[i_next])
+            points.extend(base_vertices[i])
+        
+        # Triângulos da base (fan triangulation)
+        for i in range(segments):
+            i_next = (i + 1) % segments
+            
+            # Triângulo da base
+            points.extend(base_center)
+            points.extend(base_vertices[i])
+            points.extend(base_vertices[i_next])
+        
+        # Chama triangleSet para renderizar
+        GL.triangleSet(points, colors)
 
     @staticmethod
     def cylinder(radius, height, colors):
@@ -862,10 +1109,72 @@ class GL:
         # Para desenha esse cilindro você vai precisar tesselar ele em triângulos, para isso
         # encontre os vértices e defina os triângulos.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("Cylinder : radius = {0}".format(radius)) # imprime no terminal o raio do cilindro
-        print("Cylinder : height = {0}".format(height)) # imprime no terminal a altura do cilindro
-        print("Cylinder : colors = {0}".format(colors)) # imprime no terminal as cores
+        if not radius or not height or radius <= 0 or height <= 0:
+            return
+        
+        # Parâmetros de tesselação
+        segments = 32  # Divisões circulares
+        
+        vertices = []
+        
+        # Vértices do topo
+        top_vertices = []
+        for i in range(segments):
+            angle = 2 * math.pi * i / segments
+            x = radius * math.cos(angle)
+            z = radius * math.sin(angle)
+            y = height / 2
+            top_vertices.append([x, y, z])
+        
+        # Vértices da base
+        bottom_vertices = []
+        for i in range(segments):
+            angle = 2 * math.pi * i / segments
+            x = radius * math.cos(angle)
+            z = radius * math.sin(angle)
+            y = -height / 2
+            bottom_vertices.append([x, y, z])
+        
+        # Centros das faces
+        top_center = [0, height / 2, 0]
+        bottom_center = [0, -height / 2, 0]
+        
+        points = []
+        
+        # Triângulos da lateral do cilindro
+        for i in range(segments):
+            i_next = (i + 1) % segments
+            
+            # Primeiro triângulo da lateral
+            points.extend(bottom_vertices[i])
+            points.extend(top_vertices[i])
+            points.extend(bottom_vertices[i_next])
+            
+            # Segundo triângulo da lateral
+            points.extend(bottom_vertices[i_next])
+            points.extend(top_vertices[i])
+            points.extend(top_vertices[i_next])
+        
+        # Triângulos do topo (fan triangulation)
+        for i in range(segments):
+            i_next = (i + 1) % segments
+            
+            # Triângulo do topo
+            points.extend(top_center)
+            points.extend(top_vertices[i_next])
+            points.extend(top_vertices[i])
+        
+        # Triângulos da base (fan triangulation)
+        for i in range(segments):
+            i_next = (i + 1) % segments
+            
+            # Triângulo da base
+            points.extend(bottom_center)
+            points.extend(bottom_vertices[i])
+            points.extend(bottom_vertices[i_next])
+        
+        # Chama triangleSet para renderizar
+        GL.triangleSet(points, colors)
 
     @staticmethod
     def navigationInfo(headlight):
@@ -877,8 +1186,18 @@ class GL:
         # A luz headlight deve ser direcional, ter intensidade = 1, cor = (1 1 1),
         # ambientIntensity = 0,0 e direção = (0 0 −1).
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("NavigationInfo : headlight = {0}".format(headlight)) # imprime no terminal
+        GL.headlight_enabled = headlight
+        
+        if headlight:
+            # Adiciona luz headlight (direção da câmera)
+            headlight_info = {
+                'type': 'headlight',
+                'ambientIntensity': 0.0,
+                'color': [1.0, 1.0, 1.0],
+                'intensity': 1.0,
+                'direction': [0.0, 0.0, -1.0]  # Direção da câmera
+            }
+            GL.lights.append(headlight_info)
 
     @staticmethod
     def directionalLight(ambientIntensity, color, intensity, direction):
@@ -890,11 +1209,21 @@ class GL:
         # que emana da fonte de luz no sistema de coordenadas local. A luz é emitida ao
         # longo de raios paralelos de uma distância infinita.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("DirectionalLight : ambientIntensity = {0}".format(ambientIntensity))
-        print("DirectionalLight : color = {0}".format(color)) # imprime no terminal
-        print("DirectionalLight : intensity = {0}".format(intensity)) # imprime no terminal
-        print("DirectionalLight : direction = {0}".format(direction)) # imprime no terminal
+        # Normaliza a direção da luz
+        dir_norm = np.linalg.norm(direction) or 1.0
+        normalized_direction = [d / dir_norm for d in direction]
+        
+        # Armazena informações da luz direcional
+        light_info = {
+            'type': 'directional',
+            'ambientIntensity': ambientIntensity,
+            'color': color,
+            'intensity': intensity,
+            'direction': normalized_direction
+        }
+        
+        # Adiciona à lista de luzes
+        GL.lights.append(light_info)
 
     @staticmethod
     def pointLight(ambientIntensity, color, intensity, location):
@@ -964,16 +1293,41 @@ class GL:
         # como fechada, com uma transições da última chave para a primeira chave. Se os keyValues
         # na primeira e na última chave não forem idênticos, o campo closed será ignorado.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("SplinePositionInterpolator : set_fraction = {0}".format(set_fraction))
-        print("SplinePositionInterpolator : key = {0}".format(key)) # imprime no terminal
-        print("SplinePositionInterpolator : keyValue = {0}".format(keyValue))
-        print("SplinePositionInterpolator : closed = {0}".format(closed))
-
-        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
-        value_changed = [0.0, 0.0, 0.0]
+        if not key or not keyValue or len(key) == 0:
+            return [0.0, 0.0, 0.0]
         
-        return value_changed
+        # Garante que set_fraction está no intervalo [0, 1]
+        set_fraction = max(0.0, min(1.0, set_fraction))
+        
+        # Se só há uma chave, retorna o valor correspondente
+        if len(key) == 1:
+            return keyValue[0:3]
+        
+        # Encontra os índices das chaves para interpolação
+        if set_fraction <= key[0]:
+            return keyValue[0:3]
+        if set_fraction >= key[-1]:
+            return keyValue[-3:]  # Últimos 3 valores
+        
+        # Encontra o intervalo para interpolação
+        for i in range(len(key) - 1):
+            if key[i] <= set_fraction <= key[i + 1]:
+                # Interpolação linear entre os dois pontos
+                t = (set_fraction - key[i]) / (key[i + 1] - key[i])
+                
+                # Índices dos vetores 3D
+                idx0 = i * 3
+                idx1 = (i + 1) * 3
+                
+                # Interpolação linear de cada componente
+                value_changed = [
+                    keyValue[idx0] + t * (keyValue[idx1] - keyValue[idx0]),      # x
+                    keyValue[idx0 + 1] + t * (keyValue[idx1 + 1] - keyValue[idx0 + 1]),  # y
+                    keyValue[idx0 + 2] + t * (keyValue[idx1 + 2] - keyValue[idx0 + 2])   # z
+                ]
+                return value_changed
+        
+        return [0.0, 0.0, 0.0]
 
     @staticmethod
     def orientationInterpolator(set_fraction, key, keyValue):
@@ -990,15 +1344,51 @@ class GL:
         # zeroa a um. O campo keyValue deve conter exatamente tantas rotações 3D quanto os
         # quadros-chave no key.
 
-        # O print abaixo é só para vocês verificarem o funcionamento, DEVE SER REMOVIDO.
-        print("OrientationInterpolator : set_fraction = {0}".format(set_fraction))
-        print("OrientationInterpolator : key = {0}".format(key)) # imprime no terminal
-        print("OrientationInterpolator : keyValue = {0}".format(keyValue))
-
-        # Abaixo está só um exemplo de como os dados podem ser calculados e transferidos
-        value_changed = [0, 0, 1, 0]
-
-        return value_changed
+        if not key or not keyValue or len(key) == 0:
+            return [0, 0, 1, 0]
+        
+        # Garante que set_fraction está no intervalo [0, 1]
+        set_fraction = max(0.0, min(1.0, set_fraction))
+        
+        # Se só há uma chave, retorna o valor correspondente
+        if len(key) == 1:
+            return keyValue[0:4]
+        
+        # Encontra os índices das chaves para interpolação
+        if set_fraction <= key[0]:
+            return keyValue[0:4]
+        if set_fraction >= key[-1]:
+            return keyValue[-4:]  # Últimos 4 valores
+        
+        # Encontra o intervalo para interpolação
+        for i in range(len(key) - 1):
+            if key[i] <= set_fraction <= key[i + 1]:
+                # Interpolação linear entre os dois quaternions/axis-angle
+                t = (set_fraction - key[i]) / (key[i + 1] - key[i])
+                
+                # Índices dos eixos-ângulo (4 valores cada)
+                idx0 = i * 4
+                idx1 = (i + 1) * 4
+                
+                # Interpolação SLERP simplificada para axis-angle
+                # Para simplicidade, fazemos interpolação linear dos componentes
+                value_changed = [
+                    keyValue[idx0] + t * (keyValue[idx1] - keyValue[idx0]),      # axis x
+                    keyValue[idx0 + 1] + t * (keyValue[idx1 + 1] - keyValue[idx0 + 1]),  # axis y
+                    keyValue[idx0 + 2] + t * (keyValue[idx1 + 2] - keyValue[idx0 + 2]),  # axis z
+                    keyValue[idx0 + 3] + t * (keyValue[idx1 + 3] - keyValue[idx0 + 3])   # angle
+                ]
+                
+                # Normaliza o eixo
+                axis_length = math.sqrt(value_changed[0]**2 + value_changed[1]**2 + value_changed[2]**2)
+                if axis_length > 0:
+                    value_changed[0] /= axis_length
+                    value_changed[1] /= axis_length
+                    value_changed[2] /= axis_length
+                
+                return value_changed
+        
+        return [0, 0, 1, 0]
 
     # Para o futuro (Não para versão atual do projeto.)
     def vertex_shader(self, shader):

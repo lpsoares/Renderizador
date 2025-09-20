@@ -140,6 +140,9 @@ class Renderizador:
         else:
             gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
         gpu.GPU.clear_buffer()
+        
+        # Clear lights at the beginning of each frame
+        gl.GL.clear_lights()
 
         # Recursos que podem ser úteis:
         # Define o valor do pixel no framebuffer: draw_pixel(coord, mode, data)
