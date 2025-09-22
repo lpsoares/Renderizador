@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X3D>
+  <Scene>
+    <Viewpoint position="0 0 10"/>
+    <Transform DEF="Avatar" scale="1 1 1" rotation="0.7 0.7 0 0.15">
+      <Shape>
+        <IndexedFaceSet coordIndex="0 2 1 -1 0 1 3 -1 1 2 3 -1 2 0 3 -1">
+          <Coordinate point="0 -1.71 0, 1 0 -1, -1 0 -1, 0 0 1"/>
+        </IndexedFaceSet>
+        <Appearance>
+          <Material diffuseColor='1 0 0'/>
+        </Appearance>
+      </Shape>
+      <Transform translation="0 0 0" scale="1 1 1" rotation="0 0 1 3.14">
+        <Shape>
+          <IndexedFaceSet coordIndex="0 2 1 -1 0 1 3 -1 1 2 3 -1 2 0 3 -1">
+            <Coordinate point="0 -1.71 0, 1 0 -1, -1 0 -1, 0 0 1"/>
+          </IndexedFaceSet>
+          <Appearance>
+            <Material diffuseColor='0 1 1'/>
+          </Appearance>
+        </Shape>
+        <Transform translation="0 -1.71 0" scale="0.8 0.8 0.8" rotation="0 0 1 0">
+          <Shape>
+            <IndexedFaceSet coordIndex="0 2 1 -1 0 1 3 -1 1 2 3 -1 2 0 3 -1">
+              <Coordinate point="0 -1.71 0, 1 0 -1, -1 0 -1, 0 0 1"/>
+            </IndexedFaceSet>
+            <Appearance>
+              <Material diffuseColor='0 1 0'/>
+            </Appearance>
+          </Shape>
+        </Transform>
+        <Transform translation="0.7 -1.3 0">
+          <Transform DEF="BracoD_Ombro">
+            <Transform scale="0.2 0.9 0.2">
+              <Shape>
+                <IndexedFaceSet coordIndex="0 2 1 -1 0 1 3 -1 1 2 3 -1 2 0 3 -1">
+                  <Coordinate point="0 -1.71 0, 1 0 -1, -1 0 -1, 0 0 1"/>
+                </IndexedFaceSet>
+                <Appearance>
+                  <Material diffuseColor='0 0 1'/>
+                </Appearance>
+              </Shape>
+            </Transform>
+            <Transform translation="0 -1.6 0">
+              <Transform DEF="BracoD_Cotovelo" scale="0.2 0.8 0.2">
+                <Shape>
+                  <IndexedFaceSet coordIndex="0 2 1 -1 0 1 3 -1 1 2 3 -1 2 0 3 -1">
+                    <Coordinate point="0 -1.71 0, 1 0 -1, -1 0 -1, 0 0 1"/>
+                  </IndexedFaceSet>
+                  <Appearance>
+                    <Material diffuseColor='1 1 0'/>
+                  </Appearance>
+                </Shape>
+              </Transform>
+            </Transform>
+          </Transform>
+        </Transform>
+        <Transform translation="-0.7 -1.3 0">
+          <Transform DEF="BracoE_Ombro">
+            <Transform scale="0.2 0.9 0.2">
+              <Shape>
+                <IndexedFaceSet coordIndex="0 2 1 -1 0 1 3 -1 1 2 3 -1 2 0 3 -1">
+                  <Coordinate point="0 -1.71 0, 1 0 -1, -1 0 -1, 0 0 1"/>
+                </IndexedFaceSet>
+                <Appearance>
+                  <Material diffuseColor='0 0 1'/>
+                </Appearance>
+              </Shape>
+            </Transform>
+            <Transform translation="0 -1.6 0" >
+              <Transform DEF="BracoE_Cotovelo" scale="0.2 0.8 0.2">
+                <Shape>
+                  <IndexedFaceSet coordIndex="0 2 1 -1 0 1 3 -1 1 2 3 -1 2 0 3 -1">
+                    <Coordinate point="0 -1.71 0, 1 0 -1, -1 0 -1, 0 0 1"/>
+                  </IndexedFaceSet>
+                  <Appearance>
+                    <Material diffuseColor='1 1 0'/>
+                  </Appearance>
+                </Shape>
+              </Transform>
+            </Transform>
+          </Transform>
+        </Transform>
+      </Transform>
+    </Transform>
+
+    <!-- Animações -->
+    <TimeSensor DEF="Clock" cycleInterval="3" loop="true"/>
+
+    <!-- Ombros -->
+    <OrientationInterpolator DEF="RotBracoE_Ombro"
+      key="0 0.5 1"
+      keyValue="1 0 0 -2.0, 1 0 0 -2.8, 1 0 0 -2.0"/>
+    <OrientationInterpolator DEF="RotBracoD_Ombro"
+      key="0 0.5 1"
+      keyValue="1 0 0 -2.8, 1 0 0 -2.0, 1 0 0 -2.8"/>
+
+    <!-- Cotovelos -->
+    <OrientationInterpolator DEF="RotBracoE_Cotovelo"
+      key="0 0.5 1"
+      keyValue="1 0 0 0.8, 1 0 0 0, 1 0 0 0.8"/>
+    <OrientationInterpolator DEF="RotBracoD_Cotovelo"
+      key="0 0.5 1"
+      keyValue="1 0 0 0, 1 0 0 0.8, 1 0 0 0"/>
+
+    <!-- Mover -->
+    <SplinePositionInterpolator DEF="move" closed="true" key="0.00 0.25 0.50 0.75 1.00" 
+      keyValue="-3 0 0  0 0.25 0  3 0 0  0 0.25 0  -3 0 0 "/>
+    
+
+    <!-- ROTAS -->
+    <!-- Ombros -->
+    <ROUTE fromNode="Clock" fromField="fraction_changed" toNode="RotBracoE_Ombro" toField="set_fraction"/>
+    <ROUTE fromNode="Clock" fromField="fraction_changed" toNode="RotBracoD_Ombro" toField="set_fraction"/>
+    <ROUTE fromNode="RotBracoE_Ombro" fromField="value_changed" toNode="BracoE_Ombro" toField="rotation"/>
+    <ROUTE fromNode="RotBracoD_Ombro" fromField="value_changed" toNode="BracoD_Ombro" toField="rotation"/>
+
+    <!-- Cotovelos -->
+    <ROUTE fromNode="Clock" fromField="fraction_changed" toNode="RotBracoE_Cotovelo" toField="set_fraction"/>
+    <ROUTE fromNode="Clock" fromField="fraction_changed" toNode="RotBracoD_Cotovelo" toField="set_fraction"/>
+    <ROUTE fromNode="RotBracoE_Cotovelo" fromField="value_changed" toNode="BracoE_Cotovelo" toField="rotation"/>
+    <ROUTE fromNode="RotBracoD_Cotovelo" fromField="value_changed" toNode="BracoD_Cotovelo" toField="rotation"/>
+
+    <!-- Mover -->
+    <ROUTE fromNode='Clock' fromField='fraction_changed' toNode='move' toField='set_fraction'/>
+    <ROUTE fromNode='move' fromField='value_changed' toNode='Avatar' toField='translation'/>
+
+  </Scene>
+</X3D>
