@@ -306,6 +306,8 @@ class Scene:
             clean(child)  # remove namespace
             if child.tag == "Transform":
                 self.children.append(Transform(child))
+            elif child.tag == "Shape":
+                self.children.append(Shape(child))
             elif child.tag == "TimeSensor":
                 self.children.append(TimeSensor(child))
             elif child.tag == "SplinePositionInterpolator":
