@@ -4,6 +4,7 @@
     <Viewpoint position="-1 7 24" orientation="0.71 0.71 0 -0.7"/>
     <NavigationInfo headlight='false'/>
     <DirectionalLight direction="0 -0.8 0.6"/>
+    <Transform>
     <Shape>
       <Appearance>
         <Material diffuseColor="0.2 0.3 0.7" specularColor="0.9 0.6 0.3" shininess="0.2" emissiveColor="0.0 0.0 0.0"/>
@@ -30,5 +31,7 @@
 " />
       </IndexedTriangleStripSet>
     </Shape>
+    </Transform>
   </Scene>
+
 </X3D>
