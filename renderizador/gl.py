@@ -380,6 +380,7 @@ class GL:
         rotation: [ax, ay, az, angle] rotação ao redor do eixo (ax, ay, az) por 'angle' radianos
         """
         S = np.eye(4, dtype=float)
+
         if scale:
             S[0, 0] = float(scale[0])
             S[1, 1] = float(scale[1])

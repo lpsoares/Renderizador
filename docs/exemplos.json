@@ -28,10 +28,10 @@
           { "path": "3D/malhas/", "x3d": "letras", "width": 300, "height": 200, "pause": true },
           { "path": "3D/malhas/", "x3d": "leques", "width": 300, "height": 200, "pause": true },
           { "path": "3D/malhas/", "x3d": "vertices10", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/malhas/", "x3d": "estrela", "width": 300, "height": 200, "pause": true },
           { "path": "3D/grafo_de_cena/", "x3d": "bound500", "width": 300, "height": 200, "pause": true },
           { "path": "3D/grafo_de_cena/", "x3d": "avatar", "width": 300, "height": 200, "pause": true },
           { "path": "3D/grafo_de_cena/", "x3d": "girando", "width": 300, "height": 200, "pause": true }
-          
         ]
       },
       { "title": "Interpolação 3D",
@@ -48,18 +48,12 @@
           { "path": "3D/transparencia/", "x3d": "tri_trans", "width": 12, "height": 10, "pause": true }
         ]
       },
-      { "title": "Primitivas Geométricas",
-        "examples": [
-          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/primitivas/", "x3d": "outras_duas", "width": 300, "height": 200, "pause": true }
-        ]
-      },
       { "title": "Iluminação",
         "examples": [
           { "path": "3D/malhas/", "x3d": "difusos", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/primitivas/", "x3d": "caixas", "width": 300, "height": 200, "pause": true },
-          { "path": "3D/iluminacao/", "x3d": "esferas", "width": 150, "height": 100, "pause": true },
-          { "path": "3D/iluminacao/", "x3d": "cubo", "width": 150, "height": 100, "pause": true },
+          { "path": "3D/iluminacao/", "x3d": "mineiro", "width": 600, "height": 400, "pause": true },
+          { "path": "3D/malhas/", "x3d": "senoide_difusa", "width": 600, "height": 400, "pause": true },
+          { "path": "3D/malhas/", "x3d": "senoide_especular", "width": 600, "height": 400, "pause": true },
           { "path": "3D/malhas/", "x3d": "teapot", "width": 150, "height": 100, "pause": true },
           { "path": "3D/malhas/", "x3d": "coelho", "width": 600, "height": 400, "pause": true }
         ]
@@ -69,7 +63,17 @@
           { "path": "3D/animacoes/", "x3d": "onda", "width": 300, "height": 200, "pause": false },
           { "path": "3D/animacoes/", "x3d": "piramide", "width": 300, "height": 200, "pause": false },
           { "path": "3D/animacoes/", "x3d": "voltas", "width": 200, "height": 200, "pause": false },
-          { "path": "3D/animacoes/", "x3d": "danca", "width": 150, "height": 100, "pause": false }
+          { "path": "3D/animacoes/", "x3d": "danca", "width": 150, "height": 100, "pause": false },
+          { "path": "3D/animacoes/", "x3d": "avatar_animado", "width": 150, "height": 100, "pause": false }
+        ]
+      },
+      { "title": "Primitivas Geométricas",
+        "examples": [
+          { "path": "3D/primitivas/", "x3d": "duas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/primitivas/", "x3d": "outras_duas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/primitivas/", "x3d": "caixas", "width": 300, "height": 200, "pause": true },
+          { "path": "3D/iluminacao/", "x3d": "esferas", "width": 150, "height": 100, "pause": true },
+          { "path": "3D/iluminacao/", "x3d": "cubo", "width": 150, "height": 100, "pause": true }
         ]
       }
     ]
