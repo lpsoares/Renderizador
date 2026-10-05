@@ -183,12 +183,12 @@ class Interface:
         extent = (0, self.width, self.height, 0)
 
         # Coleta o tempo antes da renderização
-        start = time.process_time()
+        start = time.perf_counter()
 
         data = func()
 
         # Calcula o tempo ao concluir a renderização
-        elapsed_time = time.process_time() - start
+        elapsed_time = time.perf_counter() - start
 
         image = self.axes.imshow(data, interpolation='nearest', extent=extent)
 
@@ -224,7 +224,10 @@ class Interface:
         bsave.on_clicked(self.save_image)
 
         # Animação de quadros
+        last_fps_update = 0.0
+
         def animate(_frame_number):
+            nonlocal last_fps_update
 
             # Executa a função recebida como parâmetro no método principal
             data = func()
@@ -233,15 +236,21 @@ class Interface:
             image.set_array(data)
 
             # Calcula e atualiza a quantidade de Quadros Por Segundo
-            fps = "{:.1f}".format(1/(time.process_time() - Interface.last_time))
-            time_box.set_val(fps)
-            time_box.cursor_index = len(fps)
-            Interface.last_time = time.process_time()
+            now = time.perf_counter()
+            elapsed = max(now - Interface.last_time, 1e-9)
+            fps = "{:.1f}".format(1 / elapsed)
+            # set_val() redesenha toda a janela e dispara callbacks dos
+            # widgets. Atualizar somente o texto é suficiente para a leitura
+            # do FPS e mantém a animação leve.
+            if now - last_fps_update >= 0.1:
+                time_box.text_disp.set_text(fps)
+                last_fps_update = now
+            Interface.last_time = now
 
-            return image, time_box
+            return image, time_box.text_disp
 
         # Para cálculo de FPS
-        Interface.last_time = time.process_time()
+        Interface.last_time = time.perf_counter()
 
         # Configura texto da interface
         time_box_pos = plt.axes([0.18, 0.02, 0.15, 0.06])
@@ -249,6 +258,9 @@ class Interface:
             time_box = TextBox(time_box_pos, 'Tempo (s) ', initial="{:.4f}".format(elapsed_time))
         else:
             time_box = TextBox(time_box_pos, 'FPS ', initial="0.0")
-            _ = animation.FuncAnimation(self.fig, animate, interval=1, blit=False)
+            self.animation = animation.FuncAnimation(
+                self.fig, animate, interval=1, blit=True,
+                cache_frame_data=False
+            )
 
         plt.show()

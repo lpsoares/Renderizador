@@ -36,85 +36,93 @@ class Renderizador:
         self.scene = None
         self.framebuffers = {}
 
-    def setup(self):
-        """Configura o sistema para a renderização."""
-        # Configurando color buffers para exibição na tela
+    def setup(self, supersampling=2):
+        """Configura os buffers de superamostragem e profundidade."""
+        self.supersampling = max(1, int(supersampling))
+        sample_width = self.width * self.supersampling
+        sample_height = self.height * self.supersampling
 
-        # Cria uma (1) posição de FrameBuffer na GPU
-        fbo = gpu.GPU.gen_framebuffers(1)
+        framebuffers = gpu.GPU.gen_framebuffers(2)
+        self.framebuffers["FRONT"] = framebuffers[0]
+        self.framebuffers["RESOLVED"] = framebuffers[1]
 
-        # Define o atributo FRONT como o FrameBuffe principal
-        self.framebuffers["FRONT"] = fbo[0]
-
-        # Define que a posição criada será usada para desenho e leitura
-        gpu.GPU.bind_framebuffer(gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"])
-        # Opções:
-        # - DRAW_FRAMEBUFFER: Faz o bind só para escrever no framebuffer
-        # - READ_FRAMEBUFFER: Faz o bind só para leitura no framebuffer
-        # - FRAMEBUFFER: Faz o bind para leitura e escrita no framebuffer
-
-        # Aloca memória no FrameBuffer para um tipo e tamanho especificado de buffer
-
-        # Memória de Framebuffer para canal de cores
+        gpu.GPU.bind_framebuffer(
+            gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"]
+        )
         gpu.GPU.framebuffer_storage(
             self.framebuffers["FRONT"],
             gpu.GPU.COLOR_ATTACHMENT,
             gpu.GPU.RGB8,
+            sample_width,
+            sample_height,
+        )
+        gpu.GPU.framebuffer_storage(
+            self.framebuffers["FRONT"],
+            gpu.GPU.DEPTH_ATTACHMENT,
+            gpu.GPU.DEPTH_COMPONENT32F,
+            sample_width,
+            sample_height,
+        )
+        gpu.GPU.framebuffer_storage(
+            self.framebuffers["RESOLVED"],
+            gpu.GPU.COLOR_ATTACHMENT,
+            gpu.GPU.RGB8,
             self.width,
-            self.height
+            self.height,
         )
 
-        # Descomente as seguintes linhas se for usar um Framebuffer para profundidade
-        # gpu.GPU.framebuffer_storage(
-        #     self.framebuffers["FRONT"],
-        #     gpu.GPU.DEPTH_ATTACHMENT,
-        #     gpu.GPU.DEPTH_COMPONENT32F,
-        #     self.width,
-        #     self.height
-        # )
-    
-        # Opções:
-        # - COLOR_ATTACHMENT: alocações para as cores da imagem renderizada
-        # - DEPTH_ATTACHMENT: alocações para as profundidades da imagem renderizada
-        # Obs: Você pode chamar duas vezes a rotina com cada tipo de buffer.
-
-        # Tipos de dados:
-        # - RGB8: Para canais de cores (Vermelho, Verde, Azul) 8bits cada (0-255)
-        # - RGBA8: Para canais de cores (Vermelho, Verde, Azul, Transparência) 8bits cada (0-255)
-        # - DEPTH_COMPONENT16: Para canal de Profundidade de 16bits (half-precision) (0-65535)
-        # - DEPTH_COMPONENT32F: Para canal de Profundidade de 32bits (single-precision) (float)
-
-        # Define cor que ira apagar o FrameBuffer quando clear_buffer() invocado
         gpu.GPU.clear_color([0, 0, 0])
-
-        # Define a profundidade que ira apagar o FrameBuffer quando clear_buffer() invocado
-        # Assuma 1.0 o mais afastado e -1.0 o mais próximo da camera
         gpu.GPU.clear_depth(1.0)
 
-        # Definindo tamanho do Viewport para renderização
+        gl.GL.width = sample_width
+        gl.GL.height = sample_height
+        gl.GL.sample_rate = self.supersampling
+
+        # TriangleSet2D usa coordenadas absolutas. Este adaptador aplica
+        # a grade 2x2 sem modificar a implementação de triangleSet2D().
+        triangle_set_2d = x3d.X3D.renderer.get("TriangleSet2D")
+        if triangle_set_2d:
+            rate = self.supersampling
+
+            def supersampled_triangle_set_2d(vertices, colors):
+                scaled = [coordinate * rate for coordinate in vertices]
+                triangle_set_2d(vertices=scaled, colors=colors)
+
+            x3d.X3D.renderer["TriangleSet2D"] = (
+                supersampled_triangle_set_2d
+            )
+
         self.scene.viewport(width=self.width, height=self.height)
 
     def pre(self):
-        """Rotinas pré renderização."""
-        # Função invocada antes do processo de renderização iniciar.
-
-        # Limpa o frame buffers atual
+        """Limpa os buffers antes de renderizar um quadro."""
+        gpu.GPU.bind_framebuffer(
+            gpu.GPU.FRAMEBUFFER, self.framebuffers["FRONT"]
+        )
         gpu.GPU.clear_buffer()
 
-        # Recursos que podem ser úteis:
-        # Define o valor do pixel no framebuffer: draw_pixel(coord, mode, data)
-        # Retorna o valor do pixel no framebuffer: read_pixel(coord, mode)
-
     def pos(self):
-        """Rotinas pós renderização."""
-        # Função invocada após o processo de renderização terminar.
+        """Resolve quatro amostras em cada pixel da imagem final."""
+        import numpy as np
 
-        # Essa é uma chamada conveniente para manipulação de buffers
-        # ao final da renderização de um frame. Como por exemplo, executar
-        # downscaling da imagem.
+        samples = gpu.GPU.frame_buffer[
+            self.framebuffers["FRONT"]
+        ].color
+        rate = self.supersampling
+        resolved = samples.reshape(
+            self.height,
+            rate,
+            self.width,
+            rate,
+            samples.shape[2],
+        ).mean(axis=(1, 3))
 
-        # Método para a troca dos buffers (NÃO IMPLEMENTADO)
-        # Esse método será utilizado na fase de implementação de animações
+        gpu.GPU.frame_buffer[
+            self.framebuffers["RESOLVED"]
+        ].color[:] = np.rint(resolved).astype(np.uint8)
+        gpu.GPU.bind_framebuffer(
+            gpu.GPU.FRAMEBUFFER, self.framebuffers["RESOLVED"]
+        )
         gpu.GPU.swap_buffers()
 
     def mapping(self):
@@ -202,7 +210,10 @@ class Renderizador:
                 scenegraph.Graph(self.scene.root)
 
         # Configura o sistema para a renderização.
-        self.setup()
+        # Para a animação, uma amostra por pixel evita quadruplicar o custo
+        # do rasterizador em todos os quadros. O modo pausado mantém a
+        # superamostragem para preservar a qualidade da imagem estática.
+        self.setup(supersampling=1 if not args.pause else 2)
 
         # Se no modo silencioso salvar imagem e não mostrar janela de visualização
         if args.quiet:
